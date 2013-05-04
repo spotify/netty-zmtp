@@ -1,4 +1,4 @@
-This is a collection of Netty channel handlers that aims to implement ZMTP/1.0, the ZeroMQ Message Transport Protocol.
+This is a ZeroMQ codec for Netty that aims to implement ZMTP/1.0, the ZeroMQ Message Transport Protocol.
 
 http://rfc.zeromq.org/spec:13
 
