@@ -1,0 +1,26 @@
+Netty ZMTP
+Copyright (c) 2012-2013 Spotify AB
+
+This product includes software developed at Spotify AB.
+http://www.spotify.com/
+
+This product includes modified software from and depends on 'Netty', a network
+communication framework in Java, which can be obtained at: http://netty.io/
+
+This product depends on 'SLF4J', a simple logging facade for Java, which can be
+obtained at: http://www.slf4j.org/
+
+This product depends on 'IntelliJ Annotations', which can be obtained at:
+https://github.com/JetBrains/intellij-community
+
+This product depends on 'ZeroMQ', a communications framework, which can be
+obtained at: https://github.com/zeromq
+
+This product depends on 'Junit', a testing framework for Java, which can be
+obtained at: http://junit.org/
+
+This product depends on 'mockito', a mocking framework for Java, which can be
+obtained at: https://code.google.com/p/mockito/
+
+This product depends on 'logback', a logging framework for Java, which can be
+obtained at: http://logback.qos.ch/
