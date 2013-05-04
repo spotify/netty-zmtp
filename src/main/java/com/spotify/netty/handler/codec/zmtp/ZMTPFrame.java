@@ -102,9 +102,10 @@ public class ZMTPFrame {
   }
 
   /**
-   * Helper used during decoding of a netty frame
+   * Helper used during decoding of a ZMTP frame
    *
    * @param length length of buffer
+   * @return A {@link ZMTPFrame} containg the data read from the buffer.
    */
   static public ZMTPFrame read(final ChannelBuffer buffer, final int length) {
     byte[] data = null;

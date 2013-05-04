@@ -55,7 +55,7 @@ public class ZMTPMessageParser {
    * to indicate that more data is needed.
    *
    * @param buffer Buffer with data
-   * @return A deque with the frames of the message if it was completed, otherwise null.
+   * @return A {@link ZMTPMessage} if it was completely parsed, otherwise null.
    */
   public ZMTPMessage parse(final ChannelBuffer buffer) {
     while (buffer.readableBytes() > 0) {
