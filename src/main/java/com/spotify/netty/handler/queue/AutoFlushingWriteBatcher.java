@@ -54,7 +54,7 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
         @NotNull
         @Override
         public Thread newThread(final Runnable r) {
-          final Thread thread = new Thread();
+          final Thread thread = new Thread(r);
           thread.setDaemon(true);
           thread.setName("netty-write-buffer-flusher");
           return thread;
