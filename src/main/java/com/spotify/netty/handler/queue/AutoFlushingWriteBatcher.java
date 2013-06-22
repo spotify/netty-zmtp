@@ -23,6 +23,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.queue.BufferedWriteHandler;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -74,6 +75,8 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
       }
     }
   };
+
+  private volatile ScheduledFuture<?> flushFuture;
 
   /**
    * Create a write batcher with default parameters.
@@ -129,8 +132,14 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
   public void channelOpen(final ChannelHandlerContext ctx, final ChannelStateEvent e)
       throws Exception {
     super.channelOpen(ctx, e);
+
     // Schedule a task to flush and enforce the maximum latency that a message is buffered
-    flusher.scheduleWithFixedDelay(flushTask, intervalNanos, intervalNanos, TimeUnit.NANOSECONDS);
+    flushFuture = flusher.scheduleWithFixedDelay(
+        flushTask,
+        intervalNanos,
+        intervalNanos,
+        TimeUnit.NANOSECONDS
+    );
   }
 
   /**
@@ -140,8 +149,9 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
   public void channelClosed(final ChannelHandlerContext ctx, final ChannelStateEvent e)
       throws Exception {
     super.channelClosed(ctx, e);
+
     // Remove the scheduled flushing task.
-    flusher.remove(flushTask);
+    flushFuture.cancel(false);
   }
 
   /**
