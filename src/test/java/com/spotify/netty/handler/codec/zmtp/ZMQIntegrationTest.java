@@ -117,7 +117,7 @@ public class ZMQIntegrationTest {
   public void testZmqDealer() throws Exception {
     final ZMQ.Context context = ZMQ.context(1);
     final ZMQ.Socket socket = context.socket(ZMQ.DEALER);
-    socket.connect("tcp://" + serverAddress.getHostString() + ":" + serverAddress.getPort());
+    socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
     final ZMsg request = ZMsg.newStringMsg("envelope", "", "hello", "world");
     request.send(socket);
 
@@ -139,7 +139,7 @@ public class ZMQIntegrationTest {
   public void testZmqRouter() throws Exception {
     final ZMQ.Context context = ZMQ.context(1);
     final ZMQ.Socket socket = context.socket(ZMQ.ROUTER);
-    socket.connect("tcp://" + serverAddress.getHostString() + ":" + serverAddress.getPort());
+    socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
 
     final ZMTPMessage request = new ZMTPMessage(
         asList(ZMTPFrame.create("envelope")),
