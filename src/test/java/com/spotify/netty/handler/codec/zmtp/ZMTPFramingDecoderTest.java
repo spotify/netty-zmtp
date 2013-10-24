@@ -10,6 +10,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
@@ -114,20 +116,64 @@ public class ZMTPFramingDecoderTest {
 
   }
 
-  private ZMTPFramingDecoder doHandshake(byte[] serverIdentity, byte[] clientIdentity) throws Exception
-  {
+  /**
+   * Lets test the funky special case where a shorter length than 255 is encoded in a
+   * big endian long, which MAY be done according to spec.
+   */
+  @Test
+  public void testOverlyLongLength() throws Exception {
+    byte[] serverIdentity = "fourth".getBytes();
+    byte[] clientIdentity = "fifth".getBytes();
+
     ZMTPSession s = new ZMTPSession(ZMTPConnectionType.Addressed, serverIdentity);
     ZMTPFramingDecoder zfd = new ZMTPFramingDecoder(s);
 
     // Someone connects
     zfd.channelConnected(ctx, channelStateEvent);
-
     verify(channel, times(1)).write(makeFrame(serverIdentity));
+    verify(ctx, never()).sendUpstream(channelStateEvent);
+
+    ChannelBuffer funky = ChannelBuffers.dynamicBuffer();
+    funky.writeBytes(new byte[]{(byte) 0xff, (byte)0, (byte)0, (byte)0, (byte)0,
+        (byte)0, (byte)0, (byte)0, (byte)(clientIdentity.length + 1), (byte) 0});
+    funky.writeBytes(clientIdentity);
+
+    Assert.assertNull(zfd.decode(ctx, channel, funky));
+    Assert.assertArrayEquals(clientIdentity, s.getRemoteIdentity());
+  }
+
+
+  /**
+   * The ZMTP/1.0 spec states that "An identity greeting consists of a unique string of 1
+   * to 255 octets". Let's make sure we don't accept longer identities.
+   * @throws Exception
+   */
+  @Test
+  public void testOverlyLongIdentity() throws Exception {
+    byte[] overlyLong = new byte[256];
+    Arrays.fill(overlyLong, (byte)'a');
+    try {
+      doHandshake("server".getBytes(), overlyLong);
+      Assert.fail("Should have thrown exception");
+    } catch (ZMTPException e) {
+      //pass
+    }
+  }
+
+  private ZMTPFramingDecoder doHandshake(byte[] serverIdent, byte[] clientIdent) throws Exception
+  {
+    ZMTPSession s = new ZMTPSession(ZMTPConnectionType.Addressed, serverIdent);
+    ZMTPFramingDecoder zfd = new ZMTPFramingDecoder(s);
+
+    // Someone connects
+    zfd.channelConnected(ctx, channelStateEvent);
+
+    verify(channel, times(1)).write(makeFrame(serverIdent));
 
     verify(ctx, never()).sendUpstream(channelStateEvent);
 
     // send it
-    Assert.assertNull(zfd.decode(ctx, channel, makeFrame(clientIdentity)));
+    Assert.assertNull(zfd.decode(ctx, channel, makeFrame(clientIdent)));
 
     verify(ctx, times(1)).sendUpstream(channelStateEvent);
     return zfd;
@@ -138,7 +184,18 @@ public class ZMTPFramingDecoderTest {
       identity = new byte[0];
     }
     ChannelBuffer cb = ChannelBuffers.dynamicBuffer(identity.length + 2);
-    cb.writeByte(identity.length + 1);
+    long l = identity.length + 1;
+    if (l < 253) {
+      cb.writeByte((byte)l);
+    } else {
+      cb.writeByte(0xff);
+      if (cb.order() == ByteOrder.BIG_ENDIAN) {
+        cb.writeLong(l);
+      }else {
+        cb.writeLong(ChannelBuffers.swapLong(l));
+      }
+    }
+
     cb.writeByte(0x00);
     cb.writeBytes(identity);
     return cb;

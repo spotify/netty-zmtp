@@ -77,6 +77,10 @@ public class ZMTPFramingDecoder extends FrameDecoder {
     buffer.markReaderIndex();
 
     final long len = ZMTPUtils.decodeLength(buffer);
+    if (len > 256) {
+      // spec says the ident string can be up to 255 chars
+      throw new ZMTPException("Remote identity longer than the allowed 255 octets");
+    }
 
     // Bail out if there's not enough data
     if (len == -1 || buffer.readableBytes() < len) {
