@@ -86,7 +86,8 @@ public class ZMTPFramingDecoder extends FrameDecoder {
 
     final int flags = buffer.readByte();
 
-    // More flag should not be set (TODO: is this true?)
+    // More flag should not be set, as can be deduced from the idflags definition in the
+    // Full ZMTP Grammar on http://rfc.zeromq.org/spec:13
     if ((flags & ZMTPUtils.MORE_FLAG) == ZMTPUtils.MORE_FLAG) {
       handshakeFuture.setFailure(new ZMTPException(
           "Expected identity from remote side but got a frame with MORE flag set."));
