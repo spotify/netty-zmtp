@@ -17,6 +17,7 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 
 import java.util.List;
 import java.util.UUID;
@@ -107,7 +108,7 @@ public class ZMTPUtils {
     encodeLength(frame.size() + 1, buffer);
     buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
     if (frame.hasData()) {
-      buffer.writeBytes(frame.getData());
+      buffer.writeBytes(frame.getDataBuffer());
     }
   }
 
@@ -126,7 +127,7 @@ public class ZMTPUtils {
     if (enveloped) {
       // Sanity check
       if (message.getContent().isEmpty()) {
-        throw new ZMTPException("Cannot write enveloped message with no content");
+        throw new IllegalArgumentException("Cannot write enveloped message with no content");
       }
 
       final List<ZMTPFrame> envelope = message.getEnvelope();
@@ -193,14 +194,28 @@ public class ZMTPUtils {
    * Create a string from binary data, keeping printable ascii and hex encoding everything else.
    *
    * @param data The data
-   * @return A string represantation of the data
+   * @return A string representation of the data
    */
   public static String toString(final byte[] data) {
     if (data == null) {
       return null;
     }
+    return toString(ChannelBuffers.wrappedBuffer(data));
+  }
+
+  /**
+   * Create a string from binary data, keeping printable ascii and hex encoding everything else.
+   *
+   * @param data The data
+   * @return A string representation of the data
+   */
+  public static String toString(final ChannelBuffer data) {
+    if (data == null) {
+      return null;
+    }
     final StringBuilder sb = new StringBuilder();
-    for (final byte b : data) {
+    while (data.readable()) {
+      final byte b = data.readByte();
       if (b > 31 && b < 127) {
         if (b == '%') {
           sb.append('%');
@@ -212,5 +227,20 @@ public class ZMTPUtils {
       }
     }
     return sb.toString();
+  }
+
+  public static String toString(final List<ZMTPFrame> frames) {
+    final StringBuilder builder = new StringBuilder("[");
+    for (int i = 0; i < frames.size(); i++) {
+      final ZMTPFrame frame = frames.get(i);
+      builder.append('"');
+      builder.append(toString(frame.getDataBuffer()));
+      builder.append('"');
+      if (i < frames.size() - 1) {
+        builder.append(',');
+      }
+    }
+    builder.append(']');
+    return builder.toString();
   }
 }

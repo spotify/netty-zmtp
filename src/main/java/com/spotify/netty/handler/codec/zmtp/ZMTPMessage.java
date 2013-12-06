@@ -13,10 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.spotify.netty.handler.codec.zmtp;
 
+import java.nio.charset.Charset;
+import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import static com.spotify.netty.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
+import static java.util.Arrays.asList;
+import static org.jboss.netty.util.CharsetUtil.UTF_8;
 
 public class ZMTPMessage {
 
@@ -24,7 +32,7 @@ public class ZMTPMessage {
   List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
 
   /**
-   * Creates a new ZMTPMessage from envelope and content frames.
+   * Create a new message from envelope and content frames.
    *
    * @param envelope The envelope frames. Must not be modified again.
    * @param content  The content frames. Must not be modified again.
@@ -32,6 +40,95 @@ public class ZMTPMessage {
   public ZMTPMessage(final List<ZMTPFrame> envelope, final List<ZMTPFrame> content) {
     this.envelope = envelope;
     this.content = content;
+  }
+
+  /**
+   * Create a new message from a string frames, using UTF-8 encoding.
+   */
+  public static ZMTPMessage fromStringsUTF8(final boolean enveloped, final String... frames) {
+    return fromStrings(enveloped, UTF_8, frames);
+  }
+
+  /**
+   * Create a new message from a list of string frames, using UTF-8 encoding.
+   */
+  public static ZMTPMessage fromStringsUTF8(final boolean enveloped, final List<String> frames) {
+    return fromStrings(enveloped, UTF_8, frames);
+  }
+
+  /**
+   * Create a new message from a list of string frames, using a specified encoding.
+   */
+  public static ZMTPMessage fromStrings(final boolean enveloped, final Charset charset,
+                                        final String... frames) {
+    return fromStrings(enveloped, charset, asList(frames));
+  }
+
+  /**
+   * Create a new message from a list of string frames, using a specified encoding.
+   */
+  public static ZMTPMessage fromStrings(final boolean enveloped, final Charset charset,
+                                        final List<String> frames) {
+    return from(enveloped, new AbstractList<ZMTPFrame>() {
+      @Override
+      public ZMTPFrame get(final int index) {
+        return ZMTPFrame.create(frames.get(index), charset);
+      }
+
+      @Override
+      public int size() {
+        return frames.size();
+      }
+    });
+  }
+
+  /**
+   * Create a new message from a list of byte array frames.
+   */
+  public static ZMTPMessage fromByteArrays(final boolean enveloped, final List<byte[]> frames) {
+    return from(enveloped, new AbstractList<ZMTPFrame>() {
+      @Override
+      public ZMTPFrame get(final int index) {
+        byte[] bytes = frames.get(index);
+        if (bytes.length == 0) {
+          return EMPTY_FRAME;
+        }
+        return ZMTPFrame.create(bytes);
+      }
+
+      @Override
+      public int size() {
+        return frames.size();
+      }
+    });
+  }
+
+  /**
+   * Create a new message from a list of frames.
+   */
+  public static ZMTPMessage from(final boolean enveloped, final List<ZMTPFrame> frames) {
+    final List<ZMTPFrame> envelope;
+    final List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
+    int i = 0;
+    if (enveloped) {
+      envelope = new ArrayList<ZMTPFrame>();
+      for (; i < frames.size(); i++) {
+        final ZMTPFrame frame = frames.get(i);
+        if (frame == EMPTY_FRAME) {
+          i++;
+          break;
+        }
+        envelope.add(frame);
+      }
+    } else {
+      envelope = Collections.emptyList();
+    }
+
+    for (; i < frames.size(); i++) {
+      content.add(frames.get(i));
+    }
+
+    return new ZMTPMessage(envelope, content);
   }
 
   /**
@@ -67,10 +164,7 @@ public class ZMTPMessage {
    */
   @Override
   public String toString() {
-    return "ZMTPMessage{" +
-           "content=" + content +
-           ", envelope=" + envelope +
-           '}';
+    return "ZMTPMessage{" + ZMTPUtils.toString(envelope) + "," + ZMTPUtils.toString(content) + '}';
   }
 
   @Override

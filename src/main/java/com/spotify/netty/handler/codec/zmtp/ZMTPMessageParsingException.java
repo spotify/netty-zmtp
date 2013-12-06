@@ -16,17 +16,9 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-/**
- * Type of ZMTP connection
- */
-public enum ZMTPConnectionType {
-  /**
-   * Addressed contain identity frames before user content
-   */
-  Addressed,
-  /**
-   * Broadcast and Neutral doesn't contain any identity frames
-   */
-  Broadcast,
-  Neutral
+public class ZMTPMessageParsingException extends ZMTPException {
+
+  public ZMTPMessageParsingException(final String message) {
+    super(message);
+  }
 }

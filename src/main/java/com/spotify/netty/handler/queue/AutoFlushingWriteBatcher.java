@@ -86,8 +86,8 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
   }
 
   /**
-   * Create a write batcher with custom flushing interval, i.e. the maximum amount of time between a
-   * message being written to the buffer and the buffer being flushed.
+   * Create a write batcher with custom flushing interval, i.e. the maximum amount of time between
+   * a message being written to the buffer and the buffer being flushed.
    *
    * @param interval     The flush interval.
    * @param intervalUnit The time unit of the flush interval.
@@ -97,10 +97,10 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
   }
 
   /**
-   * Create a write batcher, controlling whether it consolidates buffers when flushing. I.e., if the
-   * channel buffers are joined and written to a single channel buffer when flushing. NIO scatter
-   * writes are slow enough that consolidating buffers seem to always be the most performant
-   * option.
+   * Create a write batcher, controlling whether it consolidates buffers when flushing. I.e., if
+   * the channel buffers are joined and written to a single channel buffer when flushing. NIO
+   * scatter writes are slow enough that consolidating buffers seem to always be the most
+   * performant option.
    *
    * @param consolidateOnFlush true if buffers should be consolidated on flush, false otherwise.
    */
@@ -109,8 +109,8 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
   }
 
   /**
-   * Create a write batcher with custom flushing interval, i.e. the maximum amount of time between a
-   * message being written to the buffer and the buffer being flushed as well as if the buffers
+   * Create a write batcher with custom flushing interval, i.e. the maximum amount of time between
+   * a message being written to the buffer and the buffer being flushed as well as if the buffers
    * should be consolidated when flushing. I.e., if the channel buffers are joined and written to a
    * single channel buffer when flushing. NIO scatter writes are slow enough that consolidating
    * buffers seem to always be the most performant option.

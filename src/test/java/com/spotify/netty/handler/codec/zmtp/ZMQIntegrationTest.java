@@ -42,6 +42,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
@@ -72,10 +73,7 @@ public class ZMQIntegrationTest {
       );
 
       public ChannelPipeline getPipeline() throws Exception {
-        final
-        ZMTPSession
-            session =
-            new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes());
+        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
 
         return Channels.pipeline(
             new ExecutionHandler(executor),

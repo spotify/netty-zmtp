@@ -13,14 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.spotify.netty.handler.codec.zmtp;
 
 /**
  * Exception base for all netty ZMTP classes
  */
-public class ZMTPException extends RuntimeException {
+public class ZMTPException extends Exception {
 
   private static final long serialVersionUID = -7283717734572821817L;
+
+  public ZMTPException() {
+  }
 
   public ZMTPException(final String message) {
     super(message);

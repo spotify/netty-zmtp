@@ -40,14 +40,12 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-/**
- * ProtocolViolationTests
- */
 public class ProtocolViolationTests {
 
   private ServerBootstrap serverBootstrap;
@@ -78,8 +76,7 @@ public class ProtocolViolationTests {
       );
 
       public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session =
-            new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes());
+        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
 
         return Channels.pipeline(
             new ExecutionHandler(executor),

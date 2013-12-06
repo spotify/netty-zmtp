@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -36,14 +37,12 @@ public class ZMTPFramingDecoder extends FrameDecoder {
 
   private final ZMTPMessageParser parser;
   private final ZMTPSession session;
+
   private ChannelFuture handshakeFuture;
 
-  /**
-   * Creates a new decoder
-   */
   public ZMTPFramingDecoder(final ZMTPSession session) {
     this.session = session;
-    this.parser = new ZMTPMessageParser(session.isEnveloped());
+    this.parser = new ZMTPMessageParser(session.isEnveloped(), session.getSizeLimit());
   }
 
   /**
@@ -127,12 +126,12 @@ public class ZMTPFramingDecoder extends FrameDecoder {
     }
 
     // Parse incoming frames
-    final ZMTPMessage message = parser.parse(buffer);
+    final ZMTPParsedMessage message = parser.parse(buffer);
     if (message == null) {
       return null;
     }
 
-    return new ZMTPIncomingMessage(session, message);
+    return new ZMTPIncomingMessage(session, message.getMessage(), message.isTruncated());
   }
 
   @Override

@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.channel.Channel;
@@ -26,19 +27,32 @@ import java.util.UUID;
  */
 public class ZMTPSession {
 
+  public static final int DEFAULT_SIZE_LIMIT = Integer.MAX_VALUE;
+
   private final boolean useLocalIdentity;
   private final byte[] localIdent;
+  private final int sizeLimit;
 
   private ZMTPConnectionType type;
   private Channel channel;
   private byte[] remoteIdent;
 
   public ZMTPSession(final ZMTPConnectionType type) {
-    this(type, null);
+    this(type, Integer.MAX_VALUE);
+  }
+
+  public ZMTPSession(final ZMTPConnectionType type, final int sizeLimit) {
+    this(type, sizeLimit, null);
   }
 
   public ZMTPSession(final ZMTPConnectionType type, @Nullable final byte[] localIdent) {
+    this(type, DEFAULT_SIZE_LIMIT, localIdent);
+  }
+
+  public ZMTPSession(final ZMTPConnectionType type, final int sizeLimit,
+                     @Nullable final byte[] localIdent) {
     this.type = type;
+    this.sizeLimit = sizeLimit;
     this.useLocalIdentity = (localIdent != null);
     if (localIdent == null) {
       this.localIdent = ZMTPUtils.getBytesFromUUID(UUID.randomUUID());
@@ -110,9 +124,9 @@ public class ZMTPSession {
    *
    * @param remoteIdent Remote identity, if null an identity will be created
    */
-  public void setRemoteIdentity(@Nullable final byte[] remoteIdent) throws ZMTPException {
+  public void setRemoteIdentity(@Nullable final byte[] remoteIdent) {
     if (this.remoteIdent != null) {
-      throw new ZMTPException("Remote identity already set");
+      throw new IllegalStateException("Remote identity already set");
     }
 
     this.remoteIdent = remoteIdent;
@@ -128,5 +142,9 @@ public class ZMTPSession {
 
   public void setChannel(final Channel channel) {
     this.channel = channel;
+  }
+
+  public int getSizeLimit() {
+    return sizeLimit;
   }
 }

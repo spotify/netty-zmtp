@@ -16,36 +16,21 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-/**
- * A ZMTP message along with the session it was received on.
- */
-public class ZMTPIncomingMessage {
+public class ZMTPParsedMessage {
 
-  private final ZMTPSession session;
-  private final ZMTPMessage message;
   private final boolean truncated;
+  private final ZMTPMessage message;
 
-  public ZMTPIncomingMessage(final ZMTPSession session, final ZMTPMessage message,
-                             final boolean truncated) {
-    this.session = session;
-    this.message = message;
+  public ZMTPParsedMessage(final boolean truncated,
+                           final ZMTPMessage message) {
     this.truncated = truncated;
+    this.message = message;
   }
 
-  /**
-   * Return the session this message was received on.
-   *
-   * @return The session this message was received on.
-   */
-  public ZMTPSession getSession() {
-    return session;
+  public boolean isTruncated() {
+    return truncated;
   }
 
-  /**
-   * Return the message.
-   *
-   * @return The message.
-   */
   public ZMTPMessage getMessage() {
     return message;
   }
@@ -59,33 +44,29 @@ public class ZMTPIncomingMessage {
       return false;
     }
 
-    final ZMTPIncomingMessage that = (ZMTPIncomingMessage) o;
+    final ZMTPParsedMessage that = (ZMTPParsedMessage) o;
 
-    if (message != null ? !message.equals(that.message) : that.message != null) {
+    if (truncated != that.truncated) {
       return false;
     }
-    if (session != null ? !session.equals(that.session) : that.session != null) {
+    if (message != null ? !message.equals(that.message) : that.message != null) {
       return false;
     }
 
     return true;
   }
 
-  public boolean isTruncated() {
-    return truncated;
-  }
-
   @Override
   public int hashCode() {
-    int result = session != null ? session.hashCode() : 0;
+    int result = (truncated ? 1 : 0);
     result = 31 * result + (message != null ? message.hashCode() : 0);
     return result;
   }
 
   @Override
   public String toString() {
-    return "ZMTPIncomingMessage{" +
-           "session=" + session +
+    return "ZMTPParsedMessage{" +
+           "truncated=" + truncated +
            ", message=" + message +
            '}';
   }
