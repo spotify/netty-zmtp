@@ -115,13 +115,14 @@ public class ZMTPMessageParserTest {
                        enveloped, limit, input, expected));
 
     final ChannelBuffer serialized = serialize(input);
+    final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
 
     for (List<ChannelBuffer> fragments : Fragmenter.generator(serialized.duplicate())) {
 
       // Test parsing fragmented input
+      buffer.setIndex(0, 0);
       ZMTPParsedMessage parsed = null;
       final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
-      final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
       for (final ChannelBuffer fragment : fragments) {
         buffer.writeBytes(fragment);
         parsed = parser.parse(buffer);

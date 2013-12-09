@@ -51,7 +51,8 @@ class Fragmenter {
   }
 
   private boolean next(final List<ChannelBuffer> fragments) {
-    fragments.add(slice.duplicate());
+    slice.readerIndex(0);
+    fragments.add(slice);
 
     if (fragmenter == null) {
       return true;
