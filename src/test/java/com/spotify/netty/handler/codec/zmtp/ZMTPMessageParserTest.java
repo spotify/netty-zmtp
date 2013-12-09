@@ -47,6 +47,7 @@ import static java.lang.System.out;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(Theories.class)
 public class ZMTPMessageParserTest {
@@ -68,7 +69,7 @@ public class ZMTPMessageParserTest {
       test(input("8", "aa", "", "b", "cc"), nonEnveloped()),
 
       test(input("a", "bb", "", "c", "dd", "", "eee"),
-
+           // Test non-enveloped parsing
            nonEnveloped(limit(1), truncated("a")),
            nonEnveloped(limit(2), truncated("a")),
            nonEnveloped(limit(3), truncated("a", "bb", "")),
@@ -78,7 +79,7 @@ public class ZMTPMessageParserTest {
            nonEnveloped(limit(7), truncated("a", "bb", "", "c", "dd", "")),
            nonEnveloped(limit(8), truncated("a", "bb", "", "c", "dd", "")),
            nonEnveloped(limit(9), whole("a", "bb", "", "c", "dd", "", "eee")),
-
+           // Test enveloped parsing
            enveloped(limit(1), truncated("a")),
            enveloped(limit(2), truncated("a")),
            enveloped(limit(3), truncated("a", "bb", "")),
@@ -123,9 +124,14 @@ public class ZMTPMessageParserTest {
       buffer.setIndex(0, 0);
       ZMTPParsedMessage parsed = null;
       final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
-      for (final ChannelBuffer fragment : fragments) {
+      for (int i = 0; i < fragments.size(); i++) {
+        final ChannelBuffer fragment = fragments.get(i);
         buffer.writeBytes(fragment);
         parsed = parser.parse(buffer);
+        // Verify that the parser did not return a message for incomplete input
+        if (i < fragments.size() - 1) {
+          assertNull(parsed);
+        }
       }
       assertEquals(expected, parsed);
 
