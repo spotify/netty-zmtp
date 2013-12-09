@@ -53,6 +53,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
+/**
+ * This test attempts to thoroughly exercise the {@link ZMTPMessageParser} by feeding it input
+ * fragmented in every possible way using {@link Fragmenter}. Everything from whole un-fragmented
+ * message parsing to each byte being fragmented in a separate buffer is tested. Generating all
+ * possible message fragmentations takes some time, so running this test can typically take a few
+ * minutes.
+ */
 @RunWith(Theories.class)
 public class ZMTPMessageParserTest {
 
