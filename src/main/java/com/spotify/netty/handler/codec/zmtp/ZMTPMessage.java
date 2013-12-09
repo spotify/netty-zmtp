@@ -132,6 +132,16 @@ public class ZMTPMessage {
   }
 
   /**
+   * Create a new message from a list of frames.
+   *
+   * @deprecated Use {@link #from(boolean, List)} instead.
+   */
+  @Deprecated
+  public static ZMTPMessage parse(final List<ZMTPFrame> frames, final boolean enveloped) {
+    return from(enveloped, frames);
+  }
+
+  /**
    * Return the envelope
    */
   public List<ZMTPFrame> getEnvelope() {
