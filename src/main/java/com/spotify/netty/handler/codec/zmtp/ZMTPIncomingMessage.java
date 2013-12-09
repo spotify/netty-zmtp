@@ -24,12 +24,14 @@ public class ZMTPIncomingMessage {
   private final ZMTPSession session;
   private final ZMTPMessage message;
   private final boolean truncated;
+  private final long byteSize;
 
   public ZMTPIncomingMessage(final ZMTPSession session, final ZMTPMessage message,
-                             final boolean truncated) {
+                             final boolean truncated, final long byteSize) {
     this.session = session;
     this.message = message;
     this.truncated = truncated;
+    this.byteSize = byteSize;
   }
 
   /**
@@ -39,6 +41,13 @@ public class ZMTPIncomingMessage {
    */
   public ZMTPSession getSession() {
     return session;
+  }
+
+  /**
+   * Get the total size in bytes of the message, including truncated frames.
+   */
+  public long getByteSize() {
+    return byteSize;
   }
 
   /**

@@ -32,20 +32,20 @@ public class ZMTPMessageParser {
 
   private final boolean enveloped;
 
-  private final int sizeLimit;
+  private final long sizeLimit;
 
   private List<ZMTPFrame> envelope;
   private List<ZMTPFrame> content;
   private List<ZMTPFrame> part;
   private boolean hasMore;
-  private int size;
+  private long size;
   private int frameSize;
 
   // Used by discarding mode
   private int frameRemaining;
   private boolean headerParsed;
 
-  public ZMTPMessageParser(final boolean enveloped, final int sizeLimit) {
+  public ZMTPMessageParser(final boolean enveloped, final long sizeLimit) {
     this.enveloped = enveloped;
     this.sizeLimit = sizeLimit;
     reset();
@@ -116,7 +116,7 @@ public class ZMTPMessageParser {
   /**
    * Check if the message is too large and frames should be discarded.
    */
-  private boolean isOversized(final int size) {
+  private boolean isOversized(final long size) {
     return size > sizeLimit;
   }
 
@@ -125,8 +125,9 @@ public class ZMTPMessageParser {
    */
   private ZMTPParsedMessage finish(final boolean truncated) {
     final ZMTPMessage message = new ZMTPMessage(envelope, content);
+    final ZMTPParsedMessage parsedMessage = new ZMTPParsedMessage(truncated, size, message);
     reset();
-    return new ZMTPParsedMessage(truncated, message);
+    return parsedMessage;
   }
 
   /**

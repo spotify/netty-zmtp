@@ -27,6 +27,7 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPUtils.FINAL_FLAG;
+import static com.spotify.netty.handler.codec.zmtp.ZMTPUtils.messageSize;
 
 /**
  * Netty FrameDecoder for zmtp protocol
@@ -126,12 +127,12 @@ public class ZMTPFramingDecoder extends FrameDecoder {
     }
 
     // Parse incoming frames
-    final ZMTPParsedMessage message = parser.parse(buffer);
-    if (message == null) {
+    final ZMTPParsedMessage msg = parser.parse(buffer);
+    if (msg == null) {
       return null;
     }
 
-    return new ZMTPIncomingMessage(session, message.getMessage(), message.isTruncated());
+    return new ZMTPIncomingMessage(session, msg.getMessage(), msg.isTruncated(), msg.getByteSize());
   }
 
   @Override

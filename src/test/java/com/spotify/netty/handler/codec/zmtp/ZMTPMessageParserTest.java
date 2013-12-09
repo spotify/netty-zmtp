@@ -82,25 +82,25 @@ public class ZMTPMessageParserTest {
 
       test(input("a", "bb", "", "c", "dd", "", "eee"),
            // Test non-enveloped parsing
-           nonEnveloped(limit(1), truncated("a")),
-           nonEnveloped(limit(2), truncated("a")),
-           nonEnveloped(limit(3), truncated("a", "bb", "")),
-           nonEnveloped(limit(4), truncated("a", "bb", "", "c")),
-           nonEnveloped(limit(5), truncated("a", "bb", "", "c")),
-           nonEnveloped(limit(6), truncated("a", "bb", "", "c", "dd", "")),
-           nonEnveloped(limit(7), truncated("a", "bb", "", "c", "dd", "")),
-           nonEnveloped(limit(8), truncated("a", "bb", "", "c", "dd", "")),
-           nonEnveloped(limit(9), whole("a", "bb", "", "c", "dd", "", "eee")),
+           nonEnveloped(limit(1), truncated(9, "a")),
+           nonEnveloped(limit(2), truncated(9, "a")),
+           nonEnveloped(limit(3), truncated(9, "a", "bb", "")),
+           nonEnveloped(limit(4), truncated(9, "a", "bb", "", "c")),
+           nonEnveloped(limit(5), truncated(9, "a", "bb", "", "c")),
+           nonEnveloped(limit(6), truncated(9, "a", "bb", "", "c", "dd", "")),
+           nonEnveloped(limit(7), truncated(9, "a", "bb", "", "c", "dd", "")),
+           nonEnveloped(limit(8), truncated(9, "a", "bb", "", "c", "dd", "")),
+           nonEnveloped(limit(9), whole(9, "a", "bb", "", "c", "dd", "", "eee")),
            // Test enveloped parsing
-           enveloped(limit(1), truncated("a")),
-           enveloped(limit(2), truncated("a")),
-           enveloped(limit(3), truncated("a", "bb", "")),
-           enveloped(limit(4), truncated("a", "bb", "", "c")),
-           enveloped(limit(5), truncated("a", "bb", "", "c")),
-           enveloped(limit(6), truncated("a", "bb", "", "c", "dd", "")),
-           enveloped(limit(7), truncated("a", "bb", "", "c", "dd", "")),
-           enveloped(limit(8), truncated("a", "bb", "", "c", "dd", "")),
-           enveloped(limit(9), whole("a", "bb", "", "c", "dd", "", "eee"))
+           enveloped(limit(1), truncated(9, "a")),
+           enveloped(limit(2), truncated(9, "a")),
+           enveloped(limit(3), truncated(9, "a", "bb", "")),
+           enveloped(limit(4), truncated(9, "a", "bb", "", "c")),
+           enveloped(limit(5), truncated(9, "a", "bb", "", "c")),
+           enveloped(limit(6), truncated(9, "a", "bb", "", "c", "dd", "")),
+           enveloped(limit(7), truncated(9, "a", "bb", "", "c", "dd", "")),
+           enveloped(limit(8), truncated(9, "a", "bb", "", "c", "dd", "")),
+           enveloped(limit(9), whole(9, "a", "bb", "", "c", "dd", "", "eee"))
       ),
 
   };
@@ -193,12 +193,20 @@ public class ZMTPMessageParserTest {
                                              final Expectation e) {
       final ZMTPParsedMessage expected;
       if (e.expected == null) {
-        final ZMTPMessage messages = ZMTPMessage.fromStringsUTF8(e.enveloped, input);
-        expected = new ZMTPParsedMessage(false, messages);
+        final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(e.enveloped, input);
+        expected = new ZMTPParsedMessage(false, byteSize(input), message);
       } else {
         expected = e.expected;
       }
       return new Verification(e.enveloped, e.sizeLimit, input, expected);
+    }
+
+    private static long byteSize(final List<String> frames) {
+      long size = 0;
+      for (final String frame : frames) {
+        size += frame.getBytes().length;
+      }
+      return size;
     }
 
     public static Expectation nonEnveloped() {
@@ -214,9 +222,9 @@ public class ZMTPMessageParserTest {
       return expectation(false, sizeLimit, expected);
     }
 
-    public static Expectation nonEnveloped(final Limit sizeLimit, final Output output) {
-      final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(false, output.frames);
-      final ZMTPParsedMessage expected = new ZMTPParsedMessage(output.truncated, message);
+    public static Expectation nonEnveloped(final Limit sizeLimit, final Output o) {
+      final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(false, o.frames);
+      final ZMTPParsedMessage expected = new ZMTPParsedMessage(o.truncated, o.byteSize, message);
       return expectation(false, sizeLimit, expected);
     }
 
@@ -228,9 +236,9 @@ public class ZMTPMessageParserTest {
       return expectation(true, sizeLimit);
     }
 
-    public static Expectation enveloped(final Limit sizeLimit, final Output output) {
-      final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(true, output.frames);
-      final ZMTPParsedMessage expected = new ZMTPParsedMessage(output.truncated, message);
+    public static Expectation enveloped(final Limit sizeLimit, final Output o) {
+      final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(true, o.frames);
+      final ZMTPParsedMessage expected = new ZMTPParsedMessage(o.truncated, o.byteSize, message);
       return expectation(true, sizeLimit, expected);
     }
 
@@ -246,16 +254,17 @@ public class ZMTPMessageParserTest {
       return asList(frames);
     }
 
-    public static Output whole(final String... frames) {
-      return output(false, frames);
+    public static Output whole(final long byteSize, final String... frames) {
+      return output(false, byteSize, frames);
     }
 
-    public static Output truncated(final String... frames) {
-      return output(true, frames);
+    public static Output truncated(final long byteSize, final String... frames) {
+      return output(true, byteSize, frames);
     }
 
-    public static Output output(final boolean truncated, final String... frames) {
-      return new Output(truncated, asList(frames));
+    public static Output output(final boolean truncated, final long byteSize,
+                                final String... frames) {
+      return new Output(truncated, byteSize, asList(frames));
     }
 
     public static ZMTPMessage envelopedMessage(final String... frames) {
@@ -342,11 +351,12 @@ public class ZMTPMessageParserTest {
   private static class Output {
 
     private final boolean truncated;
+    private final long byteSize;
     private final List<String> frames;
 
-    public Output(final boolean truncated, final List<String> frames) {
-
+    public Output(final boolean truncated, final long byteSize, final List<String> frames) {
       this.truncated = truncated;
+      this.byteSize = byteSize;
       this.frames = frames;
     }
   }

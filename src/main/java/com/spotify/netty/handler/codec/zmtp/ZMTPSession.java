@@ -31,7 +31,7 @@ public class ZMTPSession {
 
   private final boolean useLocalIdentity;
   private final byte[] localIdent;
-  private final int sizeLimit;
+  private final long sizeLimit;
 
   private ZMTPConnectionType type;
   private Channel channel;
@@ -41,7 +41,7 @@ public class ZMTPSession {
     this(type, Integer.MAX_VALUE);
   }
 
-  public ZMTPSession(final ZMTPConnectionType type, final int sizeLimit) {
+  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit) {
     this(type, sizeLimit, null);
   }
 
@@ -49,7 +49,7 @@ public class ZMTPSession {
     this(type, DEFAULT_SIZE_LIMIT, localIdent);
   }
 
-  public ZMTPSession(final ZMTPConnectionType type, final int sizeLimit,
+  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
                      @Nullable final byte[] localIdent) {
     this.type = type;
     this.sizeLimit = sizeLimit;
@@ -144,7 +144,7 @@ public class ZMTPSession {
     this.channel = channel;
   }
 
-  public int getSizeLimit() {
+  public long getSizeLimit() {
     return sizeLimit;
   }
 }

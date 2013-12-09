@@ -19,16 +19,22 @@ package com.spotify.netty.handler.codec.zmtp;
 public class ZMTPParsedMessage {
 
   private final boolean truncated;
+  private final long byteSize;
   private final ZMTPMessage message;
 
-  public ZMTPParsedMessage(final boolean truncated,
+  public ZMTPParsedMessage(final boolean truncated, final long byteSize,
                            final ZMTPMessage message) {
     this.truncated = truncated;
+    this.byteSize = byteSize;
     this.message = message;
   }
 
   public boolean isTruncated() {
     return truncated;
+  }
+
+  public long getByteSize() {
+    return byteSize;
   }
 
   public ZMTPMessage getMessage() {
@@ -46,6 +52,9 @@ public class ZMTPParsedMessage {
 
     final ZMTPParsedMessage that = (ZMTPParsedMessage) o;
 
+    if (byteSize != that.byteSize) {
+      return false;
+    }
     if (truncated != that.truncated) {
       return false;
     }
@@ -59,6 +68,7 @@ public class ZMTPParsedMessage {
   @Override
   public int hashCode() {
     int result = (truncated ? 1 : 0);
+    result = 31 * result + (int) (byteSize ^ (byteSize >>> 32));
     result = 31 * result + (message != null ? message.hashCode() : 0);
     return result;
   }
@@ -67,6 +77,7 @@ public class ZMTPParsedMessage {
   public String toString() {
     return "ZMTPParsedMessage{" +
            "truncated=" + truncated +
+           ", byteSize=" + byteSize +
            ", message=" + message +
            '}';
   }
