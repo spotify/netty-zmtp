@@ -34,8 +34,8 @@ public class ZMTPMessageParser {
 
   private final int sizeLimit;
 
-  private List<ZMTPFrame> envelope = new ArrayList<ZMTPFrame>();
-  private List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
+  private List<ZMTPFrame> envelope;
+  private List<ZMTPFrame> content;
   private List<ZMTPFrame> part;
   private boolean hasMore;
   private int size;
@@ -134,8 +134,8 @@ public class ZMTPMessageParser {
    * Reset parser in preparation for the next message.
    */
   private void reset() {
-    envelope = new ArrayList<ZMTPFrame>(4);
-    content = new ArrayList<ZMTPFrame>();
+    envelope = new ArrayList<ZMTPFrame>(3);
+    content = new ArrayList<ZMTPFrame>(3);
     part = enveloped ? envelope : content;
     hasMore = true;
     size = 0;
