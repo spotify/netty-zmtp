@@ -16,7 +16,6 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 
@@ -34,6 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Lists.newArrayList;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Limit.limit;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Limit.unlimited;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.enveloped;
@@ -42,11 +43,14 @@ import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Paramet
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.test;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.truncated;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.whole;
+import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.util.Arrays.asList;
+import static java.util.Collections.nCopies;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 @RunWith(Theories.class)
@@ -59,14 +63,15 @@ public class ZMTPMessageParserTest {
   @DataPoints
   public static Parameters[] PARAMETERS = {
       test(input("1"), enveloped()),
-      test(input("2", "aa"), enveloped()),
-      test(input("3", "", "a"), enveloped()),
-      test(input("4", "", "a", "bb"), enveloped()),
-      test(input("5", "aa", "", "b", "cc"), enveloped()),
+      test(input("2", ""), enveloped()),
+      test(input("3", "aa"), enveloped()),
+      test(input("4", "", "a"), enveloped()),
+      test(input("5", "", "a", "bb"), enveloped()),
+      test(input("6", "aa", "", "b", "cc"), enveloped()),
 
-      test(input("6", "", "a"), nonEnveloped()),
-      test(input("7", "", "b", "cc"), nonEnveloped()),
-      test(input("8", "aa", "", "b", "cc"), nonEnveloped()),
+      test(input("7", "", "a"), nonEnveloped()),
+      test(input("8", "", "b", "cc"), nonEnveloped()),
+      test(input("9", "aa", "", "b", "cc"), nonEnveloped()),
 
       test(input("a", "bb", "", "c", "dd", "", "eee"),
            // Test non-enveloped parsing
@@ -95,7 +100,7 @@ public class ZMTPMessageParserTest {
 
   @Theory
   public void testParse(final Parameters parameters) throws Exception {
-    final List<Future<?>> futures = Lists.newArrayList();
+    final List<Future<?>> futures = newArrayList();
     for (final Verification v : parameters.getVerifications()) {
       futures.add(EXECUTOR.submit(new Callable<Object>() {
         @Override
@@ -118,9 +123,15 @@ public class ZMTPMessageParserTest {
     final ChannelBuffer serialized = serialize(input);
     final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
 
-    for (List<ChannelBuffer> fragments : Fragmenter.generator(serialized.duplicate())) {
+    // Test parsing the whole message
+    {
+      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
+      final ZMTPParsedMessage parsed = parser.parse(serialized.duplicate());
+      assertEquals(expected, parsed);
+    }
 
-      // Test parsing fragmented input
+    // Test parsing fragmented input
+    for (List<ChannelBuffer> fragments : Fragmenter.generator(serialized.duplicate())) {
       buffer.setIndex(0, 0);
       ZMTPParsedMessage parsed = null;
       final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
@@ -135,9 +146,20 @@ public class ZMTPMessageParserTest {
       }
       assertEquals(expected, parsed);
 
-      // Verify that the parser can be reused
+      // Verify that the parser can be reused to parse the same message
       final ZMTPParsedMessage reparsed = parser.parse(serialized.duplicate());
       assertEquals(expected, reparsed);
+
+      // Verify that the parser can be reused to parse a well-behaved message
+      final int contentSize = min(limit.value - 1, 10);
+      final List<String> envelope = asList("e", "");
+      final List<String> content = nCopies(contentSize, ".");
+      final List<String> frames = newArrayList(concat(envelope, content));
+      final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(enveloped, frames);
+      final ChannelBuffer trivialSerialized = serialize(frames);
+      final ZMTPParsedMessage parsedTrivial = parser.parse(trivialSerialized.duplicate());
+      assertFalse(parsedTrivial.isTruncated());
+      assertEquals(message, parsedTrivial.getMessage());
     }
   }
 
@@ -153,7 +175,7 @@ public class ZMTPMessageParserTest {
     }
 
     public static Parameters test(final List<String> input, final Expectation... expectations) {
-      final List<Verification> verifications = Lists.newArrayList();
+      final List<Verification> verifications = newArrayList();
       for (final Expectation expectation : expectations) {
         verifications.add(verification(input, expectation));
       }

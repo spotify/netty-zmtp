@@ -98,13 +98,12 @@ public class ZMTPMessageParser {
       // Read frame content
       final ZMTPFrame frame = ZMTPFrame.read(buffer, frameSize);
 
-      // Skip the delimiter
       if (!frame.hasData() && part == envelope) {
+        // Skip the delimiter
         part = content;
-        continue;
+      } else {
+        part.add(frame);
       }
-
-      part.add(frame);
 
       if (!hasMore) {
         return finish(false);
