@@ -73,7 +73,7 @@ public class ZMTPFramingDecoder extends FrameDecoder {
   /**
    * Parses the remote zmtp identity received
    */
-  private boolean handleRemoteIdentity(final ChannelBuffer buffer) {
+  private boolean handleRemoteIdentity(final ChannelBuffer buffer) throws ZMTPException {
     buffer.markReaderIndex();
 
     final long len = ZMTPUtils.decodeLength(buffer);
@@ -92,8 +92,7 @@ public class ZMTPFramingDecoder extends FrameDecoder {
 
     // More flag should not be set (TODO: is this true?)
     if ((flags & ZMTPUtils.MORE_FLAG) == ZMTPUtils.MORE_FLAG) {
-      handshakeFuture.setFailure(new ZMTPException(
-          "Expected identity from remote side but got a frame with MORE flag set."));
+      throw new ZMTPException("Expected remote identity but got a frame with MORE flag set.");
     }
 
     if (len == 1) {
@@ -149,7 +148,11 @@ public class ZMTPFramingDecoder extends FrameDecoder {
     handshake(ctx.getChannel()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(final ChannelFuture future) throws Exception {
-        ctx.sendUpstream(e);
+        if (future.isSuccess()) {
+          ctx.sendUpstream(e);
+        } else {
+          throw new ZMTPException("handshake failed", future.getCause());
+        }
       }
     });
   }

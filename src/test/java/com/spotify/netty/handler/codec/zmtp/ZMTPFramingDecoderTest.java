@@ -1,9 +1,12 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +17,12 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests ZMTPFramingDecoder
@@ -154,14 +162,28 @@ public class ZMTPFramingDecoderTest {
     Arrays.fill(overlyLong, (byte)'a');
     try {
       doHandshake("server".getBytes(), overlyLong);
-      Assert.fail("Should have thrown exception");
+      fail("Should have thrown exception");
     } catch (ZMTPException e) {
       //pass
     }
   }
 
-  private ZMTPFramingDecoder doHandshake(byte[] serverIdent, byte[] clientIdent) throws Exception
-  {
+  @Test
+  public void testIdentityWithMoreFlag() throws Exception {
+    try {
+      doHandshake("something".getBytes(), "another_thing".getBytes(), true);
+      fail("Should have thrown exception");
+    } catch (ZMTPException e) {
+      //pass
+    }
+  }
+
+  private ZMTPFramingDecoder doHandshake(byte[] serverIdent, byte[] clientIdent) throws Exception {
+    return doHandshake(serverIdent, clientIdent, false);
+  }
+
+  private ZMTPFramingDecoder doHandshake(byte[] serverIdent, byte[] clientIdent, boolean more)
+      throws Exception {
     ZMTPSession s = new ZMTPSession(ZMTPConnectionType.Addressed, serverIdent);
     ZMTPFramingDecoder zfd = new ZMTPFramingDecoder(s);
 
@@ -173,13 +195,17 @@ public class ZMTPFramingDecoderTest {
     verify(ctx, never()).sendUpstream(channelStateEvent);
 
     // send it
-    Assert.assertNull(zfd.decode(ctx, channel, makeFrame(clientIdent)));
+    Assert.assertNull(zfd.decode(ctx, channel, makeFrame(clientIdent, more)));
 
     verify(ctx, times(1)).sendUpstream(channelStateEvent);
     return zfd;
   }
 
   private ChannelBuffer makeFrame(byte[] identity) {
+    return makeFrame(identity, false);
+  }
+
+  private ChannelBuffer makeFrame(byte[] identity, boolean more) {
     if (identity == null) {
       identity = new byte[0];
     }
@@ -196,7 +222,7 @@ public class ZMTPFramingDecoderTest {
       }
     }
 
-    cb.writeByte(0x00);
+    cb.writeByte(more ? 0x01 : 0x00);
     cb.writeBytes(identity);
     return cb;
   }
