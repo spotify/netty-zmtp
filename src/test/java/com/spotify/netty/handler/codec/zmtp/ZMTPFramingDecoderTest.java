@@ -168,14 +168,13 @@ public class ZMTPFramingDecoderTest {
     }
   }
 
+  /**
+   * Verify that identity frames with the more flag set is allowed. This is needed for ZMTP 1.0
+   * detection according to 15/ZMTP. http://rfc.zeromq.org/spec:15
+   */
   @Test
   public void testIdentityWithMoreFlag() throws Exception {
-    try {
-      doHandshake("something".getBytes(), "another_thing".getBytes(), true);
-      fail("Should have thrown exception");
-    } catch (ZMTPException e) {
-      //pass
-    }
+    doHandshake("something".getBytes(), "another_thing".getBytes(), true);
   }
 
   private ZMTPFramingDecoder doHandshake(byte[] serverIdent, byte[] clientIdent) throws Exception {

@@ -88,12 +88,8 @@ public class ZMTPFramingDecoder extends FrameDecoder {
       return false;
     }
 
-    final int flags = buffer.readByte();
-
-    // More flag should not be set (TODO: is this true?)
-    if ((flags & ZMTPUtils.MORE_FLAG) == ZMTPUtils.MORE_FLAG) {
-      throw new ZMTPException("Expected remote identity but got a frame with MORE flag set.");
-    }
+    // Discard flag byte (allow for ZMTP 1.0 detection)
+    buffer.readByte();
 
     if (len == 1) {
       // Anonymous identity
