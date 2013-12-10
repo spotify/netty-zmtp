@@ -28,21 +28,22 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
+import org.jeromq.ZFrame;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import org.jeromq.ZMQ;
+import org.jeromq.ZMsg;
 
 import java.net.InetSocketAddress;
+import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ZMQIntegrationTest {
 
@@ -119,14 +120,20 @@ public class ZMQIntegrationTest {
     final ZMQ.Socket socket = context.socket(ZMQ.DEALER);
     socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
     final ZMsg request = ZMsg.newStringMsg("envelope", "", "hello", "world");
-    request.send(socket);
+    request.send(socket, false);
 
     final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
     final ZMTPMessage receivedMessage = receivedRequest.getMessage();
     receivedRequest.getSession().getChannel().write(receivedMessage);
 
     final ZMsg reply = ZMsg.recvMsg(socket);
-    assertEquals(request, reply);
+    Iterator<ZFrame> reqIter = request.iterator();
+    Iterator<ZFrame> replyIter = reply.iterator();
+    while (reqIter.hasNext()) {
+      assertTrue(replyIter.hasNext());
+      assertArrayEquals(reqIter.next().data(), replyIter.next().data());
+    }
+    assertFalse(replyIter.hasNext());
 
     assertEquals(1, receivedMessage.getEnvelope().size());
     assertEquals(2, receivedMessage.getContent().size());
