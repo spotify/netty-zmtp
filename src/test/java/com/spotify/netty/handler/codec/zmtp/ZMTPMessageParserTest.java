@@ -112,7 +112,8 @@ public class ZMTPMessageParserTest {
       futures.add(EXECUTOR.submit(new Callable<Object>() {
         @Override
         public Object call() throws Exception {
-          testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage);
+          testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage, 1);
+          testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage, 2);
           return null;
         }
       }));
@@ -123,16 +124,16 @@ public class ZMTPMessageParserTest {
   }
 
   private void testParse(final boolean enveloped, final Limit limit, final List<String> input,
-                         final ZMTPParsedMessage expected) throws Exception {
+                         final ZMTPParsedMessage expected, int version) throws Exception {
     out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                        enveloped, limit, input, expected));
 
-    final ChannelBuffer serialized = serialize(input);
+    final ChannelBuffer serialized = serialize(input, version);
     final int serializedLength = serialized.readableBytes();
 
     // Test parsing the whole message
     {
-      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
+      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
       final ZMTPParsedMessage parsed = parser.parse(serialized);
       serialized.setIndex(0, serializedLength);
       assertEquals(expected, parsed);
@@ -144,7 +145,7 @@ public class ZMTPMessageParserTest {
     final List<String> content = nCopies(contentSize, ".");
     final List<String> frames = newArrayList(concat(envelope, content));
     final ZMTPMessage trivialMessage = ZMTPMessage.fromStringsUTF8(enveloped, frames);
-    final ChannelBuffer trivialSerialized = serialize(frames);
+    final ChannelBuffer trivialSerialized = serialize(frames, version);
     final int trivialLength = trivialSerialized.readableBytes();
 
     // Test parsing fragmented input
@@ -153,7 +154,7 @@ public class ZMTPMessageParserTest {
       public void fragments(final int[] limits, final int count) throws Exception {
         serialized.setIndex(0, serializedLength);
         ZMTPParsedMessage parsed = null;
-        final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
+        final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
           serialized.writerIndex(limit);
@@ -303,14 +304,16 @@ public class ZMTPMessageParserTest {
     }
   }
 
-  public static ChannelBuffer serialize(final boolean enveloped, final ZMTPMessage message) {
-    final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(message, enveloped));
-    ZMTPUtils.writeMessage(message, buffer, enveloped);
+  public static ChannelBuffer serialize(final boolean enveloped, final ZMTPMessage message,
+                                        int version) {
+    final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(
+        message, enveloped, version));
+    ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
     return buffer;
   }
 
-  private ChannelBuffer serialize(final List<String> frames) {
-    return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames));
+  private ChannelBuffer serialize(final List<String> frames, int version) {
+    return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames), version);
   }
 
   static class Verification {
@@ -383,5 +386,4 @@ public class ZMTPMessageParserTest {
       this.expected = expected;
     }
   }
-
 }

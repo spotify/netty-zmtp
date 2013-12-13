@@ -33,9 +33,11 @@ public class ZMTPSession {
   private final byte[] localIdent;
   private final long sizeLimit;
 
+
   private ZMTPConnectionType type;
   private Channel channel;
   private byte[] remoteIdent;
+  private volatile int protocolVersion;
 
   public ZMTPSession(final ZMTPConnectionType type) {
     this(type, Integer.MAX_VALUE);
@@ -144,7 +146,22 @@ public class ZMTPSession {
     this.channel = channel;
   }
 
+
   public long getSizeLimit() {
     return sizeLimit;
   }
+
+  /**
+   * Returns the protocolVersion of this session.
+   *
+   * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
+   */
+  public int getProtocolVersion() {
+    return protocolVersion;
+  }
+
+  public void setProtocolVersion(int protocolVersion) {
+      this.protocolVersion = protocolVersion;
+  }
+
 }

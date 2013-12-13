@@ -73,12 +73,9 @@ public class ZMQIntegrationTest {
       );
 
       public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
-
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTPFramingDecoder(session),
-            new ZMTPFramingEncoder(session),
+            new ZMTP20Codec(identity.getBytes(), ZMTPSocketType.REQ, false),
             new SimpleChannelUpstreamHandler() {
 
               @Override

@@ -76,12 +76,10 @@ public class ProtocolViolationTests {
       );
 
       public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
 
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTPFramingDecoder(session),
-            new ZMTPFramingEncoder(session),
+            new ZMTP10Codec(identity.getBytes()),
             new SimpleChannelUpstreamHandler() {
 
               @Override
@@ -134,8 +132,6 @@ public class ProtocolViolationTests {
     future.awaitUninterruptibly();
 
     final Channel channel = future.getChannel();
-
-    System.out.println("payloadSize=" + payloadSize);
 
     final StringBuilder payload = new StringBuilder();
     for (int i = 0; i < payloadSize; i++) {
