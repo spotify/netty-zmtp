@@ -1,12 +1,12 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An abstract base class for common functionality to the ZMTP codecs.
@@ -67,42 +67,18 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
     return null;
   }
 
-  public void setListener(HandshakeListener listener) {
+  void setListener(HandshakeListener listener) {
     this.listener = listener;
   }
 
-  private class NameToHandler {
-    public NameToHandler(String name, ChannelHandler handler) {
-      this.name = name;
-      this.handler = handler;
-    }
-    public String name;
-    public ChannelHandler handler;
-  }
 
   private void updatePipeline(ChannelPipeline pipeline, int version,
                               ZMTPSession session, boolean enveloped) {
-    // this is a bit ugly. It turns out that to be able to modify the current pipeline in a way
-    // so that the newly added handlers get unhandled data from the buffer, addLast() needs
-    // to be used. Thus we need remove everything after this handler and re-add them.
-    List<NameToHandler> after = null;
-    for (String n : pipeline.getNames()) {
-      if (after != null) {
-        after.add(new NameToHandler(n, pipeline.remove(n)));
-      }
-      if (after == null && pipeline.get(n) == this) {
-        after = new ArrayList<NameToHandler>();
-      }
-    }
-    pipeline.addLast("zmtpEncoder", new ZMTPFramingEncoder(version, enveloped));
-    pipeline.addLast("zmtpDecoder", new ZMTPFramingDecoder(version, enveloped, session));
-    if (after != null) {
-      for (NameToHandler p : after) {
-        pipeline.addLast(p.name, p.handler);
-      }
-    }
+    pipeline.addAfter(pipeline.getContext(this).getName(), "zmtpEncoder",
+                      new ZMTPFramingEncoder(version, enveloped));
+    pipeline.addAfter("zmtpEncoder", "zmtpDecoder",
+                      new ZMTPFramingDecoder(version, enveloped, session));
     pipeline.remove(this);
-
   }
 
   /**
