@@ -214,8 +214,8 @@ public class ZMTPUtils {
       return null;
     }
     final StringBuilder sb = new StringBuilder();
-    while (data.readable()) {
-      final byte b = data.readByte();
+    for (int i = data.readerIndex(); i < data.writerIndex(); i++) {
+      final byte b = data.getByte(i);
       if (b > 31 && b < 127) {
         if (b == '%') {
           sb.append('%');
