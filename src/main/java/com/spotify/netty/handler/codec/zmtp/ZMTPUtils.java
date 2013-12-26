@@ -108,7 +108,9 @@ public class ZMTPUtils {
     encodeLength(frame.size() + 1, buffer);
     buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
     if (frame.hasData()) {
-      buffer.writeBytes(frame.getDataBuffer());
+      final ChannelBuffer source = frame.getDataBuffer();
+      buffer.ensureWritableBytes(source.readableBytes());
+      source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
   }
 
