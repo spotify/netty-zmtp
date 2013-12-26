@@ -23,7 +23,6 @@ import java.nio.charset.Charset;
 
 import static org.jboss.netty.buffer.ChannelBuffers.EMPTY_BUFFER;
 import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
-import static org.jboss.netty.buffer.ChannelBuffers.unmodifiableBuffer;
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 public class ZMTPFrame {
@@ -58,11 +57,16 @@ public class ZMTPFrame {
     }
   }
 
+  /**
+   * Return the channel buffer container the frame data.
+   *
+   * <p>Note: buffer contents and indices must not be modified.
+   */
   public ChannelBuffer getDataBuffer() {
     if (data == null) {
       return EMPTY_BUFFER;
     } else {
-      return unmodifiableBuffer(data);
+      return data;
     }
   }
 
