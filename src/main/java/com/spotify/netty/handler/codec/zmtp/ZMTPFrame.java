@@ -171,9 +171,9 @@ public class ZMTPFrame {
 
   @Override
   public String toString() {
-    return "ZMTPFrame{" +
-           ", data=" + ZMTPUtils.toString(getDataBuffer()) +
-           '}';
+    return "ZMTPFrame{\"" +
+           ZMTPUtils.toString(getDataBuffer()) +
+           "\"}";
   }
 
   public static ZMTPFrame create() {
