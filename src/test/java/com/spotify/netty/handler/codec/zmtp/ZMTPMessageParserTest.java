@@ -128,46 +128,56 @@ public class ZMTPMessageParserTest {
                        enveloped, limit, input, expected));
 
     final ChannelBuffer serialized = serialize(input);
-    final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    final int serializedLength = serialized.readableBytes();
 
     // Test parsing the whole message
     {
       final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
-      final ZMTPParsedMessage parsed = parser.parse(serialized.duplicate());
+      final ZMTPParsedMessage parsed = parser.parse(serialized);
+      serialized.setIndex(0, serializedLength);
       assertEquals(expected, parsed);
     }
+
+    // Prepare for trivial message parsing test
+    final int contentSize = min(limit.value - 1, 10);
+    final List<String> envelope = asList("e", "");
+    final List<String> content = nCopies(contentSize, ".");
+    final List<String> frames = newArrayList(concat(envelope, content));
+    final ZMTPMessage trivialMessage = ZMTPMessage.fromStringsUTF8(enveloped, frames);
+    final ChannelBuffer trivialSerialized = serialize(frames);
+    final int trivialLength = trivialSerialized.readableBytes();
 
     // Test parsing fragmented input
-    for (List<ChannelBuffer> fragments : Fragmenter.generator(serialized.duplicate())) {
-      buffer.setIndex(0, 0);
-      ZMTPParsedMessage parsed = null;
-      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
-      for (int i = 0; i < fragments.size(); i++) {
-        final ChannelBuffer fragment = fragments.get(i);
-        buffer.writeBytes(fragment);
-        parsed = parser.parse(buffer);
-        // Verify that the parser did not return a message for incomplete input
-        if (i < fragments.size() - 1) {
-          assertNull(parsed);
+    new Fragmenter(serialized.readableBytes()).fragment(new Fragmenter.Consumer() {
+      @Override
+      public void fragments(final int[] limits, final int count) throws Exception {
+        serialized.setIndex(0, serializedLength);
+        ZMTPParsedMessage parsed = null;
+        final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
+        for (int i = 0; i < count; i++) {
+          final int limit = limits[i];
+          serialized.writerIndex(limit);
+          parsed = parser.parse(serialized);
+          // Verify that the parser did not return a message for incomplete input
+          if (limit < serializedLength) {
+            assertNull(parsed);
+          }
         }
+        assertEquals(expected, parsed);
+
+        // Verify that the parser can be reused to parse the same message
+        serialized.setIndex(0, serializedLength);
+        final ZMTPParsedMessage reparsed = parser.parse(serialized);
+        assertEquals(expected, reparsed);
+
+        // Verify that the parser can be reused to parse a well-behaved message
+        trivialSerialized.setIndex(0, trivialLength);
+        final ZMTPParsedMessage parsedTrivial = parser.parse(trivialSerialized);
+        assertFalse(parsedTrivial.isTruncated());
+        assertEquals(trivialMessage, parsedTrivial.getMessage());
       }
-      assertEquals(expected, parsed);
+    });
 
-      // Verify that the parser can be reused to parse the same message
-      final ZMTPParsedMessage reparsed = parser.parse(serialized.duplicate());
-      assertEquals(expected, reparsed);
-
-      // Verify that the parser can be reused to parse a well-behaved message
-      final int contentSize = min(limit.value - 1, 10);
-      final List<String> envelope = asList("e", "");
-      final List<String> content = nCopies(contentSize, ".");
-      final List<String> frames = newArrayList(concat(envelope, content));
-      final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(enveloped, frames);
-      final ChannelBuffer trivialSerialized = serialize(frames);
-      final ZMTPParsedMessage parsedTrivial = parser.parse(trivialSerialized.duplicate());
-      assertFalse(parsedTrivial.isTruncated());
-      assertEquals(message, parsedTrivial.getMessage());
-    }
   }
 
   static class Parameters {
@@ -300,13 +310,7 @@ public class ZMTPMessageParserTest {
   }
 
   private ChannelBuffer serialize(final List<String> frames) {
-    final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-    for (int i = 0; i < frames.size(); i++) {
-      final String frame = frames.get(i);
-      final boolean more = i < frames.size() - 1;
-      ZMTPUtils.writeFrame(ZMTPFrame.create(frame), buffer, more);
-    }
-    return buffer;
+    return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames));
   }
 
   static class Verification {

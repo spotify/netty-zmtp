@@ -18,48 +18,43 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import com.google.common.collect.Lists;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
-import static org.jboss.netty.util.CharsetUtil.UTF_8;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class FragmenterTest {
 
-  static final String INPUT = "abcd";
+  static final int SIZE = 4;
 
-  static final String[][] OUTPUT = {
-      {"a", "b", "c", "d"},
-      {"a", "b", "cd"},
-      {"a", "bc", "d"},
-      {"a", "bcd"},
-      {"ab", "c", "d"},
-      {"ab", "cd"},
-      {"abc", "d"},
-      {"abcd"},
+  static final int[][] EXPECTED = {
+      {1, 2, 3, 4},
+      {1, 2, 4},
+      {1, 3, 4},
+      {1, 4},
+      {2, 3, 4},
+      {2, 4},
+      {3, 4},
+      {4},
   };
 
   @Test
-  public void test() {
-    final ChannelBuffer buffer = ChannelBuffers.copiedBuffer(INPUT, UTF_8);
-    final Fragmenter fragmenter = new Fragmenter(buffer);
-    for (int i = 0; i < OUTPUT.length; i++) {
-      final List<ChannelBuffer> expectedFragments = Lists.newArrayList();
-      for (final String fragmentString : OUTPUT[i]) {
-        final ChannelBuffer fragment = ChannelBuffers.copiedBuffer(fragmentString, UTF_8);
-        expectedFragments.add(fragment);
+  public void test() throws Exception {
+    final List<int[]> output = Lists.newArrayList();
+    final Fragmenter fragmenter = new Fragmenter(SIZE);
+    fragmenter.fragment(new Fragmenter.Consumer() {
+      @Override
+      public void fragments(final int[] limits, final int count) {
+        output.add(Arrays.copyOf(limits, count));
       }
+    });
 
-      final List<ChannelBuffer> fragments = fragmenter.next();
-      final List<String> fragmentStrings = Lists.newArrayList();
-      for (final ChannelBuffer b : fragments) {
-        fragmentStrings.add(b.duplicate().toString(UTF_8));
-      }
-      assertEquals(expectedFragments, fragments);
+    assertEquals(EXPECTED.length, output.size());
+    for (int i = 0; i < EXPECTED.length; i++) {
+      assertArrayEquals(EXPECTED[i], output.get(i));
     }
-
   }
 }

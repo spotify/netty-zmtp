@@ -16,84 +16,34 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
-import org.jboss.netty.buffer.ChannelBuffer;
-
-import java.util.Iterator;
-import java.util.List;
-
 class Fragmenter {
 
-  private final List<ChannelBuffer> fragments;
-  private final ChannelBuffer input;
-
-  private int length;
-  private ChannelBuffer slice;
-  private Fragmenter fragmenter;
-  private boolean done;
-
-  public Fragmenter(final ChannelBuffer input) {
-    this.fragments = Lists.newArrayListWithCapacity(input.readableBytes());
-    this.input = input;
-    step();
+  static interface Consumer {
+    void fragments(int[] limits, int count) throws Exception;
   }
 
-  public List<ChannelBuffer> next() {
-    if (done) {
-      return null;
-    }
-    fragments.clear();
-    done = next(fragments);
-    return ImmutableList.copyOf(fragments);
+  private final int[] limits;
+  private final int length;
+
+  public Fragmenter(final int length) {
+    this.limits = new int[length];
+    this.length = length;
   }
 
-  private boolean next(final List<ChannelBuffer> fragments) {
-    slice.readerIndex(0);
-    fragments.add(slice);
-
-    if (fragmenter == null) {
-      return true;
-    }
-
-    final boolean done = fragmenter.next(fragments);
-    if (done) {
-      step();
-    }
-
-    return false;
+  public void fragment(final Consumer consumer) throws Exception {
+    fragment(consumer, 0, 0);
   }
 
-  private void step() {
-    length++;
-    input.readerIndex(0);
-    slice = input.readSlice(length);
-    if (!input.readable()) {
-      fragmenter = null;
-    } else {
-      fragmenter = new Fragmenter(input.slice());
+  private void fragment(final Consumer consumer, final int count, final int limit)
+      throws Exception {
+    if (limit == length) {
+      consumer.fragments(limits, count);
+      return;
     }
-  }
 
-  public static Iterable<List<ChannelBuffer>> generator(final ChannelBuffer buffer) {
-    return new Iterable<List<ChannelBuffer>>() {
-      @Override
-      public Iterator<List<ChannelBuffer>> iterator() {
-        final Fragmenter fragmenter = new Fragmenter(buffer);
-        return new AbstractIterator<List<ChannelBuffer>>() {
-          @Override
-          protected List<ChannelBuffer> computeNext() {
-            List<ChannelBuffer> next = fragmenter.next();
-            if (next != null) {
-              return next;
-            } else {
-              return endOfData();
-            }
-          }
-        };
-      }
-    };
+    for (int o = limit + 1; o <= length; o++) {
+      limits[count] = o;
+      fragment(consumer, count + 1, o);
+    }
   }
 }
