@@ -78,7 +78,7 @@ public class ZMTPMessageParser {
       buffer.markReaderIndex();
 
       // Parse frame header
-      final boolean parsedHeader = version == 1 ? parseZMTP1Header(buffer) : parseZMTP2Header(buffer);
+      final boolean parsedHeader = parseZMTPHeader(buffer);
       if (!parsedHeader) {
         // Wait for more data to decode
         buffer.resetReaderIndex();
@@ -158,7 +158,7 @@ public class ZMTPMessageParser {
       // Parse header if necessary
       if (!headerParsed) {
         buffer.markReaderIndex();
-        headerParsed = version == 1 ? parseZMTP1Header(buffer) : parseZMTP2Header(buffer);
+        headerParsed = parseZMTPHeader(buffer);
         if (!headerParsed) {
           // Wait for more data to decode
           buffer.resetReaderIndex();
@@ -187,6 +187,10 @@ public class ZMTPMessageParser {
     }
 
     return null;
+  }
+
+  private boolean parseZMTPHeader(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
+    return version == 1 ? parseZMTP1Header(buffer) : parseZMTP2Header(buffer);
   }
 
   /**
