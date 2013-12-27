@@ -29,6 +29,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 /**
  * A channel handler that attempts to batch together and consolidate smaller writes to avoid many
  * small individual writes on the channel and the syscall overhead this would incur.
@@ -134,12 +136,8 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
     super.channelOpen(ctx, e);
 
     // Schedule a task to flush and enforce the maximum latency that a message is buffered
-    flushFuture = flusher.scheduleWithFixedDelay(
-        flushTask,
-        intervalNanos,
-        intervalNanos,
-        TimeUnit.NANOSECONDS
-    );
+    flushFuture = flusher.scheduleAtFixedRate(flushTask, intervalNanos, intervalNanos,
+                                              NANOSECONDS);
   }
 
   /**
