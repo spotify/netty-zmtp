@@ -94,7 +94,7 @@ public class ZMTPFrameIntegrationTest {
       public boolean onMessage(final ZMTPIncomingMessage msg) {
         int framePos = 0;
 
-        // Verify that we can parse the FOO correctly
+        // Verify that we can parse the identity correctly
         assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
                           msg.getSession().getRemoteIdentity());
 
