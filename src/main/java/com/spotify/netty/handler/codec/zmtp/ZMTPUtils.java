@@ -172,23 +172,24 @@ public class ZMTPUtils {
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static int messageSize(final ZMTPMessage message, final boolean enveloped) {
+    final int contentSize = framesSize(message.getContent());
+    if (!enveloped) {
+      return contentSize;
+    }
+    final int envelopeSize = framesSize(message.getEnvelope()) + frameSize(DELIMITER);
+    return envelopeSize + contentSize;
+  }
+
+  /**
+   * Calculate bytes needed to serialize a list of ZMTP frames.
+   */
+  @SuppressWarnings("ForLoopReplaceableByForEach")
+  public static int framesSize(final List<ZMTPFrame> frames) {
     int size = 0;
-
-    if (enveloped) {
-
-      final List<ZMTPFrame> envelope = message.getEnvelope();
-      for (int i = 0; i < envelope.size(); i++) {
-        size += frameSize(envelope.get(i));
-      }
-      size += frameSize(DELIMITER);
-    }
-
-    final List<ZMTPFrame> content = message.getContent();
-    final int n = content.size();
+    final int n = frames.size();
     for (int i = 0; i < n; i++) {
-      size += frameSize(content.get(i));
+      size += frameSize(frames.get(i));
     }
-
     return size;
   }
 
