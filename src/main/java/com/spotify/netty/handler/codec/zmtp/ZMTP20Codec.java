@@ -10,20 +10,17 @@ import org.jboss.netty.buffer.ChannelBuffers;
  */
 public class ZMTP20Codec extends CodecBase {
 
-  private final ZMTPSocketType type;
   private final boolean interop;
   private boolean splitHandshake;
 
   /**
-   * Construct a ZMTP20Codec with the specified mode, localIdentity and socket type
-   * @param localIdentity the local identity of this peer, or null if this is an anonymous peer
-   * @param type the socket type of this peer
+   * Construct a ZMTP20Codec with the speicfied session and optional interoperability behavior.
+   * @param session the session that configures this codec
    * @param interop whether this socket should implement the ZMTP/1.0 interoperability handshake
    */
-  public ZMTP20Codec(byte[] localIdentity, ZMTPSocketType type, boolean interop) {
-    super(localIdentity);
+  public ZMTP20Codec(ZMTPSession session, boolean interop) {
+    super(session);
     this.interop = interop;
-    this.type = type;
   }
 
   protected ChannelBuffer onConnect() {
@@ -48,7 +45,7 @@ public class ZMTP20Codec extends CodecBase {
         done(version, ZMTP10Codec.readZMTP1RemoteIdentity(buffer));
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
-        return ChannelBuffers.wrappedBuffer(localIdentity);
+        return ChannelBuffers.wrappedBuffer(session.getLocalIdentity());
       } else {
         splitHandshake = true;
         return makeZMTP2Greeting(false);
@@ -104,12 +101,12 @@ public class ZMTP20Codec extends CodecBase {
     }
     out.writeByte(0x01);
     // socket-type
-    out.writeByte(type.ordinal());
+    out.writeByte(session.getSocketType().ordinal());
     // identity
     // the final-short flag octet
     out.writeByte(0x00);
-    out.writeByte(localIdentity.length);
-    out.writeBytes(localIdentity);
+    out.writeByte(session.getLocalIdentity().length);
+    out.writeBytes(session.getLocalIdentity());
     return out;
   }
 
@@ -119,7 +116,7 @@ public class ZMTP20Codec extends CodecBase {
    */
   private ChannelBuffer makeZMTP2CompatSignature() {
     ChannelBuffer out = ChannelBuffers.dynamicBuffer();
-    ZMTPUtils.encodeLength(localIdentity.length + 1, out, true);
+    ZMTPUtils.encodeLength(session.getLocalIdentity().length + 1, out, true);
     out.writeByte(0x7f);
     return out;
   }

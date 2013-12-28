@@ -13,17 +13,11 @@ import org.jboss.netty.handler.codec.replay.VoidEnum;
  */
 abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
 
-  private final ZMTPSession session;
-  private final boolean enveloped;
-  protected final byte[] localIdentity;
+  protected final ZMTPSession session;
   protected HandshakeListener listener;
 
-  CodecBase(byte[] localIdentity) {
-    this.localIdentity = localIdentity;
-    boolean enveloped = localIdentity != null;
-    this.session = new ZMTPSession(
-        enveloped ? ZMTPConnectionType.Addressed : ZMTPConnectionType.Broadcast);
-    this.enveloped = enveloped;
+  CodecBase(ZMTPSession session) {
+    this.session = session;
   }
 
   @Override
@@ -35,7 +29,7 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
       public void handshakeDone(int protocolVersion, byte[] remoteIdentity) {
         session.setRemoteIdentity(remoteIdentity);
         session.setProtocolVersion(protocolVersion);
-        updatePipeline(ctx.getPipeline(), protocolVersion, session, enveloped);
+        updatePipeline(ctx.getPipeline(), protocolVersion, session);
         ctx.sendUpstream(e);
       }
     });
@@ -73,11 +67,11 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
 
 
   private void updatePipeline(ChannelPipeline pipeline, int version,
-                              ZMTPSession session, boolean enveloped) {
+                              ZMTPSession session) {
     pipeline.addAfter(pipeline.getContext(this).getName(), "zmtpEncoder",
-                      new ZMTPFramingEncoder(version, enveloped));
+                      new ZMTPFramingEncoder(version, session.isEnveloped()));
     pipeline.addAfter("zmtpEncoder", "zmtpDecoder",
-                      new ZMTPFramingDecoder(version, enveloped, session));
+                      new ZMTPFramingDecoder(version, session.isEnveloped(), session));
     pipeline.remove(this);
   }
 

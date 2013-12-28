@@ -32,6 +32,7 @@ public class ZMTPSession {
   private final boolean useLocalIdentity;
   private final byte[] localIdent;
   private final long sizeLimit;
+  private final ZMTPSocketType socketType;
 
 
   private ZMTPConnectionType type;
@@ -44,15 +45,15 @@ public class ZMTPSession {
   }
 
   public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit) {
-    this(type, sizeLimit, null);
+    this(type, sizeLimit, null, null);
   }
 
   public ZMTPSession(final ZMTPConnectionType type, @Nullable final byte[] localIdent) {
-    this(type, DEFAULT_SIZE_LIMIT, localIdent);
+    this(type, DEFAULT_SIZE_LIMIT, localIdent, null);
   }
 
   public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
-                     @Nullable final byte[] localIdent) {
+                     @Nullable final byte[] localIdent, final ZMTPSocketType socketType) {
     this.type = type;
     this.sizeLimit = sizeLimit;
     this.useLocalIdentity = (localIdent != null);
@@ -61,6 +62,7 @@ public class ZMTPSession {
     } else {
       this.localIdent = localIdent;
     }
+    this.socketType = socketType;
   }
 
   /**
@@ -164,4 +166,7 @@ public class ZMTPSession {
       this.protocolVersion = protocolVersion;
   }
 
+  public ZMTPSocketType getSocketType() {
+    return socketType;
+  }
 }

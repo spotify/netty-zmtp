@@ -15,15 +15,15 @@ public class ZMTP10Codec extends CodecBase {
    * of connections using this codec is treated as ZMTPConnectionType.Broadcast and neither
    * sent nor received frames will be enveloped.
    *
-   * @param localIdentity the local identity octets to use in the handshake.
+   * @param session the session that configures this codec
    */
-  public ZMTP10Codec(byte[] localIdentity) {
-    super(localIdentity);
+  public ZMTP10Codec(ZMTPSession session) {
+    super(session);
   }
 
   @Override
   protected ChannelBuffer onConnect() {
-    return makeZMTP1Greeting(localIdentity);
+    return makeZMTP1Greeting(session.getLocalIdentity());
   }
 
   protected ChannelBuffer inputOutput(final ChannelBuffer buffer)

@@ -3,14 +3,12 @@ package com.spotify.netty.handler.codec.zmtp;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
 
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.buf;
-import static com.spotify.netty.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.cmp;
 
 /**
@@ -48,8 +46,9 @@ public class PipelineTests {
 
   @Test
   public void testZMTPPipeline() {
-    ChannelPipeline p = Channels.pipeline(new ZMTP20Codec("foo".getBytes(), ZMTPSocketType.REQ,
-                                                          true));
+    ZMTPSession s = new ZMTPSession(
+        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(s, true));
 
     PipelineTester pt = new PipelineTester(p);
     cmp(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f), pt.readClient());
@@ -72,8 +71,9 @@ public class PipelineTests {
 
   @Test
   public void testZMTPPipelineFragmented() {
-    ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(
-        "foo".getBytes(), ZMTPSocketType.REQ, true));
+    ZMTPSession s = new ZMTPSession(
+        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(s, true));
 
     PipelineTester pt = new PipelineTester(p);
     cmp(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f), pt.readClient());

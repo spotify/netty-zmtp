@@ -17,23 +17,16 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jeromq.ZFrame;
+import org.jeromq.ZMQ;
+import org.jeromq.ZMsg;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
@@ -42,7 +35,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
@@ -75,7 +67,8 @@ public class ZMQIntegrationTest {
       public ChannelPipeline getPipeline() throws Exception {
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTP20Codec(identity.getBytes(), ZMTPSocketType.REQ, false),
+            new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 1024, identity.getBytes(),
+                                            ZMTPSocketType.REQ), false),
             new SimpleChannelUpstreamHandler() {
 
               @Override
