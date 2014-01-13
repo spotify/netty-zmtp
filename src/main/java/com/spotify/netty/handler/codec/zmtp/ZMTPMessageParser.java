@@ -16,7 +16,7 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +62,7 @@ public class ZMTPMessageParser {
    * @param buffer Buffer with data
    * @return A {@link ZMTPMessage} if it was completely parsed, otherwise null.
    */
-  public ZMTPParsedMessage parse(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
+  public ZMTPParsedMessage parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
 
     // If we're in discarding mode, continue discarding data
     if (isOversized(size)) {
@@ -146,7 +146,7 @@ public class ZMTPMessageParser {
    *
    * @return A truncated message if done discarding, null if not yet done.
    */
-  private ZMTPParsedMessage discardFrames(final ChannelBuffer buffer)
+  private ZMTPParsedMessage discardFrames(final ByteBuf buffer)
       throws ZMTPMessageParsingException {
 
     while (buffer.readableBytes() > 0) {
@@ -187,7 +187,7 @@ public class ZMTPMessageParser {
   /**
    * Parse a frame header.
    */
-  private boolean parseFrameHeader(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
+  private boolean parseFrameHeader(final ByteBuf buffer) throws ZMTPMessageParsingException {
     final long len = ZMTPUtils.decodeLength(buffer);
 
     if (len > Integer.MAX_VALUE) {

@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
+import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
-import static org.jboss.netty.util.CharsetUtil.UTF_8;
 
 public class ZMTPMessage {
 

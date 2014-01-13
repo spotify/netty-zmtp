@@ -16,22 +16,19 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBuf;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-
-import static org.jboss.netty.buffer.ChannelBuffers.EMPTY_BUFFER;
-import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
-import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 public class ZMTPFrame {
 
   public static final ZMTPFrame EMPTY_FRAME = create();
 
-  private final ChannelBuffer data;
+  private final ByteBuf data;
 
-  private ZMTPFrame(final ChannelBuffer data) {
+  private ZMTPFrame(final ByteBuf data) {
     this.data = data;
   }
 
@@ -50,7 +47,7 @@ public class ZMTPFrame {
   public byte[] getData() {
     if (hasData()) {
       final byte[] bytes = new byte[size()];
-      wrappedBuffer(data).readBytes(bytes);
+      Unpooled.wrappedBuffer(data).readBytes(bytes);
       return bytes;
     } else {
       return null;
@@ -62,9 +59,9 @@ public class ZMTPFrame {
    *
    * <p>Note: buffer contents and indices must not be modified.
    */
-  public ChannelBuffer getDataBuffer() {
+  public ByteBuf getDataBuffer() {
     if (data == null) {
-      return EMPTY_BUFFER;
+      return Unpooled.EMPTY_BUFFER;
     } else {
       return data;
     }
@@ -109,7 +106,7 @@ public class ZMTPFrame {
     if (data.length() == 0) {
       return EMPTY_FRAME;
     } else {
-      return create(copiedBuffer(data, charset));
+      return create(Unpooled.copiedBuffer(data, charset));
     }
   }
 
@@ -120,15 +117,15 @@ public class ZMTPFrame {
     if (data == null || data.length == 0) {
       return EMPTY_FRAME;
     } else {
-      return create(copiedBuffer(data));
+      return create(Unpooled.copiedBuffer(data));
     }
   }
 
   /**
    * Create a new frame from a channel buffer.
    */
-  public static ZMTPFrame create(final ChannelBuffer buf) {
-    if (!buf.readable()) {
+  public static ZMTPFrame create(final ByteBuf buf) {
+    if (!buf.isReadable()) {
       return EMPTY_FRAME;
     } else {
       return new ZMTPFrame(buf);
@@ -164,9 +161,9 @@ public class ZMTPFrame {
    * @param length length of buffer
    * @return A {@link ZMTPFrame} containg the data read from the buffer.
    */
-  static public ZMTPFrame read(final ChannelBuffer buffer, final int length) {
+  static public ZMTPFrame read(final ByteBuf buffer, final int length) {
     if (length > 0) {
-      final ChannelBuffer data = buffer.readSlice(length);
+      final ByteBuf data = buffer.readSlice(length);
       return new ZMTPFrame(data);
     } else {
       return EMPTY_FRAME;

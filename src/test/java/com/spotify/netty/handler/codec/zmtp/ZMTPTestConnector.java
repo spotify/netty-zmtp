@@ -16,19 +16,12 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPipeline;
 import org.jeromq.ZMQ;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 
@@ -57,9 +50,8 @@ public abstract class ZMTPTestConnector {
     serverSocket.bind("tcp://" + ip + ":" + port);
 
     // Configure the client.
-    final ClientBootstrap bootstrap =
-        new ClientBootstrap(new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                              Executors.newCachedThreadPool()));
+    final Bootstrap bootstrap = new Bootstrap();
+
 
     // Set up the pipeline factory.
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {

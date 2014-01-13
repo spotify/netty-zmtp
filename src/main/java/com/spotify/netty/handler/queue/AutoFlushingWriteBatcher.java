@@ -16,11 +16,8 @@
 
 package com.spotify.netty.handler.queue;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.queue.BufferedWriteHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ScheduledFuture;
@@ -35,7 +32,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * A channel handler that attempts to batch together and consolidate smaller writes to avoid many
  * small individual writes on the channel and the syscall overhead this would incur.
  */
-public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
+public class AutoFlushingWriteBatcher extends ChannelInboundHandlerAdapter {
 
   private static final long DEFAULT_INTERVAL = 1;
   private static final TimeUnit DEFAULT_INTERVAL_TIMEUNIT = TimeUnit.MILLISECONDS;
@@ -123,7 +120,7 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
    */
   public AutoFlushingWriteBatcher(final long interval, final TimeUnit intervalUnit,
                                   final boolean consolidateOnFlush) {
-    super(consolidateOnFlush);
+    super();
     this.intervalNanos = intervalUnit.toNanos(interval);
   }
 
@@ -131,55 +128,51 @@ public class AutoFlushingWriteBatcher extends BufferedWriteHandler {
    * Called when the channel is opened.
    */
   @Override
-  public void channelOpen(final ChannelHandlerContext ctx, final ChannelStateEvent e)
+  public void channelActive(final ChannelHandlerContext ctx)
       throws Exception {
-    super.channelOpen(ctx, e);
-
     // Schedule a task to flush and enforce the maximum latency that a message is buffered
     flushFuture = flusher.scheduleAtFixedRate(flushTask, intervalNanos, intervalNanos,
                                               NANOSECONDS);
+	  ctx.fireChannelActive();
   }
 
   /**
    * Called when the channel is closed.
    */
   @Override
-  public void channelClosed(final ChannelHandlerContext ctx, final ChannelStateEvent e)
+  public void channelInactive(final ChannelHandlerContext ctx)
       throws Exception {
-    super.channelClosed(ctx, e);
-
     // Remove the scheduled flushing task.
     flushFuture.cancel(false);
+	  ctx.fireChannelInactive();
   }
 
-  /**
-   * Called when an outgoing message is written to the channel.
-   */
-  @Override
-  public void writeRequested(final ChannelHandlerContext ctx, final MessageEvent e)
-      throws Exception {
-    super.writeRequested(ctx, e);
+//	TODO
+//  /**
+//   * Called when an outgoing message is written to the channel.
+//   */
+//  @Override
+//  public void writeRequested(final ChannelHandlerContext ctx, final MessageEvent e)
+//      throws Exception {
+//    super.writeRequested(ctx, e);
+//
+//    // Calculate new size of outgoing message buffer
+//    final ChannelBuffer data = (ChannelBuffer) e.getMessage();
+//    final int newBufferSize = bufferSize.addAndGet(data.readableBytes());
+//
+//    // Calculate how long it was since the last outgoing message
+//    final long now = System.nanoTime();
+//    final long nanosSinceLastWrite = now - lastWrite;
+//    lastWrite = now;
+//
+//    // Flush if writes are sparse or if the buffer has reached its threshold size
+//    if (nanosSinceLastWrite > maxDelayNanos ||
+//        newBufferSize > maxBufferSize) {
+//      flush();
+//    }
+//  }
 
-    // Calculate new size of outgoing message buffer
-    final ChannelBuffer data = (ChannelBuffer) e.getMessage();
-    final int newBufferSize = bufferSize.addAndGet(data.readableBytes());
-
-    // Calculate how long it was since the last outgoing message
-    final long now = System.nanoTime();
-    final long nanosSinceLastWrite = now - lastWrite;
-    lastWrite = now;
-
-    // Flush if writes are sparse or if the buffer has reached its threshold size
-    if (nanosSinceLastWrite > maxDelayNanos ||
-        newBufferSize > maxBufferSize) {
-      flush();
-    }
-  }
-
-  @Override
   public void flush() {
-    super.flush();
-
     // The message buffer is now empty
     bufferSize.set(0);
 

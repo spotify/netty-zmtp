@@ -19,8 +19,8 @@ package com.spotify.netty.handler.codec.zmtp;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -127,7 +127,7 @@ public class ZMTPMessageParserTest {
     out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                        enveloped, limit, input, expected));
 
-    final ChannelBuffer serialized = serialize(input);
+    final ByteBuf serialized = serialize(input);
     final int serializedLength = serialized.readableBytes();
 
     // Test parsing the whole message
@@ -144,7 +144,7 @@ public class ZMTPMessageParserTest {
     final List<String> content = nCopies(contentSize, ".");
     final List<String> frames = newArrayList(concat(envelope, content));
     final ZMTPMessage trivialMessage = ZMTPMessage.fromStringsUTF8(enveloped, frames);
-    final ChannelBuffer trivialSerialized = serialize(frames);
+    final ByteBuf trivialSerialized = serialize(frames);
     final int trivialLength = trivialSerialized.readableBytes();
 
     // Test parsing fragmented input
@@ -303,13 +303,13 @@ public class ZMTPMessageParserTest {
     }
   }
 
-  public static ChannelBuffer serialize(final boolean enveloped, final ZMTPMessage message) {
-    final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(message, enveloped));
+  public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message) {
+    final ByteBuf buffer = Unpooled.buffer(ZMTPUtils.messageSize(message, enveloped));
     ZMTPUtils.writeMessage(message, buffer, enveloped);
     return buffer;
   }
 
-  private ChannelBuffer serialize(final List<String> frames) {
+  private ByteBuf serialize(final List<String> frames) {
     return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames));
   }
 

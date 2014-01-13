@@ -26,8 +26,8 @@
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty</artifactId>
-      <version>3.6.6.Final</version>
+      <artifactId>netty-all</artifactId>
+      <version>4.0.14.Final</version>
       <!-- the user of this lib should already have a dependency on netty -->
       <scope>provided</scope>
     </dependency>

@@ -16,7 +16,8 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
@@ -65,14 +66,14 @@ public class ZMTPSession {
    * @return The local address of the session
    */
   public SocketAddress getLocalAddress() {
-    return channel.getLocalAddress();
+    return channel.localAddress();
   }
 
   /**
    * @return The remote address of the session
    */
   public SocketAddress getRemoteAddress() {
-    return channel.getRemoteAddress();
+    return channel.remoteAddress();
   }
 
   /**
