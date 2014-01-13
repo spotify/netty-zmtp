@@ -16,14 +16,14 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 
 import java.util.List;
 import java.util.UUID;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
-import static org.jboss.netty.buffer.ChannelBuffers.swapLong;
 
 /**
  * Helper utilities for zmtp protocol
@@ -39,7 +39,7 @@ public class ZMTPUtils {
    *
    * @return length or -1 if not enough bytes available
    */
-  static public long decodeLength(final ChannelBuffer in) {
+  static public long decodeLength(final ByteBuf in) {
     if (in.readableBytes() < 1) {
       return -1;
     }
@@ -53,7 +53,7 @@ public class ZMTPUtils {
       if (in.order() == BIG_ENDIAN) {
         size = in.readLong();
       } else {
-        size = swapLong(in.readLong());
+        size = ByteBufUtil.swapLong(in.readLong());
       }
     }
 
@@ -63,7 +63,7 @@ public class ZMTPUtils {
   /**
    * Helper to encode a zmtp length field
    */
-  static public void encodeLength(final long size, final ChannelBuffer out) {
+  static public void encodeLength(final long size, final ByteBuf out) {
     if (size < 255) {
       // Encoded as a single byte
       out.writeByte((byte) size);
@@ -73,7 +73,7 @@ public class ZMTPUtils {
       if (out.order() == BIG_ENDIAN) {
         out.writeLong(size);
       } else {
-        out.writeLong(swapLong(size));
+        out.writeLong(ByteBufUtil.swapLong(size));
       }
     }
   }
@@ -103,13 +103,13 @@ public class ZMTPUtils {
    * @param buffer The target buffer.
    * @param more   True to write a more flag, false to write a final flag.
    */
-  public static void writeFrame(final ZMTPFrame frame, final ChannelBuffer buffer,
+  public static void writeFrame(final ZMTPFrame frame, final ByteBuf buffer,
                                 final boolean more) {
     encodeLength(frame.size() + 1, buffer);
     buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
     if (frame.hasData()) {
-      final ChannelBuffer source = frame.getDataBuffer();
-      buffer.ensureWritableBytes(source.readableBytes());
+      final ByteBuf source = frame.getDataBuffer();
+      buffer.ensureWritable(source.readableBytes());
       source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
   }
@@ -122,7 +122,7 @@ public class ZMTPUtils {
    * @param enveloped Whether the envelope and delimiter should be written.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static void writeMessage(final ZMTPMessage message, final ChannelBuffer buffer,
+  public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer,
                                   final boolean enveloped) {
 
     // Write envelope
@@ -203,7 +203,7 @@ public class ZMTPUtils {
     if (data == null) {
       return null;
     }
-    return toString(ChannelBuffers.wrappedBuffer(data));
+    return toString(Unpooled.wrappedBuffer(data));
   }
 
   /**
@@ -212,7 +212,7 @@ public class ZMTPUtils {
    * @param data The data
    * @return A string representation of the data
    */
-  public static String toString(final ChannelBuffer data) {
+  public static String toString(final ByteBuf data) {
     if (data == null) {
       return null;
     }
