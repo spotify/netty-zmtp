@@ -16,8 +16,8 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class ZMTPUtilsTests {
       for (int size = 0; size < 1024; size++) {
         final ZMTPFrame frame = ZMTPFrame.create(new byte[size]);
         int estimatedSize = ZMTPUtils.frameSize(frame);
-        final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+        final ByteBuf buffer = Unpooled.buffer();
         ZMTPUtils.writeFrame(frame, buffer, more);
         int writtenSize = buffer.readableBytes();
         assertEquals(writtenSize, estimatedSize);
@@ -66,7 +66,7 @@ public class ZMTPUtilsTests {
 
           final ZMTPMessage message = new ZMTPMessage(envelope, payload);
           int estimatedSize = ZMTPUtils.messageSize(message, enveloped);
-          final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+          final ByteBuf buffer = Unpooled.buffer();
           ZMTPUtils.writeMessage(message, buffer, enveloped);
           int writtenSize = buffer.readableBytes();
           assertEquals(writtenSize, estimatedSize);

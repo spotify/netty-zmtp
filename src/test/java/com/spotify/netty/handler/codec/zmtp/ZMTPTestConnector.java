@@ -17,11 +17,15 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import org.jeromq.ZMQ;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 
@@ -54,6 +58,16 @@ public abstract class ZMTPTestConnector {
 
 
     // Set up the pipeline factory.
+
+	  bootstrap.handler(new ByteToMessageDecoder() {
+		  @Override
+		  protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+			  if (onMessage()) {
+				  receivedMessage = true;
+				  ctx.channel().close();
+			  }
+		  }
+	  });
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
         final ZMTPSession session = new ZMTPSession(Addressed);
@@ -67,7 +81,7 @@ public abstract class ZMTPTestConnector {
                   receivedMessage = true;
                   channel.close();
                 }
-
+			   ChannelBuffers.dynamicBuffer();
                 return null;
               }
             });
@@ -85,7 +99,7 @@ public abstract class ZMTPTestConnector {
     future.getChannel().getCloseFuture().awaitUninterruptibly();
 
     // Shut down thread pools to exit.
-    bootstrap.releaseExternalResources();
+//    bootstrap.releaseExternalResources();
 
     serverSocket.close();
     context.term();

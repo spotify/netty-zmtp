@@ -16,13 +16,13 @@
 
 package com.spotify.netty.handler.queue;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.jetbrains.annotations.NotNull;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 
+import java.net.SocketAddress;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +32,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * A channel handler that attempts to batch together and consolidate smaller writes to avoid many
  * small individual writes on the channel and the syscall overhead this would incur.
  */
-public class AutoFlushingWriteBatcher extends ChannelInboundHandlerAdapter {
+public class AutoFlushingWriteBatcher extends ChannelOutboundHandlerAdapter {
 
   private static final long DEFAULT_INTERVAL = 1;
   private static final TimeUnit DEFAULT_INTERVAL_TIMEUNIT = TimeUnit.MILLISECONDS;
@@ -48,32 +48,6 @@ public class AutoFlushingWriteBatcher extends ChannelInboundHandlerAdapter {
 
   private volatile long lastFlush;
   private volatile long lastWrite;
-
-  private static final ScheduledThreadPoolExecutor flusher =
-      new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @NotNull
-        @Override
-        public Thread newThread(final Runnable r) {
-          final Thread thread = new Thread(r);
-          thread.setDaemon(true);
-          thread.setName("netty-write-buffer-flusher");
-          return thread;
-        }
-      });
-
-  /**
-   * Scheduled to be called regularly to enforce the max delay of outgoing messages in the buffer.
-   */
-  private final Runnable flushTask = new Runnable() {
-    @Override
-    public void run() {
-      // Flush if the buffer has not been flushed during the last max delay time interval
-      final long nanosSinceLastFlush = System.nanoTime() - lastFlush;
-      if (nanosSinceLastFlush > maxDelayNanos) {
-        flush();
-      }
-    }
-  };
 
   private volatile ScheduledFuture<?> flushFuture;
 
@@ -128,24 +102,49 @@ public class AutoFlushingWriteBatcher extends ChannelInboundHandlerAdapter {
    * Called when the channel is opened.
    */
   @Override
-  public void channelActive(final ChannelHandlerContext ctx)
+  public void connect(final ChannelHandlerContext ctx, SocketAddress remote, SocketAddress local, ChannelPromise promise)
       throws Exception {
     // Schedule a task to flush and enforce the maximum latency that a message is buffered
-    flushFuture = flusher.scheduleAtFixedRate(flushTask, intervalNanos, intervalNanos,
-                                              NANOSECONDS);
-	  ctx.fireChannelActive();
+    flushFuture = ctx.executor().scheduleAtFixedRate(new Runnable() {
+		@Override
+		public void run() {
+			final long nanosSinceLastFlush = System.nanoTime() - lastFlush;
+			if (nanosSinceLastFlush > maxDelayNanos) {
+				ctx.flush();
+				bufferSize.set(0);
+				lastFlush = System.nanoTime();
+			}
+		}
+	}, intervalNanos, intervalNanos, NANOSECONDS);
+
+	  ctx.connect(remote, local, promise);
   }
 
   /**
    * Called when the channel is closed.
    */
   @Override
-  public void channelInactive(final ChannelHandlerContext ctx)
+  public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise)
       throws Exception {
     // Remove the scheduled flushing task.
     flushFuture.cancel(false);
-	  ctx.fireChannelInactive();
+	  ctx.disconnect(promise);
   }
+
+	@Override
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+			throws Exception {
+		if (msg instanceof ByteBuf) {
+			ByteBuf buf = (ByteBuf) msg;
+			int size = bufferSize.get() + buf.capacity();
+			if (size >= maxBufferSize) {
+				ctx.writeAndFlush(buf);
+			}
+
+		} else {
+			ctx.write(msg, promise);
+		}
+	}
 
 //	TODO
 //  /**
@@ -171,12 +170,4 @@ public class AutoFlushingWriteBatcher extends ChannelInboundHandlerAdapter {
 //      flush();
 //    }
 //  }
-
-  public void flush() {
-    // The message buffer is now empty
-    bufferSize.set(0);
-
-    // Record the flush time for use in the scheduled flush task
-    lastFlush = System.nanoTime();
-  }
 }

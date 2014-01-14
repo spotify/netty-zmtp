@@ -16,27 +16,17 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.Channels;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -56,48 +46,47 @@ public class ProtocolViolationTests {
 
   interface MockHandler {
 
-    public void channelConnected(final ChannelHandlerContext ctx, final ChannelStateEvent e);
+    public void channelActive(final ChannelHandlerContext ctx);
 
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e);
+    public void messageInactive(final ChannelHandlerContext ctx);
   }
 
   final MockHandler mockHandler = mock(MockHandler.class);
 
   @Before
   public void setup() {
-    serverBootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
-        Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+    serverBootstrap = new ServerBootstrap();
 
-    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
-          Runtime.getRuntime().availableProcessors(),
-          1024 * 1024,
-          128 * 1024 * 1024
-      );
+//    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+//      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
+//          Runtime.getRuntime().availableProcessors(),
+//          1024 * 1024,
+//          128 * 1024 * 1024
+//      );
 
-      public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
-
-        return Channels.pipeline(
-            new ExecutionHandler(executor),
-            new ZMTPFramingDecoder(session),
-            new ZMTPFramingEncoder(session),
-            new SimpleChannelUpstreamHandler() {
-
-              @Override
-              public void channelConnected(final ChannelHandlerContext ctx,
-                                           final ChannelStateEvent e) throws Exception {
-                mockHandler.channelConnected(ctx, e);
-              }
-
-              @Override
-              public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
-                  throws Exception {
-                mockHandler.messageReceived(ctx, e);
-              }
-            });
-      }
-    });
+//      public ChannelPipeline getPipeline() throws Exception {
+//        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
+//
+//        return Channels.pipeline(
+//				new ExecutionHandler(executor),
+//				new ZMTPFramingDecoder(session),
+//				new ZMTPFramingEncoder(session),
+//				new SimpleChannelUpstreamHandler() {
+//
+//					@Override
+//					public void channelConnected(final ChannelHandlerContext ctx,
+//												 final ChannelStateEvent e) throws Exception {
+//						mockHandler.channelConnected(ctx, e);
+//					}
+//
+//					@Override
+//					public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
+//							throws Exception {
+//						mockHandler.messageReceived(ctx, e);
+//					}
+//				});
+//      }
+//    });
 
     serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0));
     serverAddress = (InetSocketAddress) serverChannel.getLocalAddress();
