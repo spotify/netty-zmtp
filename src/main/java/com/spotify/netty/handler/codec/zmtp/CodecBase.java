@@ -28,8 +28,8 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
       @Override
       public void handshakeDone(int protocolVersion, byte[] remoteIdentity) {
         session.setRemoteIdentity(remoteIdentity);
-        session.setProtocolVersion(protocolVersion);
-        updatePipeline(ctx.getPipeline(), protocolVersion, session);
+        session.setActualVersion(protocolVersion);
+        updatePipeline(ctx.getPipeline(), session);
         ctx.sendUpstream(e);
       }
     });
@@ -66,12 +66,12 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
   }
 
 
-  private void updatePipeline(ChannelPipeline pipeline, int version,
+  private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
     pipeline.addAfter(pipeline.getContext(this).getName(), "zmtpEncoder",
-                      new ZMTPFramingEncoder(version, session.isEnveloped()));
+                      new ZMTPFramingEncoder(session));
     pipeline.addAfter("zmtpEncoder", "zmtpDecoder",
-                      new ZMTPFramingDecoder(version, session.isEnveloped(), session));
+                      new ZMTPFramingDecoder(session));
     pipeline.remove(this);
   }
 

@@ -38,7 +38,7 @@ public class ZMTPSession {
   private ZMTPConnectionType type;
   private Channel channel;
   private byte[] remoteIdent;
-  private volatile int protocolVersion;
+  private volatile int actualVersion;
 
   public ZMTPSession(final ZMTPConnectionType type) {
     this(type, Integer.MAX_VALUE);
@@ -154,16 +154,19 @@ public class ZMTPSession {
   }
 
   /**
-   * Returns the protocolVersion of this session.
+   * An integer representing the actual version of an ZMTP connection. Note that this property
+   * does not effect which protcol versions support (To pick a version, select one of the CodecBase
+   * subclasses) and the actualVersion might be lower than the highest supported version of your
+   * CodecBase subclass due to interoperability downgrades.
    *
    * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
    */
-  public int getProtocolVersion() {
-    return protocolVersion;
+  public int getActualVersion() {
+    return actualVersion;
   }
 
-  public void setProtocolVersion(int protocolVersion) {
-      this.protocolVersion = protocolVersion;
+  public void setActualVersion(int actualVersion) {
+      this.actualVersion = actualVersion;
   }
 
   public ZMTPSocketType getSocketType() {
