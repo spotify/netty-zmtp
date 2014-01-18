@@ -32,7 +32,7 @@ public class ZMTPUtils {
 
   public static final byte MORE_FLAG = 0x1;
   public static final byte FINAL_FLAG = 0x0;
-  public static final ZMTPFrame DELIMITER = ZMTPFrame.create();
+  public static final ZMTPFrame DELIMITER = ZMTPFrame.EMPTY_FRAME;
 
   /**
    * Helper to decode a ZeroMQ length field
@@ -108,9 +108,12 @@ public class ZMTPUtils {
     encodeLength(frame.size() + 1, buffer);
     buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
     if (frame.hasData()) {
-      final ByteBuf source = frame.getDataBuffer();
-      buffer.ensureWritable(source.readableBytes());
-      source.getBytes(source.readerIndex(), buffer, source.readableBytes());
+//      final ByteBuf source = frame.getDataBuffer();
+        byte[] data = frame.getData();
+        buffer.ensureWritable(data.length);
+
+    buffer.writeBytes(data);
+//      source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
   }
 
@@ -237,7 +240,7 @@ public class ZMTPUtils {
     for (int i = 0; i < frames.size(); i++) {
       final ZMTPFrame frame = frames.get(i);
       builder.append('"');
-      builder.append(toString(frame.getDataBuffer()));
+      builder.append(frame.getData());
       builder.append('"');
       if (i < frames.size() - 1) {
         builder.append(',');

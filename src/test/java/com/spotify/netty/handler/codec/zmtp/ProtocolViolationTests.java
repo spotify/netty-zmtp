@@ -16,21 +16,19 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import com.google.common.base.Charsets;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.channel.embedded.EmbeddedChannel;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.InetSocketAddress;
-import java.nio.channels.Channels;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,68 +36,23 @@ import static org.mockito.Mockito.verify;
 
 public class ProtocolViolationTests {
 
-  private ServerBootstrap serverBootstrap;
-  private Channel serverChannel;
-  private InetSocketAddress serverAddress;
-
+  private EmbeddedChannel serverChannel;
   private String identity = "identity";
-
-  interface MockHandler {
-
-    public void channelActive(final ChannelHandlerContext ctx);
-
-    public void messageInactive(final ChannelHandlerContext ctx);
-  }
-
-  final MockHandler mockHandler = mock(MockHandler.class);
+  private ChannelInboundHandler mockHandler = mock(ChannelInboundHandler.class);
 
   @Before
   public void setup() {
-    serverBootstrap = new ServerBootstrap();
-
-//    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-//      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
-//          Runtime.getRuntime().availableProcessors(),
-//          1024 * 1024,
-//          128 * 1024 * 1024
-//      );
-
-//      public ChannelPipeline getPipeline() throws Exception {
-//        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
-//
-//        return Channels.pipeline(
-//				new ExecutionHandler(executor),
-//				new ZMTPFramingDecoder(session),
-//				new ZMTPFramingEncoder(session),
-//				new SimpleChannelUpstreamHandler() {
-//
-//					@Override
-//					public void channelConnected(final ChannelHandlerContext ctx,
-//												 final ChannelStateEvent e) throws Exception {
-//						mockHandler.channelConnected(ctx, e);
-//					}
-//
-//					@Override
-//					public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
-//							throws Exception {
-//						mockHandler.messageReceived(ctx, e);
-//					}
-//				});
-//      }
-//    });
-
-    serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0));
-    serverAddress = (InetSocketAddress) serverChannel.getLocalAddress();
+    ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
+    serverChannel = new EmbeddedChannel(
+        new ZMTPFramingDecoder(session),
+        new ZMTPFramingEncoder(session),
+        mockHandler);
   }
 
   @After
   public void teardown() {
     if (serverChannel != null) {
       serverChannel.close();
-      serverChannel.getCloseFuture().awaitUninterruptibly();
-    }
-    if (serverBootstrap != null) {
-      serverBootstrap.releaseExternalResources();
     }
   }
 
@@ -110,33 +63,18 @@ public class ProtocolViolationTests {
     }
   }
 
-  private void testConnect(final int payloadSize) throws InterruptedException {
-    final ClientBootstrap clientBootstrap =
-        new ClientBootstrap(new NioClientSocketChannelFactory());
-    clientBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(new SimpleChannelUpstreamHandler());
-      }
-    });
-    final ChannelFuture future = clientBootstrap.connect(serverAddress);
-    future.awaitUninterruptibly();
-
-    final Channel channel = future.getChannel();
-
+  private void testConnect(final int payloadSize) throws Exception {
     System.out.println("payloadSize=" + payloadSize);
 
-    final StringBuilder payload = new StringBuilder();
+    StringBuilder payload = new StringBuilder();
     for (int i = 0; i < payloadSize; i++) {
       payload.append('0');
     }
-    channel.write(ChannelBuffers.copiedBuffer(payload.toString().getBytes()));
 
-    Thread.sleep(100);
+    serverChannel.writeInbound(Unpooled.copiedBuffer(payload, Charsets.UTF_8));
 
     verify(mockHandler, never())
-        .channelConnected(any(ChannelHandlerContext.class), any(ChannelStateEvent.class));
-    verify(mockHandler, never())
-        .messageReceived(any(ChannelHandlerContext.class), any(MessageEvent.class));
+        .channelActive(any(ChannelHandlerContext.class));
+    Assert.assertNull(serverChannel.readInbound());
   }
 }

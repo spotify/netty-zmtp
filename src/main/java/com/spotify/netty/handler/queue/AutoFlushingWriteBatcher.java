@@ -106,18 +106,18 @@ public class AutoFlushingWriteBatcher extends ChannelOutboundHandlerAdapter {
       throws Exception {
     // Schedule a task to flush and enforce the maximum latency that a message is buffered
     flushFuture = ctx.executor().scheduleAtFixedRate(new Runnable() {
-		@Override
-		public void run() {
-			final long nanosSinceLastFlush = System.nanoTime() - lastFlush;
-			if (nanosSinceLastFlush > maxDelayNanos) {
-				ctx.flush();
-				bufferSize.set(0);
-				lastFlush = System.nanoTime();
-			}
-		}
-	}, intervalNanos, intervalNanos, NANOSECONDS);
+      @Override
+      public void run() {
+        final long nanosSinceLastFlush = System.nanoTime() - lastFlush;
+        if (nanosSinceLastFlush > maxDelayNanos) {
+          ctx.flush();
+          bufferSize.set(0);
+          lastFlush = System.nanoTime();
+        }
+      }
+    }, intervalNanos, intervalNanos, NANOSECONDS);
 
-	  ctx.connect(remote, local, promise);
+    ctx.connect(remote, local, promise);
   }
 
   /**
@@ -128,23 +128,23 @@ public class AutoFlushingWriteBatcher extends ChannelOutboundHandlerAdapter {
       throws Exception {
     // Remove the scheduled flushing task.
     flushFuture.cancel(false);
-	  ctx.disconnect(promise);
+    ctx.disconnect(promise);
   }
 
-	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
-			throws Exception {
-		if (msg instanceof ByteBuf) {
-			ByteBuf buf = (ByteBuf) msg;
-			int size = bufferSize.get() + buf.capacity();
-			if (size >= maxBufferSize) {
-				ctx.writeAndFlush(buf);
-			}
+  @Override
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+      throws Exception {
+    if (msg instanceof ByteBuf) {
+      ByteBuf buf = (ByteBuf) msg;
+      int size = bufferSize.get() + buf.capacity();
+      if (size >= maxBufferSize) {
+        ctx.writeAndFlush(buf);
+      }
 
-		} else {
-			ctx.write(msg, promise);
-		}
-	}
+    } else {
+      ctx.write(msg, promise);
+    }
+  }
 
 //	TODO
 //  /**

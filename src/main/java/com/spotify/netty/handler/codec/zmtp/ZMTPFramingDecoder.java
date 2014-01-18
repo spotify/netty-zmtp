@@ -22,7 +22,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
@@ -39,8 +38,6 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
   private final ZMTPMessageParser parser;
   private final ZMTPSession session;
 
-  private ChannelPromise handshakeFuture;
-
   public ZMTPFramingDecoder(final ZMTPSession session) {
     this.session = session;
     this.parser = new ZMTPMessageParser(session.isEnveloped(), session.getSizeLimit());
@@ -49,7 +46,7 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
   /**
    * Sends my local identity
    */
-  private void sendIdentity(final Channel channel) {
+  private ChannelFuture sendIdentity(final Channel channel) {
     final ByteBuf msg;
 
     if (session.useLocalIdentity()) {
@@ -67,7 +64,7 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
     }
 
     // Send identity message
-    channel.write(msg);
+    return channel.writeAndFlush(msg);
   }
 
   /**
@@ -103,8 +100,6 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
       session.setRemoteIdentity(identity);
     }
 
-    handshakeFuture.setSuccess();
-
     return true;
   }
 
@@ -113,7 +108,7 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
     // Store channel in the session
     this.session.setChannel(ctx.channel());
 
-    handshake(ctx.channel()).addListener(new ChannelFutureListener() {
+    sendIdentity(ctx.channel()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(final ChannelFuture future) throws Exception {
         if (future.isSuccess()) {
@@ -123,15 +118,6 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
         }
       }
     });
-  }
-
-  private ChannelPromise handshake(final Channel channel) {
-    handshakeFuture = channel.newPromise();
-
-    // Send our identity
-    sendIdentity(channel);
-
-    return handshakeFuture;
   }
 
 	@Override
@@ -150,6 +136,6 @@ public class ZMTPFramingDecoder extends ByteToMessageDecoder {
 		if (msg == null) {
 			return;
 		}
-		out.add(msg);
+		out.add(new ZMTPIncomingMessage(session, msg.getMessage(), msg.isTruncated(), msg.getByteSize()));
 	}
 }
