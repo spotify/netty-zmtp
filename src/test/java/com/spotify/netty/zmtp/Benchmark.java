@@ -52,6 +52,7 @@ public class Benchmark {
         message = parser.parse(buffer).getMessage();
 
         sum += buffer.readableBytes();
+        buffer.release();
       }
       meter.inc(1000, 0);
     }

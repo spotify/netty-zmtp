@@ -108,10 +108,10 @@ public class ZMTPMessage {
      */
     public static ZMTPMessage from(final boolean enveloped, final List<ZMTPFrame> frames) {
         final List<ZMTPFrame> envelope;
-        final List<ZMTPFrame> content = new ArrayList<>();
+        final List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
         int i = 0;
         if (enveloped) {
-            envelope = new ArrayList<>();
+            envelope = new ArrayList<ZMTPFrame>();
             for (; i < frames.size(); i++) {
                 final ZMTPFrame frame = frames.get(i);
                 if (frame == EMPTY_FRAME) {
@@ -191,6 +191,10 @@ public class ZMTPMessage {
         if (content != null ? !content.equals(that.content) : that.content != null) {
             return false;
         }
+
+		if (envelope.equals(that.envelope)) {
+			String s = "";
+		}
         if (envelope != null ? !envelope.equals(that.envelope) : that.envelope != null) {
             return false;
         }

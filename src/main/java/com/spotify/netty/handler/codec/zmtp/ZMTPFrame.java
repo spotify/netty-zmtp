@@ -20,8 +20,8 @@ import io.netty.buffer.ByteBuf;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
-@Deprecated
 public class ZMTPFrame {
 
     public static final ZMTPFrame EMPTY_FRAME = new ZMTPFrame(new byte[]{});
@@ -122,7 +122,7 @@ public class ZMTPFrame {
 
         final ZMTPFrame zmtpFrame = (ZMTPFrame) o;
 
-        if (data != null ? !data.equals(zmtpFrame.data) : zmtpFrame.data != null) {
+        if (data != null ? !Arrays.equals(data, zmtpFrame.data) : zmtpFrame.data != null) {
             return false;
         }
 
