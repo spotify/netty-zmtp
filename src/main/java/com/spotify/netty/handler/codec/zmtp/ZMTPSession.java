@@ -32,25 +32,28 @@ public class ZMTPSession {
   private final boolean useLocalIdentity;
   private final byte[] localIdent;
   private final long sizeLimit;
+  private final ZMTPSocketType socketType;
+
 
   private ZMTPConnectionType type;
   private Channel channel;
   private byte[] remoteIdent;
+  private volatile int actualVersion;
 
   public ZMTPSession(final ZMTPConnectionType type) {
     this(type, Integer.MAX_VALUE);
   }
 
   public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit) {
-    this(type, sizeLimit, null);
+    this(type, sizeLimit, null, null);
   }
 
   public ZMTPSession(final ZMTPConnectionType type, @Nullable final byte[] localIdent) {
-    this(type, DEFAULT_SIZE_LIMIT, localIdent);
+    this(type, DEFAULT_SIZE_LIMIT, localIdent, null);
   }
 
   public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
-                     @Nullable final byte[] localIdent) {
+                     @Nullable final byte[] localIdent, final ZMTPSocketType socketType) {
     this.type = type;
     this.sizeLimit = sizeLimit;
     this.useLocalIdentity = (localIdent != null);
@@ -59,6 +62,7 @@ public class ZMTPSession {
     } else {
       this.localIdent = localIdent;
     }
+    this.socketType = socketType;
   }
 
   /**
@@ -144,7 +148,28 @@ public class ZMTPSession {
     this.channel = channel;
   }
 
+
   public long getSizeLimit() {
     return sizeLimit;
+  }
+
+  /**
+   * An integer representing the actual version of an ZMTP connection. Note that this property
+   * does not effect which protcol versions support (To pick a version, select one of the CodecBase
+   * subclasses) and the actualVersion might be lower than the highest supported version of your
+   * CodecBase subclass due to interoperability downgrades.
+   *
+   * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
+   */
+  public int getActualVersion() {
+    return actualVersion;
+  }
+
+  public void setActualVersion(int actualVersion) {
+      this.actualVersion = actualVersion;
+  }
+
+  public ZMTPSocketType getSocketType() {
+    return socketType;
   }
 }

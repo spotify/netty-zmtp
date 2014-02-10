@@ -30,8 +30,6 @@ import org.jeromq.ZMQ;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
-import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
-
 /**
  * Helper to create connections to a zmtp server via netty
  */
@@ -64,9 +62,8 @@ public abstract class ZMTPTestConnector {
     // Set up the pipeline factory.
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session = new ZMTPSession(Addressed);
         return Channels.pipeline(
-            new ZMTPFramingDecoder(session),
+            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, "client".getBytes())),
             new OneToOneDecoder() {
               @Override
               protected Object decode(final ChannelHandlerContext ctx, final Channel channel,

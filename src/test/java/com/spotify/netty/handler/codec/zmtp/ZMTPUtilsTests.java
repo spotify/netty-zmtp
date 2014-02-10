@@ -16,13 +16,16 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
+import org.jboss.netty.buffer.BigEndianHeapChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.LittleEndianHeapChannelBuffer;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.spotify.netty.handler.codec.zmtp.TestUtil.cmp;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
@@ -35,9 +38,9 @@ public class ZMTPUtilsTests {
     for (boolean more : asList(TRUE, FALSE)) {
       for (int size = 0; size < 1024; size++) {
         final ZMTPFrame frame = ZMTPFrame.create(new byte[size]);
-        int estimatedSize = ZMTPUtils.frameSize(frame);
+        int estimatedSize = ZMTPUtils.frameSize(frame, 1);
         final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-        ZMTPUtils.writeFrame(frame, buffer, more);
+        ZMTPUtils.writeFrame(frame, buffer, more, 1);
         int writtenSize = buffer.readableBytes();
         assertEquals(writtenSize, estimatedSize);
       }
@@ -51,7 +54,7 @@ public class ZMTPUtilsTests {
     for (int i = 0; i < 1024; i++) {
       manyFrameSizes.add(ZMTPFrame.create(new byte[i]));
     }
-    final List<List<ZMTPFrame>> frameSets = asList(
+    @SuppressWarnings("unchecked") final List<List<ZMTPFrame>> frameSets = asList(
         EMPTY,
         asList(ZMTPFrame.create("foo")),
         asList(ZMTPFrame.create("foo"), ZMTPFrame.create("bar")),
@@ -65,9 +68,9 @@ public class ZMTPUtilsTests {
           }
 
           final ZMTPMessage message = new ZMTPMessage(envelope, payload);
-          int estimatedSize = ZMTPUtils.messageSize(message, enveloped);
+          int estimatedSize = ZMTPUtils.messageSize(message, enveloped, 1);
           final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-          ZMTPUtils.writeMessage(message, buffer, enveloped);
+          ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
           int writtenSize = buffer.readableBytes();
           assertEquals(writtenSize, estimatedSize);
         }
@@ -75,4 +78,19 @@ public class ZMTPUtilsTests {
     }
 
   }
+
+  @Test
+  public void testWriteLongBE() {
+    ChannelBuffer cb = new BigEndianHeapChannelBuffer(8);
+    ZMTPUtils.writeLong(cb, 1);
+    cmp(cb, 0,0,0,0,0,0,0,1);
+  }
+
+  @Test
+  public void testWriteLongLE() {
+    ChannelBuffer cb = new LittleEndianHeapChannelBuffer(8);
+    ZMTPUtils.writeLong(cb, 1);
+    cmp(cb, 0,0,0,0,0,0,0,1);
+  }
+
 }

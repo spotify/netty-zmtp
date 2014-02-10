@@ -40,11 +40,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class ProtocolViolationTests {
 
@@ -76,12 +73,10 @@ public class ProtocolViolationTests {
       );
 
       public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
 
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTPFramingDecoder(session),
-            new ZMTPFramingEncoder(session),
+            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes())),
             new SimpleChannelUpstreamHandler() {
 
               @Override
@@ -134,8 +129,6 @@ public class ProtocolViolationTests {
     future.awaitUninterruptibly();
 
     final Channel channel = future.getChannel();
-
-    System.out.println("payloadSize=" + payloadSize);
 
     final StringBuilder payload = new StringBuilder();
     for (int i = 0; i < payloadSize; i++) {

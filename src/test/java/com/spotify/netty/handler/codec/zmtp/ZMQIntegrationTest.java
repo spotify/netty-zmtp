@@ -29,11 +29,11 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jeromq.ZFrame;
+import org.jeromq.ZMQ;
+import org.jeromq.ZMsg;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
@@ -42,7 +42,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
@@ -73,12 +72,10 @@ public class ZMQIntegrationTest {
       );
 
       public ChannelPipeline getPipeline() throws Exception {
-        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
-
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTPFramingDecoder(session),
-            new ZMTPFramingEncoder(session),
+            new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 1024, identity.getBytes(),
+                                            ZMTPSocketType.REQ), false),
             new SimpleChannelUpstreamHandler() {
 
               @Override
