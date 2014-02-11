@@ -16,7 +16,6 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import com.sun.tools.javac.resources.version;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
