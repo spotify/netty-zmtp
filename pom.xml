@@ -9,7 +9,14 @@
   <packaging>jar</packaging>
 
   <name>netty-zmtp</name>
+  <description>ZMTP, the ZeroMQ Message Transport Protocol for Netty</description>
   <url>https://github.com/spotify/netty-zmtp</url>
+
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
 
   <licenses>
     <license>
@@ -19,9 +26,25 @@
     </license>
   </licenses>
 
+  <scm>
+    <connection>scm:git:https://github.com/spotify/netty-zmtp</connection>
+    <developerConnection>scm:git:git@github.com:spotify/netty-zmtp</developerConnection>
+    <url>https://github.com/spotify/netty-zmtp</url>
+  </scm>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.6</maven.compiler.target>
+    <maven.compiler.source>1.6</maven.compiler.source>
   </properties>
+
+  <developers>
+    <developer>
+      <id>dano</id>
+      <email>dano@spotify.com</email>
+      <name>Daniel Norberg</name>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
@@ -30,12 +53,6 @@
       <version>3.6.6.Final</version>
       <!-- the user of this lib should already have a dependency on netty -->
       <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.7.5</version>
     </dependency>
 
     <dependency>
@@ -68,13 +85,6 @@
     </dependency>
 
     <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.0.13</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>15.0</version>
@@ -83,15 +93,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
-        <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
