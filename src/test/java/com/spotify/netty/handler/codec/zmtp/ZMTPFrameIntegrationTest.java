@@ -29,88 +29,89 @@ import static org.junit.Assert.assertEquals;
 
 public class ZMTPFrameIntegrationTest {
 
-  @Test
-  public void testOneFrameREP() {
-    final UUID remoteId = UUID.randomUUID();
-    final ZFrame f = new ZFrame("test-frame".getBytes());
+    @Test
+    public void testOneFrameREP() {
+        final UUID remoteId = UUID.randomUUID();
+        final ZFrame f = new ZFrame("test-frame".getBytes());
 
-    final ZMTPTestConnector tester = new ZMTPTestConnector() {
-      @Override
-      public void preConnect(final ZMQ.Socket socket) {
-        socket.setIdentity(ZMTPUtils.getBytesFromUUID(remoteId));
-      }
+        final ZMTPTestConnector tester = new ZMTPTestConnector() {
+            @Override
+            public void preConnect(final ZMQ.Socket socket) {
+                socket.setIdentity(ZMTPUtils.getBytesFromUUID(remoteId));
+            }
 
-      @Override
-      public void afterConnect(final ZMQ.Socket socket, final ChannelFuture future) {
-        f.sendAndKeep(socket);
-      }
+            @Override
+            public void afterConnect(final ZMQ.Socket socket, final ChannelFuture future) {
+                f.sendAndKeep(socket);
+            }
 
-      @Override
-      public boolean onMessage(final ZMTPIncomingMessage msg) {
-        // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.getSession().getRemoteIdentity());
+            @Override
+            public boolean onMessage(final ZMTPIncomingMessage msg) {
+                // Verify that we can parse the identity correctly
+                assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
+                        msg.getSession().getRemoteIdentity());
 
-        System.err.println(msg);
+                System.err.println(msg);
 
-        // Verify that frames received is correct
-        assertEquals(1, msg.getMessage().getContent().size());
-        assertEquals(0, msg.getMessage().getEnvelope().size());
-        assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(0).getData());
+                // Verify that frames received is correct
+                assertEquals(1, msg.getMessage().getContent().size());
+                assertEquals(0, msg.getMessage().getEnvelope().size());
+                assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(0).getData());
 
-        f.destroy();
+                f.destroy();
 
-        return true;
-      }
-    };
+                return true;
+            }
+        };
 
-    assertEquals(true, tester.connectAndReceive("127.0.0.1", 10001, ZMQ.REQ));
-  }
+        assertEquals(true, tester.connectAndReceive("127.0.0.1", 10001, ZMQ.REQ));
+        System.out.println("WORKING?");
+    }
 
-  @Test
-  public void testMultipleFrameREP() {
-    final UUID remoteId = UUID.randomUUID();
+    @Test
+    public void testMultipleFrameREP() {
+        final UUID remoteId = UUID.randomUUID();
 
-    final ZMTPTestConnector tester = new ZMTPTestConnector() {
-      ZMsg m;
+        final ZMTPTestConnector tester = new ZMTPTestConnector() {
+            ZMsg m;
 
-      @Override
-      public void preConnect(final ZMQ.Socket socket) {
-        m = new ZMsg();
+            @Override
+            public void preConnect(final ZMQ.Socket socket) {
+                m = new ZMsg();
 
-        for (int i = 0; i < 16; i++) {
-          m.addString("test-frame-" + i);
-        }
+                for (int i = 0; i < 16; i++) {
+                    m.addString("test-frame-" + i);
+                }
 
-        socket.setIdentity(ZMTPUtils.getBytesFromUUID(remoteId));
-      }
+                socket.setIdentity(ZMTPUtils.getBytesFromUUID(remoteId));
+            }
 
-      @Override
-      public void afterConnect(final ZMQ.Socket socket, final ChannelFuture future) {
-        m.duplicate().send(socket);
-      }
+            @Override
+            public void afterConnect(final ZMQ.Socket socket, final ChannelFuture future) {
+                m.duplicate().send(socket);
+            }
 
-      @Override
-      public boolean onMessage(final ZMTPIncomingMessage msg) {
-        int framePos = 0;
+            @Override
+            public boolean onMessage(final ZMTPIncomingMessage msg) {
+                int framePos = 0;
 
-        // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.getSession().getRemoteIdentity());
+                // Verify that we can parse the identity correctly
+                assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
+                        msg.getSession().getRemoteIdentity());
 
-        // Verify that frames received is correct
-        assertEquals(m.size(), msg.getMessage().getContent().size());
-        assertEquals(0, msg.getMessage().getEnvelope().size());
+                // Verify that frames received is correct
+                assertEquals(m.size(), msg.getMessage().getContent().size());
+                assertEquals(0, msg.getMessage().getEnvelope().size());
 
-        for (final ZFrame f : m) {
-          assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(framePos).getData());
-          framePos++;
-        }
+                for (final ZFrame f : m) {
+                    assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(framePos).getData());
+                    framePos++;
+                }
 
-        return true;
-      }
-    };
+                return true;
+            }
+        };
 
-    assertEquals(true, tester.connectAndReceive("127.0.0.1", 4711, ZMQ.REQ));
-  }
+        assertEquals(true, tester.connectAndReceive("127.0.0.1", 4711, ZMQ.REQ));
+    }
 }
