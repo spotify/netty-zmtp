@@ -37,6 +37,7 @@ public class PipelineTests {
         List<ZMTPFrame> body = m.getMessage().getContent();
         Assert.assertEquals(1, body.size());
         Assert.assertArrayEquals(new byte[]{0x62}, body.get(0).getData());
+        Assert.assertFalse(channel.finish());
     }
 
     @Test
@@ -59,5 +60,6 @@ public class PipelineTests {
         List<ZMTPFrame> body = m.getMessage().getContent();
         Assert.assertEquals(1, body.size());
         Assert.assertArrayEquals(new byte[]{0x62}, body.get(0).getData());
+        Assert.assertFalse(channel.finish());
     }
 }
