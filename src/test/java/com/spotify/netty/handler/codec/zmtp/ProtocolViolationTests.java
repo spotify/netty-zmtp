@@ -29,10 +29,7 @@ import org.junit.Test;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class ProtocolViolationTests {
 
@@ -63,10 +60,8 @@ public class ProtocolViolationTests {
     }
   }
 
-  private void testConnect(final int payloadSize) throws Exception {
-    System.out.println("payloadSize=" + payloadSize);
-
-    StringBuilder payload = new StringBuilder();
+  private void testConnect(final int payloadSize) throws InterruptedException {
+    final StringBuilder payload = new StringBuilder();
     for (int i = 0; i < payloadSize; i++) {
       payload.append('0');
     }

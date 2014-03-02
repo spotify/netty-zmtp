@@ -18,7 +18,6 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.experimental.theories.DataPoints;
@@ -27,31 +26,20 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Limit.limit;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Limit.unlimited;
-import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.enveloped;
-import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.input;
-import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.nonEnveloped;
-import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.test;
-import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.truncated;
-import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.whole;
+import static com.spotify.netty.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.*;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.util.Arrays.asList;
 import static java.util.Collections.nCopies;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  * This test attempts to thoroughly exercise the {@link ZMTPMessageParser} by feeding it input
@@ -112,7 +100,8 @@ public class ZMTPMessageParserTest {
             futures.add(EXECUTOR.submit(new Callable<Object>() {
                 @Override
                 public Object call() throws Exception {
-                    testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage);
+                    testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage, 1);
+                    testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage, 2);
                     return null;
                 }
             }));
@@ -123,16 +112,16 @@ public class ZMTPMessageParserTest {
     }
 
     private void testParse(final boolean enveloped, final Limit limit, final List<String> input,
-                           final ZMTPParsedMessage expected) throws Exception {
+                           final ZMTPParsedMessage expected, int version) throws Exception {
         out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                 enveloped, limit, input, expected));
 
-        final ByteBuf serialized = serialize(input);
+        final ByteBuf serialized = serialize(input, version);
         final int serializedLength = serialized.readableBytes();
 
         // Test parsing the whole message
         {
-            final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
+            final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
             final ZMTPParsedMessage parsed = parser.parse(serialized);
             serialized.setIndex(0, serializedLength);
             assertEquals(expected, parsed);
@@ -144,7 +133,7 @@ public class ZMTPMessageParserTest {
         final List<String> content = nCopies(contentSize, ".");
         final List<String> frames = newArrayList(concat(envelope, content));
         final ZMTPMessage trivialMessage = ZMTPMessage.fromStringsUTF8(enveloped, frames);
-        final ByteBuf trivialSerialized = serialize(frames);
+        final ByteBuf trivialSerialized = serialize(frames, version);
         final int trivialLength = trivialSerialized.readableBytes();
 
         // Test parsing fragmented input
@@ -153,7 +142,7 @@ public class ZMTPMessageParserTest {
             public void fragments(final int[] limits, final int count) throws Exception {
                 serialized.setIndex(0, serializedLength);
                 ZMTPParsedMessage parsed = null;
-                final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value);
+                final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
                 for (int i = 0; i < count; i++) {
                     final int limit = limits[i];
                     serialized.writerIndex(limit);
@@ -177,6 +166,7 @@ public class ZMTPMessageParserTest {
                 assertEquals(trivialMessage, parsedTrivial.getMessage());
             }
         });
+
     }
 
     static class Parameters {
@@ -302,14 +292,16 @@ public class ZMTPMessageParserTest {
         }
     }
 
-    public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message) {
-        final ByteBuf buffer = Unpooled.buffer(ZMTPUtils.messageSize(message, enveloped));
-        ZMTPUtils.writeMessage(message, buffer, enveloped);
+    public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message,
+                                          int version) {
+        final ByteBuf buffer = Unpooled.buffer(ZMTPUtils.messageSize(
+                message, enveloped, version));
+        ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
         return buffer;
     }
 
-    private ByteBuf serialize(final List<String> frames) {
-        return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames));
+    private ByteBuf serialize(final List<String> frames, int version) {
+        return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames), version);
     }
 
     static class Verification {
@@ -382,5 +374,4 @@ public class ZMTPMessageParserTest {
             this.expected = expected;
         }
     }
-
 }

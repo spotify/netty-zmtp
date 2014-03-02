@@ -17,22 +17,33 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.handler.codec.MessageToMessageEncoder;
+
+import java.util.List;
 
 /**
  * Netty encoder for ZMTP messages.
  */
-public class ZMTPFramingEncoder extends MessageToByteEncoder<ZMTPMessage> {
+class ZMTPFramingEncoder extends MessageToMessageEncoder<ZMTPMessage> {
 
-  private final ZMTPSession session;
+    private final ZMTPSession session;
 
-  public ZMTPFramingEncoder(final ZMTPSession session) {
-    this.session = session;
-  }
+    public ZMTPFramingEncoder(final ZMTPSession session) {
+        this.session = session;
+    }
 
-	@Override
-	protected void encode(ChannelHandlerContext ctx, ZMTPMessage msg, ByteBuf out) throws Exception {
-		ZMTPUtils.writeMessage(msg, out, session.isEnveloped());
-	}
+    @Override
+    protected void encode(ChannelHandlerContext ctx, ZMTPMessage msg, List<Object> out) throws Exception {
+        // TODO (dano): integrate with write batching to avoid buffer creation and reduce garbage
+
+        final int size = ZMTPUtils.messageSize(
+                msg, session.isEnveloped(), session.getActualVersion());
+        final ByteBuf buffer = Unpooled.buffer(size);
+
+        ZMTPUtils.writeMessage(msg, buffer, session.isEnveloped(), session.getActualVersion());
+
+        out.add(buffer);
+    }
 }

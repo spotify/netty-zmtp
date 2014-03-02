@@ -18,7 +18,7 @@ package com.spotify.netty.handler.codec.zmtp;
 
 public class ZMTPMessageParsingException extends ZMTPException {
 
-  public ZMTPMessageParsingException(final String message) {
-    super(message);
-  }
+    public ZMTPMessageParsingException(final String message) {
+        super(message);
+    }
 }

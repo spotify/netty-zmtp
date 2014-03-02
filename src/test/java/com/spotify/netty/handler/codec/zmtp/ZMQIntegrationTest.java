@@ -16,138 +16,130 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.jeromq.ZFrame;
+import org.jeromq.ZMQ;
+import org.jeromq.ZMsg;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 public class ZMQIntegrationTest {
 
-//  private Bootstrap serverBootstrap;
-//  private Channel serverChannel;
-//  private InetSocketAddress serverAddress;
-//
-//  private String identity = "identity";
-//
-//  private BlockingQueue<ZMTPIncomingMessage> incomingMessages =
-//      new LinkedBlockingQueue<ZMTPIncomingMessage>();
-//
-//  private BlockingQueue<Channel> channelsConnected =
-//      new LinkedBlockingQueue<Channel>();
-//
-//  @Before
-//  public void setup() {
-//    serverBootstrap = new Bootstrap(new NioServerSocketChannelFactory(
-//        Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
-//
-//    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-//      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
-//          Runtime.getRuntime().availableProcessors(),
-//          1024 * 1024,
-//          128 * 1024 * 1024
-//      );
-//
-//      public ChannelPipeline getPipeline() throws Exception {
-//        final ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
-//
-//        return Channels.pipeline(
-//            new ExecutionHandler(executor),
-//            new ZMTPFramingDecoder(session),
-//            new ZMTPFramingEncoder(session),
-//            new SimpleChannelUpstreamHandler() {
-//
-//              @Override
-//              public void channelConnected(final ChannelHandlerContext ctx,
-//                                           final ChannelStateEvent e) throws Exception {
-//                super.channelConnected(ctx, e);
-//                channelsConnected.add(ctx.getChannel());
-//              }
-//
-//              @Override
-//              public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
-//                  throws Exception {
-//                incomingMessages.put((ZMTPIncomingMessage) e.getMessage());
-//              }
-//            });
-//      }
-//    });
-//
-//    serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0));
-//    serverAddress = (InetSocketAddress) serverChannel.getLocalAddress();
-//  }
-//
-//  @After
-//  public void teardown() {
-//    if (serverChannel != null) {
-//      serverChannel.close();
-//      serverChannel.getCloseFuture().awaitUninterruptibly();
-//    }
-//    if (serverBootstrap != null) {
-//      serverBootstrap.releaseExternalResources();
-//    }
-//  }
-//
-//  @Test
-//  public void testZmqDealer() throws Exception {
-//    final ZMQ.Context context = ZMQ.context(1);
-//    final ZMQ.Socket socket = context.socket(ZMQ.DEALER);
-//    socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
-//    final ZMsg request = ZMsg.newStringMsg("envelope", "", "hello", "world");
-//    request.send(socket, false);
-//
-//    final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
-//    final ZMTPMessage receivedMessage = receivedRequest.getMessage();
-//    receivedRequest.getSession().getChannel().write(receivedMessage);
-//
-//    final ZMsg reply = ZMsg.recvMsg(socket);
-//    Iterator<ZFrame> reqIter = request.iterator();
-//    Iterator<ZFrame> replyIter = reply.iterator();
-//    while (reqIter.hasNext()) {
-//      assertTrue(replyIter.hasNext());
-//      assertArrayEquals(reqIter.next().data(), replyIter.next().data());
-//    }
-//    assertFalse(replyIter.hasNext());
-//
-//    assertEquals(1, receivedMessage.getEnvelope().size());
-//    assertEquals(2, receivedMessage.getContent().size());
-//    assertArrayEquals("envelope".getBytes(), receivedMessage.getEnvelope().get(0).getData());
-//    assertArrayEquals("hello".getBytes(), receivedMessage.getContent().get(0).getData());
-//    assertArrayEquals("world".getBytes(), receivedMessage.getContent().get(1).getData());
-//  }
-//
-//  @Test
-//  public void testZmqRouter() throws Exception {
-//    final ZMQ.Context context = ZMQ.context(1);
-//    final ZMQ.Socket socket = context.socket(ZMQ.ROUTER);
-//    socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
-//
-//    final ZMTPMessage request = new ZMTPMessage(
-//        asList(ZMTPFrame.create("envelope")),
-//        asList(ZMTPFrame.create("hello"), ZMTPFrame.create("world")));
-//
-//    final Channel channel = channelsConnected.take();
-//    channel.write(request);
-//
-//    final ZMsg receivedReply = ZMsg.recvMsg(socket);
-//
-//    assertEquals(ZMsg.newStringMsg(identity, "envelope", "", "hello", "world"), receivedReply);
-//  }
-//
+    private ServerBootstrap serverBootstrap;
+    private Channel serverChannel;
+    private InetSocketAddress serverAddress;
+
+    private String identity = "identity";
+    private EventLoopGroup bossGroup, workerGroup;
+
+    private BlockingQueue<ZMTPIncomingMessage> incomingMessages =
+            new LinkedBlockingQueue<ZMTPIncomingMessage>();
+
+    private BlockingQueue<Channel> channelsConnected =
+            new LinkedBlockingQueue<Channel>();
+
+    @Before
+    public void setup() throws InterruptedException {
+        bossGroup = new NioEventLoopGroup();
+        workerGroup = new NioEventLoopGroup();
+        serverBootstrap = new ServerBootstrap();
+
+        serverBootstrap
+                .group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed,
+                                1024, identity.getBytes(), ZMTPSocketType.REQ), false));
+                        ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+                                super.channelActive(ctx);
+                                channelsConnected.add(ctx.channel());
+                            }
+
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                incomingMessages.put((ZMTPIncomingMessage)msg);
+                            }
+                        });
+                    }
+                });
+
+        serverChannel = serverBootstrap.bind(0).sync().channel();
+        serverAddress = (InetSocketAddress) serverChannel.localAddress();
+    }
+
+    @After
+    public void teardown() {
+        if (serverChannel != null) {
+            serverChannel.close();
+            serverChannel.closeFuture().awaitUninterruptibly();
+        }
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+    }
+
+    @Test
+    public void testZmqDealer() throws Exception {
+        final ZMQ.Context context = ZMQ.context(1);
+        final ZMQ.Socket socket = context.socket(ZMQ.DEALER);
+        socket.connect("tcp://0.0.0.0:" + serverAddress.getPort());
+        final ZMsg request = ZMsg.newStringMsg("envelope", "", "hello", "world");
+        request.send(socket, false);
+
+        final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
+        final ZMTPMessage receivedMessage = receivedRequest.getMessage();
+        receivedRequest.getSession().getChannel().writeAndFlush(receivedMessage);
+
+        final ZMsg reply = ZMsg.recvMsg(socket);
+        Iterator<ZFrame> reqIter = request.iterator();
+        Iterator<ZFrame> replyIter = reply.iterator();
+        while (reqIter.hasNext()) {
+            assertTrue(replyIter.hasNext());
+            assertArrayEquals(reqIter.next().data(), replyIter.next().data());
+        }
+        assertFalse(replyIter.hasNext());
+
+        assertEquals(1, receivedMessage.getEnvelope().size());
+        assertEquals(2, receivedMessage.getContent().size());
+        assertArrayEquals("envelope".getBytes(), receivedMessage.getEnvelope().get(0).getData());
+        assertArrayEquals("hello".getBytes(), receivedMessage.getContent().get(0).getData());
+        assertArrayEquals("world".getBytes(), receivedMessage.getContent().get(1).getData());
+    }
+
+    @Test
+    public void testZmqRouter() throws Exception {
+        final ZMQ.Context context = ZMQ.context(1);
+        final ZMQ.Socket socket = context.socket(ZMQ.ROUTER);
+        socket.connect("tcp://0.0.0.0:" + serverAddress.getPort());
+
+        final ZMTPMessage request = new ZMTPMessage(
+                asList(ZMTPFrame.create("envelope")),
+                asList(ZMTPFrame.create("hello"), ZMTPFrame.create("world")));
+
+        final Channel channel = channelsConnected.take();
+        channel.writeAndFlush(request);
+
+        final ZMsg receivedReply = ZMsg.recvMsg(socket);
+
+        assertEquals(ZMsg.newStringMsg(identity, "envelope", "", "hello", "world"), receivedReply);
+    }
+
 
 }
