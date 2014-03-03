@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Ignore;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -49,7 +48,7 @@ import static org.junit.Assert.*;
  * possible message fragmentations takes some time, so running this test can typically take a few
  * minutes.
  */
-@RunWith(Theories.class) @Ignore
+@RunWith(Theories.class)
 public class ZMTPMessageParserTest {
 
     public static final int CPUS = Runtime.getRuntime().availableProcessors();
