@@ -16,96 +16,40 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
+import com.google.common.base.Charsets;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.channel.embedded.EmbeddedChannel;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class ProtocolViolationTests {
 
-  private ServerBootstrap serverBootstrap;
-  private Channel serverChannel;
-  private InetSocketAddress serverAddress;
-
+  private EmbeddedChannel serverChannel;
   private String identity = "identity";
-
-  interface MockHandler {
-
-    public void channelConnected(final ChannelHandlerContext ctx, final ChannelStateEvent e);
-
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e);
-  }
-
-  final MockHandler mockHandler = mock(MockHandler.class);
+  private ChannelInboundHandler mockHandler = mock(ChannelInboundHandler.class);
 
   @Before
   public void setup() {
-    serverBootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
-        Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
-
-    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
-          Runtime.getRuntime().availableProcessors(),
-          1024 * 1024,
-          128 * 1024 * 1024
-      );
-
-      public ChannelPipeline getPipeline() throws Exception {
-
-        return Channels.pipeline(
-            new ExecutionHandler(executor),
-            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes())),
-            new SimpleChannelUpstreamHandler() {
-
-              @Override
-              public void channelConnected(final ChannelHandlerContext ctx,
-                                           final ChannelStateEvent e) throws Exception {
-                mockHandler.channelConnected(ctx, e);
-              }
-
-              @Override
-              public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
-                  throws Exception {
-                mockHandler.messageReceived(ctx, e);
-              }
-            });
-      }
-    });
-
-    serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0));
-    serverAddress = (InetSocketAddress) serverChannel.getLocalAddress();
+    ZMTPSession session = new ZMTPSession(Addressed, identity.getBytes());
+    serverChannel = new EmbeddedChannel(
+        new ZMTPFramingDecoder(session),
+        new ZMTPFramingEncoder(session),
+        mockHandler);
   }
 
   @After
   public void teardown() {
     if (serverChannel != null) {
       serverChannel.close();
-      serverChannel.getCloseFuture().awaitUninterruptibly();
-    }
-    if (serverBootstrap != null) {
-      serverBootstrap.releaseExternalResources();
     }
   }
 
@@ -117,30 +61,16 @@ public class ProtocolViolationTests {
   }
 
   private void testConnect(final int payloadSize) throws InterruptedException {
-    final ClientBootstrap clientBootstrap =
-        new ClientBootstrap(new NioClientSocketChannelFactory());
-    clientBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(new SimpleChannelUpstreamHandler());
-      }
-    });
-    final ChannelFuture future = clientBootstrap.connect(serverAddress);
-    future.awaitUninterruptibly();
-
-    final Channel channel = future.getChannel();
-
     final StringBuilder payload = new StringBuilder();
     for (int i = 0; i < payloadSize; i++) {
       payload.append('0');
     }
-    channel.write(ChannelBuffers.copiedBuffer(payload.toString().getBytes()));
 
-    Thread.sleep(100);
+    serverChannel.writeInbound(Unpooled.copiedBuffer(payload, Charsets.UTF_8));
 
-    verify(mockHandler, never())
-        .channelConnected(any(ChannelHandlerContext.class), any(ChannelStateEvent.class));
-    verify(mockHandler, never())
-        .messageReceived(any(ChannelHandlerContext.class), any(MessageEvent.class));
+	  // TODO- verify it's ok to remove this
+//    verify(mockHandler, never())
+//        .channelActive(any(ChannelHandlerContext.class));
+    Assert.assertNull(serverChannel.readInbound());
   }
 }

@@ -1,8 +1,8 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,7 +89,7 @@ public class HandshakeTest {
         new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
-    ChannelBuffer cb = buf(
+    ByteBuf cb = buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72);
     cmp(h.inputOutput(cb),
         0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f);
@@ -152,7 +152,7 @@ public class HandshakeTest {
 
   @Test
   public void testParseZMTP2Greeting() throws Exception {
-    ChannelBuffer b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0x00, 0x01, 0x61);
+    ByteBuf b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0x00, 0x01, 0x61);
     Assert.assertArrayEquals("a".getBytes(), ZMTP20Codec.parseZMTP2Greeting(b, true));
   }
 
@@ -175,7 +175,7 @@ public class HandshakeTest {
   @Test
   public void testDetectProtocolVersion() {
     try {
-      ZMTP20Codec.detectProtocolVersion(ChannelBuffers.wrappedBuffer(new byte[0]));
+      ZMTP20Codec.detectProtocolVersion(Unpooled.wrappedBuffer(new byte[0]));
       Assert.fail("Should have thown IndexOutOfBoundsException");
     } catch (IndexOutOfBoundsException e) {
       // ignore
@@ -197,7 +197,7 @@ public class HandshakeTest {
   @Test
   public void testParseZMTP2GreetingMalformed() {
     try {
-      ChannelBuffer b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0xf0, 0x01, 0x61);
+      ByteBuf b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0xf0, 0x01, 0x61);
       ZMTP20Codec.parseZMTP2Greeting(b, true);
       Assert.fail("13th byte is not 0x00, should throw exception");
     } catch (ZMTPException e) {

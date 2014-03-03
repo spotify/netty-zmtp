@@ -5,5 +5,5 @@ package com.spotify.netty.handler.codec.zmtp;
  * the completion of a ZMTP handshake
  */
 interface HandshakeListener {
-  void handshakeDone(int protocolVersion, byte[] remoteIdentity);
+    void handshakeDone(int protocolVersion, byte[] remoteIdentity);
 }

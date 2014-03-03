@@ -16,43 +16,40 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+
+import java.util.List;
 
 /**
  * Netty FrameDecoder for zmtp protocol
- *
+ * <p/>
  * Decodes ZMTP frames into a ZMTPMessage - will return a ZMTPMessage as a message event
  */
-class ZMTPFramingDecoder extends FrameDecoder {
+class ZMTPFramingDecoder extends ByteToMessageDecoder {
 
-  private final ZMTPMessageParser parser;
-  private final ZMTPSession session;
+    private final ZMTPMessageParser parser;
+    private final ZMTPSession session;
 
-  /**
-   * Creates a new decoder
-   */
-  public ZMTPFramingDecoder(final ZMTPSession session) {
-    this.parser = new ZMTPMessageParser(session.isEnveloped(), session.getSizeLimit(),
-                                        session.getActualVersion());
-    this.session = session;
-  }
-
-  /**
-   * Responsible for decoding incoming data to zmtp frames
-   */
-  @Override
-  protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
-      throws Exception {
-
-    // Parse incoming frames
-    final ZMTPParsedMessage msg = parser.parse(buffer);
-    if (msg == null) {
-      return null;
+    /**
+     * Creates a new decoder
+     */
+    public ZMTPFramingDecoder(final ZMTPSession session) {
+        this.parser = new ZMTPMessageParser(session.isEnveloped(), session.getSizeLimit(),
+                session.getActualVersion());
+        this.session = session;
     }
 
-    return new ZMTPIncomingMessage(session, msg.getMessage(), msg.isTruncated(), msg.getByteSize());
-  }
+    /**
+     * Responsible for decoding incoming data to zmtp frames
+     */
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        // Parse incoming frames
+        final ZMTPParsedMessage msg = parser.parse(in);
+        if (msg != null) {
+            out.add(new ZMTPIncomingMessage(session, msg.getMessage(), msg.isTruncated(), msg.getByteSize()));
+        }
+    }
 }
