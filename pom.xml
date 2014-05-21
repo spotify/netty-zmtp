@@ -5,7 +5,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>netty-zmtp</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>netty-zmtp</name>
