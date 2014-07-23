@@ -164,9 +164,25 @@ public class ZMTPFrame {
    * @param length length of buffer
    * @return A {@link ZMTPFrame} containg the data read from the buffer.
    */
-  static public ZMTPFrame read(final ChannelBuffer buffer, final int length) {
+  static public ZMTPFrame read(final ChannelBuffer buffer, final long length) {
     if (length > 0) {
-      final ChannelBuffer data = buffer.readSlice(length);
+      final ChannelBuffer data;
+      if (length < Integer.MAX_VALUE) {
+           data = buffer.readSlice((int)length);
+      }
+      else {
+          data = buffer.readSlice(Integer.MAX_VALUE);
+          long diff = length - Integer.MAX_VALUE;
+          while (diff > 0) {
+              if (diff < Integer.MAX_VALUE) {
+                  buffer.readBytes(data, (int)diff);
+              }
+              else {
+                  buffer.readBytes(data, Integer.MAX_VALUE);
+              }
+              diff = diff - Integer.MAX_VALUE;
+          }
+      }
       return new ZMTPFrame(data);
     } else {
       return EMPTY_FRAME;
