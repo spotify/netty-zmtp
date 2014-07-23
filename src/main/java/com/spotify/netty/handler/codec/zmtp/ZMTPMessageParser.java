@@ -43,10 +43,10 @@ public class ZMTPMessageParser {
   private List<ZMTPFrame> part;
   private boolean hasMore;
   private long size;
-  private int frameSize;
+  private long frameSize;
 
   // Used by discarding mode
-  private int frameRemaining;
+  private long frameRemaining;
   private boolean headerParsed;
 
   public ZMTPMessageParser(final boolean enveloped, final long sizeLimit, int version) {
@@ -169,9 +169,13 @@ public class ZMTPMessageParser {
       }
 
       // Discard bytes
-      final int discardBytes = min(frameRemaining, buffer.readableBytes());
+      long discardBytes = min(frameRemaining, (long)buffer.readableBytes());
       frameRemaining -= discardBytes;
-      buffer.skipBytes(discardBytes);
+      while (discardBytes > Integer.MAX_VALUE) {
+          buffer.skipBytes(Integer.MAX_VALUE);
+          discardBytes -= Integer.MAX_VALUE;
+      }
+      buffer.skipBytes((int)discardBytes);
 
       // Check if this frame is completely discarded
       final boolean done = frameRemaining == 0;
@@ -199,7 +203,7 @@ public class ZMTPMessageParser {
   private boolean parseZMTP1Header(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
     final long len = ZMTPUtils.decodeLength(buffer);
 
-    if (len > Integer.MAX_VALUE) {
+    if (len > Long.MAX_VALUE) {
       throw new ZMTPMessageParsingException("Received too large frame: " + len);
     }
 
@@ -217,7 +221,7 @@ public class ZMTPMessageParser {
       return false;
     }
 
-    frameSize = (int) len - 1;
+    frameSize = len - 1;
     hasMore = (buffer.readByte() & MORE_FLAG) == MORE_FLAG;
 
     return true;
@@ -242,10 +246,10 @@ public class ZMTPMessageParser {
     } else {
       len = swapLong(buffer.readLong());
     }
-    if (len > Integer.MAX_VALUE) {
+    if (len > Long.MAX_VALUE) {
       throw new ZMTPMessageParsingException("Received too large frame: " + len);
     }
-    frameSize = (int)len;
+    frameSize = len;
     return true;
   }
 }
