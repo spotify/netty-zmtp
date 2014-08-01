@@ -43,6 +43,9 @@ public class ZMTPUtils {
   static public long decodeLength(final ChannelBuffer in) {
     long size = in.readByte() & 0xFF;
     if (size == 0xFF) {
+      if (in.readableBytes() < 8) {
+        return -1;
+      }
       if (in.order() == BIG_ENDIAN) {
         size = in.readLong();
       } else {
