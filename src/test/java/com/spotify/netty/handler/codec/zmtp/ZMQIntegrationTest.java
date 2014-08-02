@@ -28,9 +28,9 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -126,7 +126,7 @@ public class ZMQIntegrationTest {
     Iterator<ZFrame> replyIter = reply.iterator();
     while (reqIter.hasNext()) {
       assertTrue(replyIter.hasNext());
-      assertArrayEquals(reqIter.next().data(), replyIter.next().data());
+      assertArrayEquals(reqIter.next().getData(), replyIter.next().getData());
     }
     assertFalse(replyIter.hasNext());
 

@@ -25,7 +25,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;

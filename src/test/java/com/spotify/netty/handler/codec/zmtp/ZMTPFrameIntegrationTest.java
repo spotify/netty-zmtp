@@ -18,9 +18,9 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.channel.ChannelFuture;
 import org.junit.Test;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 import java.util.UUID;
 
