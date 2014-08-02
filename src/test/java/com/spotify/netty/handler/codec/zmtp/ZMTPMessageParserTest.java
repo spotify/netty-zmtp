@@ -25,6 +25,7 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -66,6 +67,16 @@ public class ZMTPMessageParserTest {
   public static final int CPUS = Runtime.getRuntime().availableProcessors();
   public static final ExecutorService EXECUTOR = MoreExecutors.getExitingExecutorService(
       (ThreadPoolExecutor) Executors.newFixedThreadPool(CPUS), 0, SECONDS);
+
+  @Test
+  public void testZMTP1LongFrameSize() throws ZMTPMessageParsingException {
+    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    buffer.writeByte(0xFF);
+    ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
+    ZMTPParsedMessage msg = parser.parse(buffer);
+    assertNull("Message shouldn't be parsed for missing frame size",
+               msg);
+  }
 
   @DataPoints
   public static Parameters[] PARAMETERS = {

@@ -27,4 +27,23 @@ public class CodecTest {
     }
   }
 
+  @Test
+  public void testLongZMTP1FrameLengthMissingLong() {
+    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    buffer.writeByte(0xFF);
+    long size = ZMTPUtils.decodeLength(buffer);
+    Assert.assertEquals("Length shouldn't have been determined",
+                        -1, size);
+  }
+
+  @Test
+  public void testLongZMTP1FrameLengthWithLong() {
+    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    buffer.writeByte(0xFF);
+    buffer.writeLong(4);
+    long size = ZMTPUtils.decodeLength(buffer);
+    Assert.assertEquals("Frame length should be after the first byte",
+                        4, size);
+  }
+
 }
