@@ -23,6 +23,12 @@ class TestUtil {
     return cb;
   }
 
+  public static ChannelBuffer buf(byte[] data) {
+    ChannelBuffer cb = ChannelBuffers.dynamicBuffer(data.length);
+    cb.writeBytes(data);
+    return cb;
+  }
+
   public static void cmp(ChannelBuffer buf, int... bytes) {
     cmp(buf, buf(bytes));
   }
