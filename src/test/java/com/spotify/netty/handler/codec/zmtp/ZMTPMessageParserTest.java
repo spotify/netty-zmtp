@@ -78,6 +78,15 @@ public class ZMTPMessageParserTest {
                msg);
   }
 
+  @Test
+  public void testZMTP1BufferLengthEmpty() throws ZMTPMessageParsingException {
+    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
+    ZMTPParsedMessage msg = parser.parse(buffer);
+    assertNull("Empty ChannelBuffer should result in an empty ZMTPParsedMessage",
+               msg);
+  }
+
   @DataPoints
   public static Parameters[] PARAMETERS = {
       test(input("1"), enveloped()),

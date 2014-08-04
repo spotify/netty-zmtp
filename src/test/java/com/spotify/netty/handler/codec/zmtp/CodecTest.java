@@ -46,4 +46,12 @@ public class CodecTest {
                         4, size);
   }
 
+  @Test
+  public void testZMTP1LenghtEmptyBuffer() {
+    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    long size = ZMTPUtils.decodeLength(buffer);
+    Assert.assertEquals("Empty buffer should return -1 frame length",
+                        -1, size);
+  }
+
 }
