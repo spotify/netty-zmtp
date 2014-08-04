@@ -41,8 +41,14 @@ public class ZMTPUtils {
    * @throws IndexOutOfBoundsException if there is not enough octets to be read.
    */
   static public long decodeLength(final ChannelBuffer in) {
+    if (in.readableBytes() < 1) {
+      return -1;
+    }
     long size = in.readByte() & 0xFF;
     if (size == 0xFF) {
+      if (in.readableBytes() < 8) {
+        return -1;
+      }
       if (in.order() == BIG_ENDIAN) {
         size = in.readLong();
       } else {
