@@ -51,7 +51,6 @@ import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.nCopies;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -71,8 +70,6 @@ public class ZMTPMessageParserTest {
   public static final int CPUS = Runtime.getRuntime().availableProcessors();
   public static final ExecutorService EXECUTOR = MoreExecutors.getExitingExecutorService(
       (ThreadPoolExecutor) Executors.newFixedThreadPool(CPUS), 0, SECONDS);
-
-  private static final List<String> EMPTY = emptyList();
 
   @Test
   public void testZMTP1LongFrameSize() throws ZMTPMessageParsingException {
@@ -202,14 +199,8 @@ public class ZMTPMessageParserTest {
         // Verify that the parser can be reused to parse a well-behaved message
         trivialSerialized.setIndex(0, trivialLength);
         final ZMTPParsedMessage parsedTrivial = parser.parse(trivialSerialized);
-//        assertFalse(parsedTrivial.isTruncated());
-//        assertEquals(trivialMessage, parsedTrivial.getMessage());
-        if (!trivialMessage.equals(parsedTrivial.getMessage())) {
-          trivialSerialized.setIndex(0, trivialLength);
-          final ZMTPParsedMessage parsedTrivial2 = parser.parse(trivialSerialized);
-          assertFalse(parsedTrivial2.isTruncated());
-          assertEquals(trivialMessage, parsedTrivial2.getMessage());
-        }
+        assertFalse(parsedTrivial.isTruncated());
+        assertEquals(trivialMessage, parsedTrivial.getMessage());
       }
     });
 
