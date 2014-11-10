@@ -107,27 +107,38 @@ public class ZMTPMessage {
    * Create a new message from a list of frames.
    */
   public static ZMTPMessage from(final boolean enveloped, final List<ZMTPFrame> frames) {
-    final List<ZMTPFrame> envelope;
-    final List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
+    final List<ZMTPFrame> head;
+    final List<ZMTPFrame> tail = new ArrayList<ZMTPFrame>();
+    boolean delimited = false;
     int i = 0;
     if (enveloped) {
-      envelope = new ArrayList<ZMTPFrame>();
+      head = new ArrayList<ZMTPFrame>();
       for (; i < frames.size(); i++) {
         final ZMTPFrame frame = frames.get(i);
         if (frame == EMPTY_FRAME) {
+          delimited = true;
           i++;
           break;
         }
-        envelope.add(frame);
+        head.add(frame);
       }
     } else {
-      envelope = Collections.emptyList();
+      head = Collections.emptyList();
     }
 
     for (; i < frames.size(); i++) {
-      content.add(frames.get(i));
+      tail.add(frames.get(i));
     }
 
+    final List<ZMTPFrame> envelope;
+    final List<ZMTPFrame> content;
+    if (enveloped && !delimited) {
+      envelope = Collections.emptyList();
+      content = head;
+    } else {
+      envelope = head;
+      content = tail;
+    }
     return new ZMTPMessage(envelope, content);
   }
 
