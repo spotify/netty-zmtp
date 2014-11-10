@@ -19,6 +19,7 @@ package com.spotify.netty.handler.codec.zmtp;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
@@ -38,10 +39,11 @@ public class ZMTPMessageParser {
   private final long sizeLimit;
   private final int version;
 
-  private List<ZMTPFrame> envelope;
-  private List<ZMTPFrame> content;
+  private List<ZMTPFrame> head;
+  private List<ZMTPFrame> tail;
   private List<ZMTPFrame> part;
   private boolean hasMore;
+  private boolean delimited;
   private long size;
   private int frameSize;
 
@@ -103,9 +105,10 @@ public class ZMTPMessageParser {
       // Read frame content
       final ZMTPFrame frame = ZMTPFrame.read(buffer, frameSize);
 
-      if (!frame.hasData() && part == envelope) {
+      if (!frame.hasData() && part == head) {
         // Skip the delimiter
-        part = content;
+        delimited = true;
+        part = tail;
       } else {
         part.add(frame);
       }
@@ -129,6 +132,21 @@ public class ZMTPMessageParser {
    * Create a message from the parsed frames and reset the parser.
    */
   private ZMTPParsedMessage finish(final boolean truncated) {
+    final List<ZMTPFrame> envelope;
+    final List<ZMTPFrame> content;
+
+    // If we're expecting enveloped messages but didn't get a delimiter, then we treat that as a
+    // message without an envelope and assign the received frames to the content part of the
+    // message instead of the envelope. This is to allow the parser to deal with situations where
+    // we're not really sure if we're going to get enveloped messages or not.
+    if (enveloped && !delimited && !truncated) {
+      envelope = Collections.emptyList();
+      content = head;
+    } else {
+      envelope = head;
+      content = tail;
+    }
+
     final ZMTPMessage message = new ZMTPMessage(envelope, content);
     final ZMTPParsedMessage parsedMessage = new ZMTPParsedMessage(truncated, size, message);
     reset();
@@ -139,10 +157,17 @@ public class ZMTPMessageParser {
    * Reset parser in preparation for the next message.
    */
   private void reset() {
-    envelope = new ArrayList<ZMTPFrame>(3);
-    content = new ArrayList<ZMTPFrame>(3);
-    part = enveloped ? envelope : content;
+    if (enveloped) {
+      head = new ArrayList<ZMTPFrame>(3);
+      tail = new ArrayList<ZMTPFrame>(3);
+      part = head;
+    } else {
+      head = Collections.emptyList();
+      tail = new ArrayList<ZMTPFrame>(3);
+      part = tail;
+    }
     hasMore = true;
+    delimited = false;
     size = 0;
   }
 
