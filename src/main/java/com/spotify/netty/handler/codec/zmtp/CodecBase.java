@@ -49,15 +49,17 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
                           VoidEnum _) throws ZMTPException {
     buffer.markReaderIndex();
     ChannelBuffer toSend = inputOutput(buffer);
-    while (toSend != null) {
+    if (toSend != null) {
       ctx.getChannel().write(toSend);
-      toSend = inputOutput(buffer);
+      return null;
     }
+
     // This follows the pattern for dynamic pipelines documented in
     // http://netty.io/3.6/api/org/jboss/netty/handler/codec/replay/ReplayingDecoder.html
     if (actualReadableBytes() > 0) {
       return buffer.readBytes(actualReadableBytes());
     }
+
     return null;
   }
 
