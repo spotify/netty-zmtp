@@ -21,6 +21,9 @@ public class ZMTP20Codec extends CodecBase {
    */
   public ZMTP20Codec(ZMTPSession session, boolean interop) {
     super(session);
+    if (session.getSocketType() == null) {
+      throw new IllegalArgumentException("ZMTP/2.0 requires a socket type");
+    }
     this.interop = interop;
   }
 
@@ -103,7 +106,9 @@ public class ZMTP20Codec extends CodecBase {
     }
     out.writeByte(0x01);
     // socket-type
-    out.writeByte(session.getSocketType().ordinal());
+    ZMTPSocketType socketType = session.getSocketType();
+    assert socketType != null;
+    out.writeByte(socketType.ordinal());
     // identity
     // the final-short flag octet
     out.writeByte(0x00);
