@@ -64,13 +64,11 @@ public class ZMTP20Codec extends CodecBase {
   }
 
   /**
-   * Read enough bytes from buffer to deduce the remote protocol version. If the protocol
-   * version is determined to be ZMTP/1.0, reset the buffer to the beginning of buffer. If
-   * version is determined to be a later version, the buffer is not reset.
+   * Read enough bytes from buffer to deduce the remote protocol version.
    *
    * @param buffer the buffer of data to determine version from
    * @return false if not enough data is available, else true
-   * @throws IndexOutOfBoundsException if there are not enough data available in buffer
+   * @throws IndexOutOfBoundsException if there is not enough data available in buffer
    */
   static int detectProtocolVersion(final ChannelBuffer buffer) {
     if (buffer.readByte() != (byte)0xff) {
