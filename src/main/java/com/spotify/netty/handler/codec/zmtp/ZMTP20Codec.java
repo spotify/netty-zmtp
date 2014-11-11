@@ -14,7 +14,7 @@ public class ZMTP20Codec extends CodecBase {
   private boolean splitHandshake;
 
   /**
-   * Construct a ZMTP20Codec with the speicfied session and optional interoperability behavior.
+   * Construct a ZMTP20Codec with the specified session and optional interoperability behavior.
    * @param session the session that configures this codec
    * @param interop whether this socket should implement the ZMTP/1.0 interoperability handshake
    */
@@ -132,7 +132,7 @@ public class ZMTP20Codec extends CodecBase {
     buffer.skipBytes(2);
     int val = buffer.readByte();
     if (val != 0x00) {
-      String s = String.format("Malfromed greeting. Byte 13 expected to be 0x00, was: 0x%02x", val);
+      String s = String.format("Malformed greeting. Byte 13 expected to be 0x00, was: 0x%02x", val);
       throw new ZMTPException(s);
     }
     int len = buffer.readByte();
