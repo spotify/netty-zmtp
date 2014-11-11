@@ -42,15 +42,14 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
 
   abstract ChannelBuffer onConnect();
 
-  abstract ChannelBuffer inputOutput(final ChannelBuffer buffer) throws ZMTPException;
+  abstract boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException;
 
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer,
                           VoidEnum _) throws ZMTPException {
     buffer.markReaderIndex();
-    ChannelBuffer toSend = inputOutput(buffer);
-    if (toSend != null) {
-      ctx.getChannel().write(toSend);
+    boolean done = inputOutput(buffer, channel);
+    if (!done) {
       return null;
     }
 
