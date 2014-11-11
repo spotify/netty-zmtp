@@ -20,6 +20,7 @@ import org.jboss.netty.channel.Channel;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -171,5 +172,19 @@ public class ZMTPSession {
 
   public ZMTPSocketType getSocketType() {
     return socketType;
+  }
+
+  @Override
+  public String toString() {
+    return "ZMTPSession{" +
+           "useLocalIdentity=" + useLocalIdentity +
+           ", localIdent=" + Arrays.toString(localIdent) +
+           ", sizeLimit=" + sizeLimit +
+           ", socketType=" + socketType +
+           ", type=" + type +
+           ", channel=" + channel +
+           ", remoteIdent=" + Arrays.toString(remoteIdent) +
+           ", actualVersion=" + actualVersion +
+           '}';
   }
 }
