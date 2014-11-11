@@ -40,9 +40,10 @@ import static com.spotify.netty.handler.codec.zmtp.ZMTPSession.DEFAULT_SIZE_LIMI
 import static com.spotify.netty.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
 
 public class EndToEndTest {
 
@@ -77,27 +78,35 @@ public class EndToEndTest {
     SocketAddress address = serverChannel.getLocalAddress();
     Channel clientChannel = connect(address, clientCodec, client);
     Channel clientConnectedChannel = client.connected.poll(5, SECONDS);
-    assertNotNull(clientConnectedChannel);
+    assertThat(clientConnectedChannel, is(notNullValue()));
     Channel serverConnectedChannel = server.connected.poll(5, SECONDS);
-    assertNotNull(serverConnectedChannel);
+    assertThat(serverConnectedChannel, is(notNullValue()));
+
+    // Make sure there's no left over messages/connections on the wires
+    Thread.sleep(1000);
+    assertThat("unexpected server message", server.messages.poll(), is(nullValue()));
+    assertThat("unexpected client message", client.messages.poll(), is(nullValue()));
+    assertThat("unexpected server connection", server.connected.poll(), is(nullValue()));
+    assertThat("unexpected client connection", client.connected.poll(), is(nullValue()));
 
     // Send and receive request
     clientChannel.write(helloWorldMessage());
     ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
-    assertNotNull(receivedRequest);
-    assertEquals(helloWorldMessage(), receivedRequest.getMessage());
+    assertThat(receivedRequest, is(notNullValue()));
+    assertThat(receivedRequest.getMessage(), is(helloWorldMessage()));
 
     // Send and receive reply
     serverConnectedChannel.write(fooBarMessage());
     ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
-    assertNotNull(receivedReply);
-    assertEquals(fooBarMessage(), receivedReply.getMessage());
+    assertThat(receivedReply, is(notNullValue()));
+    assertThat(receivedReply.getMessage(), is(fooBarMessage()));
 
     // Make sure there's no left over messages/connections on the wires
-    assertNull(server.messages.poll(1, SECONDS));
-    assertNull(client.messages.poll(1, SECONDS));
-    assertNull(server.connected.poll(1, SECONDS));
-    assertNull(client.connected.poll(1, SECONDS));
+    Thread.sleep(1000);
+    assertThat("unexpected server message", server.messages.poll(), is(nullValue()));
+    assertThat("unexpected client message", client.messages.poll(), is(nullValue()));
+    assertThat("unexpected server connection", server.connected.poll(), is(nullValue()));
+    assertThat("unexpected client connection", client.connected.poll(), is(nullValue()));
   }
 
   @Test
