@@ -46,11 +46,10 @@ class ZMTPFramingEncoder extends OneToOneEncoder {
 
     final ZMTPMessage message = (ZMTPMessage) o;
 
-    final int size = ZMTPUtils.messageSize(
-        message, session.isEnveloped(), session.getActualVersion());
+    final int size = ZMTPUtils.messageSize(message, session.getActualVersion());
     final ChannelBuffer buffer = ChannelBuffers.buffer(size);
 
-    ZMTPUtils.writeMessage(message, buffer, session.isEnveloped(), session.getActualVersion());
+    ZMTPUtils.writeMessage(message, buffer, session.getActualVersion());
 
     return buffer;
   }

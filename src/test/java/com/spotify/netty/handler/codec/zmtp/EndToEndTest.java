@@ -93,13 +93,13 @@ public class EndToEndTest {
     clientChannel.write(helloWorldMessage());
     ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
     assertThat(receivedRequest, is(notNullValue()));
-    assertThat(receivedRequest.getMessage(), is(helloWorldMessage()));
+    assertThat(receivedRequest.message(), is(helloWorldMessage()));
 
     // Send and receive reply
     serverConnectedChannel.write(fooBarMessage());
     ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
     assertThat(receivedReply, is(notNullValue()));
-    assertThat(receivedReply.getMessage(), is(fooBarMessage()));
+    assertThat(receivedReply.message(), is(fooBarMessage()));
 
     // Make sure there's no left over messages/connections on the wires
     Thread.sleep(1000);
@@ -146,11 +146,11 @@ public class EndToEndTest {
   }
 
   private ZMTPMessage helloWorldMessage() {
-    return ZMTPMessage.fromStringsUTF8(true, "", "hello", "world");
+    return ZMTPMessage.fromStringsUTF8("", "hello", "world");
   }
 
   private ZMTPMessage fooBarMessage() {
-    return ZMTPMessage.fromStringsUTF8(true, "", "foo", "bar");
+    return ZMTPMessage.fromStringsUTF8("", "foo", "bar");
   }
 
   private static class Handler extends SimpleChannelUpstreamHandler {

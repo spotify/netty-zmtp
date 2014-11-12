@@ -32,7 +32,6 @@ public class ZMTPUtils {
 
   public static final byte MORE_FLAG = 0x1;
   public static final byte FINAL_FLAG = 0x0;
-  public static final ZMTPFrame DELIMITER = ZMTPFrame.create();
 
   /**
    * Helper to decode a ZMTP/1.0 length field
@@ -128,7 +127,7 @@ public class ZMTPUtils {
       encodeZMTP2FrameHeader(frame.size(), more ? MORE_FLAG : FINAL_FLAG, buffer);
     }
     if (frame.hasData()) {
-      final ChannelBuffer source = frame.getDataBuffer();
+      final ChannelBuffer source = frame.data();
       buffer.ensureWritableBytes(source.readableBytes());
       source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
@@ -136,36 +135,16 @@ public class ZMTPUtils {
 
   /**
    * Write a ZMTP message to a buffer.
-   *
-   * @param message   The message to write.
+   *  @param message   The message to write.
    * @param buffer    The target buffer.
-   * @param enveloped Whether the envelope and delimiter should be written.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static void writeMessage(final ZMTPMessage message, final ChannelBuffer buffer,
-                                  final boolean enveloped, int version) {
-
-    // Write envelope
-    if (enveloped) {
-      // Sanity check
-      if (message.getContent().isEmpty()) {
-        throw new IllegalArgumentException("Cannot write enveloped message with no content");
-      }
-
-      final List<ZMTPFrame> envelope = message.getEnvelope();
-      for (int i = 0; i < envelope.size(); i++) {
-        writeFrame(envelope.get(i), buffer, true, version);
-      }
-
-      // Write the delimiter
-      writeFrame(DELIMITER, buffer, true, version);
-    }
-
-    final List<ZMTPFrame> content = message.getContent();
-    final int n = content.size();
+                                  int version) {
+    final int n = message.size();
     final int lastFrame = n - 1;
     for (int i = 0; i < n; i++) {
-      writeFrame(content.get(i), buffer, i < lastFrame, version);
+      writeFrame(message.frame(i), buffer, i < lastFrame, version);
     }
   }
 
@@ -192,24 +171,6 @@ public class ZMTPUtils {
   }
 
   /**
-   * Calculate bytes needed to serialize a ZMTP message.
-   *
-   * @param message   The message.
-   * @param enveloped Whether an envelope will be written.
-   * @return The number of bytes needed.
-   */
-  @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static int messageSize(final ZMTPMessage message, final boolean enveloped,
-                                final int version) {
-    final int contentSize = framesSize(message.getContent(), version);
-    if (!enveloped) {
-      return contentSize;
-    }
-    final int envelopeSize = framesSize(message.getEnvelope(), version) + frameSize(DELIMITER, version);
-    return envelopeSize + contentSize;
-  }
-
-  /**
    * Calculate bytes needed to serialize a list of ZMTP frames.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
@@ -218,6 +179,22 @@ public class ZMTPUtils {
     final int n = frames.size();
     for (int i = 0; i < n; i++) {
       size += frameSize(frames.get(i), version);
+    }
+    return size;
+  }
+
+  /**
+   * Calculate bytes needed to serialize a ZMTP message.
+   *
+   * @param message   The message.
+   * @return The number of bytes needed.
+   */
+  @SuppressWarnings("ForLoopReplaceableByForEach")
+  public static int messageSize(final ZMTPMessage message, final int version) {
+    int size = 0;
+    final int n = message.size();
+    for (int i = 0; i < n; i++) {
+      size += frameSize(message.frame(i), version);
     }
     return size;
   }
@@ -266,7 +243,7 @@ public class ZMTPUtils {
     for (int i = 0; i < frames.size(); i++) {
       final ZMTPFrame frame = frames.get(i);
       builder.append('"');
-      builder.append(toString(frame.getDataBuffer()));
+      builder.append(toString(frame.data()));
       builder.append('"');
       if (i < frames.size() - 1) {
         builder.append(',');

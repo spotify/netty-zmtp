@@ -35,7 +35,7 @@ class ZMTPFramingDecoder extends FrameDecoder {
    * Creates a new decoder
    */
   public ZMTPFramingDecoder(final ZMTPSession session) {
-    this.parser = new ZMTPMessageParser(session.isEnveloped(), session.getSizeLimit(),
+    this.parser = new ZMTPMessageParser(session.getSizeLimit(),
                                         session.getActualVersion());
     this.session = session;
   }

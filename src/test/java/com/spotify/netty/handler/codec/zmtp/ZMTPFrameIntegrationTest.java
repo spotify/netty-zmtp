@@ -16,6 +16,7 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.junit.Test;
 import org.zeromq.ZFrame;
@@ -49,14 +50,13 @@ public class ZMTPFrameIntegrationTest {
       public boolean onMessage(final ZMTPIncomingMessage msg) {
         // Verify that we can parse the identity correctly
         assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.getSession().getRemoteIdentity());
+                          msg.session().getRemoteIdentity());
 
         System.err.println(msg);
 
         // Verify that frames received is correct
-        assertEquals(1, msg.getMessage().getContent().size());
-        assertEquals(0, msg.getMessage().getEnvelope().size());
-        assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(0).getData());
+        assertEquals(2, msg.message().size());
+        assertEquals(ChannelBuffers.wrappedBuffer(f.getData()), msg.message().frame(1).data());
 
         f.destroy();
 
@@ -96,14 +96,14 @@ public class ZMTPFrameIntegrationTest {
 
         // Verify that we can parse the identity correctly
         assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.getSession().getRemoteIdentity());
+                          msg.session().getRemoteIdentity());
 
-        // Verify that frames received is correct
-        assertEquals(m.size(), msg.getMessage().getContent().size());
-        assertEquals(0, msg.getMessage().getEnvelope().size());
+        // Verify that frames received is correct (+1 envelope delimiter)
+        assertEquals(m.size() + 1, msg.message().size());
 
         for (final ZFrame f : m) {
-          assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(framePos).getData());
+          assertEquals(ChannelBuffers.wrappedBuffer(f.getData()),
+                       msg.message().frame(framePos + 1).data());
           framePos++;
         }
 

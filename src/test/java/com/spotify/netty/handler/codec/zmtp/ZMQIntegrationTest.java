@@ -17,6 +17,8 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -28,12 +30,12 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
@@ -42,8 +44,11 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ZMQIntegrationTest {
 
@@ -118,8 +123,8 @@ public class ZMQIntegrationTest {
     request.send(socket, false);
 
     final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
-    final ZMTPMessage receivedMessage = receivedRequest.getMessage();
-    receivedRequest.getSession().getChannel().write(receivedMessage);
+    final ZMTPMessage receivedMessage = receivedRequest.message();
+    receivedRequest.session().getChannel().write(receivedMessage);
 
     final ZMsg reply = ZMsg.recvMsg(socket);
     Iterator<ZFrame> reqIter = request.iterator();
@@ -130,11 +135,15 @@ public class ZMQIntegrationTest {
     }
     assertFalse(replyIter.hasNext());
 
-    assertEquals(1, receivedMessage.getEnvelope().size());
-    assertEquals(2, receivedMessage.getContent().size());
-    assertArrayEquals("envelope".getBytes(), receivedMessage.getEnvelope().get(0).getData());
-    assertArrayEquals("hello".getBytes(), receivedMessage.getContent().get(0).getData());
-    assertArrayEquals("world".getBytes(), receivedMessage.getContent().get(1).getData());
+    assertEquals(4, receivedMessage.size());
+    assertEquals(utf8("envelope"), receivedMessage.frame(0).data());
+    assertEquals(utf8(""), receivedMessage.frame(1).data());
+    assertEquals(utf8("hello"), receivedMessage.frame(2).data());
+    assertEquals(utf8("world"), receivedMessage.frame(3).data());
+  }
+
+  private ChannelBuffer utf8(final String s) {
+    return ChannelBuffers.copiedBuffer(s, UTF_8);
   }
 
   @Test
@@ -143,9 +152,7 @@ public class ZMQIntegrationTest {
     final ZMQ.Socket socket = context.socket(ZMQ.ROUTER);
     socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
 
-    final ZMTPMessage request = new ZMTPMessage(
-        asList(ZMTPFrame.create("envelope")),
-        asList(ZMTPFrame.create("hello"), ZMTPFrame.create("world")));
+    final ZMTPMessage request = ZMTPMessage.fromStringsUTF8("envelope", "", "hello", "world");
 
     final Channel channel = channelsConnected.take();
     channel.write(request);

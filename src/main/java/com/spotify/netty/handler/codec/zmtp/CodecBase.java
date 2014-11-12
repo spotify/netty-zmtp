@@ -46,7 +46,7 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
 
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer,
-                          VoidEnum _) throws ZMTPException {
+                          VoidEnum ignore) throws ZMTPException {
     buffer.markReaderIndex();
     boolean done = inputOutput(buffer, channel);
     if (!done) {

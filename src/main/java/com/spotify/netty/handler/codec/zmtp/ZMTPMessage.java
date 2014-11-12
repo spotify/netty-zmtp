@@ -18,7 +18,6 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import java.nio.charset.Charset;
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,48 +27,48 @@ import static org.jboss.netty.util.CharsetUtil.UTF_8;
 
 public class ZMTPMessage {
 
-  List<ZMTPFrame> envelope = new ArrayList<ZMTPFrame>();
-  List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
+  private final List<ZMTPFrame> frames;
 
   /**
    * Create a new message from envelope and content frames.
    *
-   * @param envelope The envelope frames. Must not be modified again.
-   * @param content  The content frames. Must not be modified again.
+   * @param frames The message frames. Must not be modified again.
    */
-  public ZMTPMessage(final List<ZMTPFrame> envelope, final List<ZMTPFrame> content) {
-    this.envelope = envelope;
-    this.content = content;
+  public ZMTPMessage(final List<ZMTPFrame> frames) {
+    if (frames == null) {
+      throw new IllegalArgumentException("frames");
+    }
+    this.frames = frames;
   }
 
   /**
    * Create a new message from a string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromStringsUTF8(final boolean enveloped, final String... frames) {
-    return fromStrings(enveloped, UTF_8, frames);
+  public static ZMTPMessage fromStringsUTF8(final String... frames) {
+    return fromStrings(UTF_8, frames);
   }
 
   /**
    * Create a new message from a list of string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromStringsUTF8(final boolean enveloped, final List<String> frames) {
-    return fromStrings(enveloped, UTF_8, frames);
+  public static ZMTPMessage fromStringsUTF8(final List<String> frames) {
+    return fromStrings(UTF_8, frames);
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage fromStrings(final boolean enveloped, final Charset charset,
+  public static ZMTPMessage fromStrings(final Charset charset,
                                         final String... frames) {
-    return fromStrings(enveloped, charset, asList(frames));
+    return fromStrings(charset, asList(frames));
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage fromStrings(final boolean enveloped, final Charset charset,
+  public static ZMTPMessage fromStrings(final Charset charset,
                                         final List<String> frames) {
-    return from(enveloped, new AbstractList<ZMTPFrame>() {
+    return from(new AbstractList<ZMTPFrame>() {
       @Override
       public ZMTPFrame get(final int index) {
         return ZMTPFrame.create(frames.get(index), charset);
@@ -85,8 +84,8 @@ public class ZMTPMessage {
   /**
    * Create a new message from a list of byte array frames.
    */
-  public static ZMTPMessage fromByteArrays(final boolean enveloped, final List<byte[]> frames) {
-    return from(enveloped, new AbstractList<ZMTPFrame>() {
+  public static ZMTPMessage fromByteArrays(final List<byte[]> frames) {
+    return from(new AbstractList<ZMTPFrame>() {
       @Override
       public ZMTPFrame get(final int index) {
         byte[] bytes = frames.get(index);
@@ -106,113 +105,53 @@ public class ZMTPMessage {
   /**
    * Create a new message from a list of frames.
    */
-  public static ZMTPMessage from(final boolean enveloped, final List<ZMTPFrame> frames) {
-    final List<ZMTPFrame> head;
-    final List<ZMTPFrame> tail = new ArrayList<ZMTPFrame>();
-    boolean delimited = false;
-    int i = 0;
-    if (enveloped) {
-      head = new ArrayList<ZMTPFrame>();
-      for (; i < frames.size(); i++) {
-        final ZMTPFrame frame = frames.get(i);
-        if (frame == EMPTY_FRAME) {
-          delimited = true;
-          i++;
-          break;
-        }
-        head.add(frame);
-      }
-    } else {
-      head = Collections.emptyList();
-    }
-
-    for (; i < frames.size(); i++) {
-      tail.add(frames.get(i));
-    }
-
-    final List<ZMTPFrame> envelope;
-    final List<ZMTPFrame> content;
-    if (enveloped && !delimited) {
-      envelope = Collections.emptyList();
-      content = head;
-    } else {
-      envelope = head;
-      content = tail;
-    }
-    return new ZMTPMessage(envelope, content);
+  public static ZMTPMessage from(final List<ZMTPFrame> frames) {
+    return new ZMTPMessage(frames);
   }
 
   /**
-   * Create a new message from a list of frames.
-   *
-   * @deprecated Use {@link #from(boolean, List)} instead.
+   * Get a list of message frames.
    */
-  @Deprecated
-  public static ZMTPMessage parse(final List<ZMTPFrame> frames, final boolean enveloped) {
-    return from(enveloped, frames);
-  }
-
-  /**
-   * Return the envelope
-   */
-  public List<ZMTPFrame> getEnvelope() {
-    return envelope;
-  }
-
-  /**
-   * @return Current list of content in the message
-   */
-  public List<ZMTPFrame> getContent() {
-    return content;
+  public List<ZMTPFrame> frames() {
+    return Collections.unmodifiableList(frames);
   }
 
   /**
    * Returns a specific content frame
    *
-   * @param frameId frame to return (0 based)
+   * @param index frame to return (0 based)
    * @return ZMTPFrame identified by frameId
    */
-  public ZMTPFrame getContentFrame(final int frameId) {
-    if (frameId < 0 || frameId >= content.size()) {
-      throw new IllegalArgumentException("Invalid frame id " + frameId);
-    }
-
-    return content.get(frameId);
+  public ZMTPFrame frame(final int index) {
+    return frames.get(index);
   }
 
   /**
-   * Helper to convert the object into a string
+   * Return the number of frames in this message.
    */
-  @Override
-  public String toString() {
-    return "ZMTPMessage{" + ZMTPUtils.toString(envelope) + "," + ZMTPUtils.toString(content) + '}';
+  public int size() {
+    return frames.size();
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) { return true; }
+    if (o == null || getClass() != o.getClass()) { return false; }
 
     final ZMTPMessage that = (ZMTPMessage) o;
 
-    if (content != null ? !content.equals(that.content) : that.content != null) {
-      return false;
-    }
-    if (envelope != null ? !envelope.equals(that.envelope) : that.envelope != null) {
-      return false;
-    }
+    if (!frames.equals(that.frames)) { return false; }
 
     return true;
   }
 
   @Override
   public int hashCode() {
-    int result = content != null ? content.hashCode() : 0;
-    result = 31 * result + (envelope != null ? envelope.hashCode() : 0);
-    return result;
+    return frames.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return "ZMTPMessage{" + ZMTPUtils.toString(frames) + '}';
   }
 }
