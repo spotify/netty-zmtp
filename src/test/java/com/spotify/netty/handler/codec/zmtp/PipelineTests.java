@@ -55,7 +55,7 @@ public class PipelineTests {
   @Test
   public void testZMTPPipeline() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(s, true));
 
     PipelineTester pt = new PipelineTester(p);
@@ -75,7 +75,7 @@ public class PipelineTests {
   @Test
   public void testZMTPPipelineFragmented() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(s, true));
 
     PipelineTester pt = new PipelineTester(p);
@@ -95,7 +95,7 @@ public class PipelineTests {
   @Test
   public void testZMTP1PipelineLongMessage() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -123,7 +123,7 @@ public class PipelineTests {
   // tests the case when the message to be parsed is fragmented inside the long long size field
   public void testZMTP1PipelineLongMessageFragmentedLong() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -158,7 +158,7 @@ public class PipelineTests {
   // tests the case when the message to be parsed is fragmented between 0xff flag and 8 octet length
   public void testZMTP1PipelineLongMessageFragmentedSize() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -194,7 +194,7 @@ public class PipelineTests {
   // tests fragmentation in the size field of the second message
   public void testZMTP1PipelineMultiMessage() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);

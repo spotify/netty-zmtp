@@ -38,31 +38,31 @@ public class HandshakeTest {
 
   @Test
   public void testIsDone() {
-    ZMTP10Codec h = new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, FOO));
+    ZMTP10Codec h = new ZMTP10Codec(new ZMTPSession(FOO));
     h.setListener(handshakeListener);
     verifyNoMoreInteractions(handshakeListener);
   }
 
   @Test
   public void testOnConnect() {
-    CodecBase h = new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, FOO));
+    CodecBase h = new ZMTP10Codec(new ZMTPSession(FOO));
     cmp(h.onConnect(), 0x04, 0x00, 0x66, 0x6f, 0x6f);
 
-    h = new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, new byte[0]));
+    h = new ZMTP10Codec(new ZMTPSession(new byte[0]));
     cmp(h.onConnect(), 0x01, 0x00);
 
-    h = new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.SUB),
+    h = new ZMTP20Codec(new ZMTPSession(0, FOO, ZMTPSocketType.SUB),
                         true);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f);
 
-    h = new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.REQ),
+    h = new ZMTP20Codec(new ZMTPSession(0, FOO, ZMTPSocketType.REQ),
                         false);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x03, 0x00, 3, 0x66, 0x6f, 0x6f);
   }
 
   @Test
   public void test1to1Handshake() throws Exception {
-    ZMTP10Codec h = new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, FOO));
+    ZMTP10Codec h = new ZMTP10Codec(new ZMTPSession(FOO));
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0x04, 0x00, 0x66, 0x6f, 0x6f);
     boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), channel);
@@ -74,7 +74,7 @@ public class HandshakeTest {
   @Test
   public void test2InteropTo1Handshake() throws Exception {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
+        new ZMTPSession(0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), channel);
@@ -86,7 +86,7 @@ public class HandshakeTest {
   @Test
   public void test2InteropTo2InteropHandshake() throws Exception {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
+        new ZMTPSession(0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     boolean done1 = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), channel);
@@ -101,7 +101,7 @@ public class HandshakeTest {
   @Test
   public void test2InteropTo2Handshake() throws Exception {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
+        new ZMTPSession(0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ChannelBuffer cb = buf(
@@ -118,7 +118,7 @@ public class HandshakeTest {
   @Test
   public void test2To2InteropHandshake() throws Exception {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 1024, FOO, ZMTPSocketType.PUB), false);
+        new ZMTPSession(1024, FOO, ZMTPSocketType.PUB), false);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
 
@@ -137,7 +137,7 @@ public class HandshakeTest {
   @Test
   public void test2To2Handshake() throws Exception {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 1024, FOO, ZMTPSocketType.PUB),
+        new ZMTPSession(1024, FOO, ZMTPSocketType.PUB),
         false);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
@@ -150,7 +150,7 @@ public class HandshakeTest {
   @Test
   public void test2To1Handshake() {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 1024, FOO, ZMTPSocketType.PUB), false);
+        new ZMTPSession(1024, FOO, ZMTPSocketType.PUB), false);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     try {
       assertNull(h.inputOutput(buf(0x04, 0, 0x62, 0x61, 0x72), channel));
@@ -163,7 +163,7 @@ public class HandshakeTest {
   @Test
   public void test2To2CompatTruncated() throws Exception {
     ZMTP20Codec h = new ZMTP20Codec(
-        new ZMTPSession(ZMTPConnectionType.Addressed, 1024, "identity".getBytes(), ZMTPSocketType.PUB),
+        new ZMTPSession(1024, "identity".getBytes(), ZMTPSocketType.PUB),
         true);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 9, 0x7f);
     boolean done = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), channel);

@@ -79,7 +79,7 @@ public class ZMQIntegrationTest {
       public ChannelPipeline getPipeline() throws Exception {
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 1024, identity.getBytes(),
+            new ZMTP20Codec(new ZMTPSession(1024, identity.getBytes(),
                                             ZMTPSocketType.REQ), false),
             new SimpleChannelUpstreamHandler() {
 
@@ -124,7 +124,7 @@ public class ZMQIntegrationTest {
 
     final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
     final ZMTPMessage receivedMessage = receivedRequest.message();
-    receivedRequest.session().getChannel().write(receivedMessage);
+    receivedRequest.session().channel().write(receivedMessage);
 
     final ZMsg reply = ZMsg.recvMsg(socket);
     Iterator<ZFrame> reqIter = request.iterator();

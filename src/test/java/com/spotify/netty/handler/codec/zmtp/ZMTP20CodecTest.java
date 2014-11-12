@@ -20,7 +20,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPSocketType.DEALER;
 
 
@@ -31,7 +30,7 @@ public class ZMTP20CodecTest {
   @Test
   public void verifyRequiresSocketType() {
     final ZMTPSocketType socketType = null;
-    final ZMTPSession session = new ZMTPSession(Addressed, 1024, socketType);
+    final ZMTPSession session = new ZMTPSession(1024, socketType);
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage("ZMTP/2.0 requires a socket type");
     new ZMTP20Codec(session, true);
@@ -39,7 +38,7 @@ public class ZMTP20CodecTest {
 
   @Test
   public void testConstruction() {
-    final ZMTPSession session = new ZMTPSession(Addressed, 1024, DEALER);
+    final ZMTPSession session = new ZMTPSession(1024, DEALER);
     new ZMTP20Codec(session, true);
   }
 }

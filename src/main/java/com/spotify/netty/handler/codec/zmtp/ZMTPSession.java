@@ -30,40 +30,35 @@ public class ZMTPSession {
 
   public static final int DEFAULT_SIZE_LIMIT = Integer.MAX_VALUE;
 
-  private final boolean useLocalIdentity;
   private final byte[] localIdent;
   private final long sizeLimit;
   private final ZMTPSocketType socketType;
 
-
-  private ZMTPConnectionType type;
   private Channel channel;
   private byte[] remoteIdent;
   private volatile int actualVersion;
 
-  public ZMTPSession(final ZMTPConnectionType type) {
-    this(type, Integer.MAX_VALUE);
+  public ZMTPSession() {
+    this(Integer.MAX_VALUE);
   }
 
-  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit) {
-    this(type, sizeLimit, null, null);
+  public ZMTPSession(final long sizeLimit) {
+    this(sizeLimit, null, null);
   }
 
-  public ZMTPSession(final ZMTPConnectionType type, @Nullable final byte[] localIdent) {
-    this(type, DEFAULT_SIZE_LIMIT, localIdent, null);
+  public ZMTPSession(@Nullable final byte[] localIdent) {
+    this(DEFAULT_SIZE_LIMIT, localIdent, null);
   }
 
-  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
+  public ZMTPSession(final long sizeLimit,
                      @Nullable final ZMTPSocketType socketType) {
-    this(type, sizeLimit, null, socketType);
+    this(sizeLimit, null, socketType);
   }
 
-  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
+  public ZMTPSession(final long sizeLimit,
                      @Nullable final byte[] localIdent,
                      @Nullable final ZMTPSocketType socketType) {
-    this.type = type;
     this.sizeLimit = sizeLimit;
-    this.useLocalIdentity = (localIdent != null);
     if (localIdent == null) {
       this.localIdent = ZMTPUtils.getBytesFromUUID(UUID.randomUUID());
     } else {
@@ -75,59 +70,29 @@ public class ZMTPSession {
   /**
    * @return The local address of the session
    */
-  public SocketAddress getLocalAddress() {
+  public SocketAddress localAddress() {
     return channel.getLocalAddress();
   }
 
   /**
    * @return The remote address of the session
    */
-  public SocketAddress getRemoteAddress() {
+  public SocketAddress remoteAddress() {
     return channel.getRemoteAddress();
-  }
-
-  /**
-   * Type of connection dictates if a identity frame is needed
-   *
-   * @return Returns the type of connection
-   */
-  public ZMTPConnectionType getConnectionType() {
-    return type;
-  }
-
-  /**
-   * Changes the type of connection of the session
-   */
-  void setConnectionType(final ZMTPConnectionType type) {
-    this.type = type;
-  }
-
-  /**
-   * Helper to determine if messages in this session are enveloped
-   */
-  public boolean isEnveloped() {
-    return (type == ZMTPConnectionType.Addressed);
   }
 
   /**
    * Get the remote session id (can be used for persistent queuing)
    */
-  public byte[] getRemoteIdentity() {
+  public byte[] remoteIdentity() {
     return remoteIdent;
   }
 
   /**
    * Return the local identity
    */
-  public byte[] getLocalIdentity() {
+  public byte[] localIdentity() {
     return localIdent;
-  }
-
-  /**
-   * Do we have a local identity or does the system create one
-   */
-  public boolean useLocalIdentity() {
-    return useLocalIdentity;
   }
 
   /**
@@ -135,7 +100,7 @@ public class ZMTPSession {
    *
    * @param remoteIdent Remote identity, if null an identity will be created
    */
-  public void setRemoteIdentity(@Nullable final byte[] remoteIdent) {
+  public void remoteIdentity(@Nullable final byte[] remoteIdent) {
     if (this.remoteIdent != null) {
       throw new IllegalStateException("Remote identity already set");
     }
@@ -147,16 +112,16 @@ public class ZMTPSession {
     }
   }
 
-  public Channel getChannel() {
+  public Channel channel() {
     return channel;
   }
 
-  public void setChannel(final Channel channel) {
+  public void channel(final Channel channel) {
     this.channel = channel;
   }
 
 
-  public long getSizeLimit() {
+  public long sizeLimit() {
     return sizeLimit;
   }
 
@@ -168,27 +133,25 @@ public class ZMTPSession {
    *
    * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
    */
-  public int getActualVersion() {
+  public int actualVersion() {
     return actualVersion;
   }
 
-  public void setActualVersion(int actualVersion) {
+  public void actualVersion(int actualVersion) {
       this.actualVersion = actualVersion;
   }
 
   @Nullable
-  public ZMTPSocketType getSocketType() {
+  public ZMTPSocketType socketType() {
     return socketType;
   }
 
   @Override
   public String toString() {
     return "ZMTPSession{" +
-           "useLocalIdentity=" + useLocalIdentity +
            ", localIdent=" + Arrays.toString(localIdent) +
            ", sizeLimit=" + sizeLimit +
            ", socketType=" + socketType +
-           ", type=" + type +
            ", channel=" + channel +
            ", remoteIdent=" + Arrays.toString(remoteIdent) +
            ", actualVersion=" + actualVersion +

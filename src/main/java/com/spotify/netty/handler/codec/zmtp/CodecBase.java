@@ -27,8 +27,8 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
     setListener(new HandshakeListener() {
       @Override
       public void handshakeDone(int protocolVersion, byte[] remoteIdentity) {
-        session.setRemoteIdentity(remoteIdentity);
-        session.setActualVersion(protocolVersion);
+        session.remoteIdentity(remoteIdentity);
+        session.actualVersion(protocolVersion);
         updatePipeline(ctx.getPipeline(), session);
         ctx.sendUpstream(e);
       }
@@ -37,7 +37,7 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
     Channel channel = e.getChannel();
 
     channel.write(onConnect());
-    this.session.setChannel(e.getChannel());
+    this.session.channel(e.getChannel());
   }
 
   abstract ChannelBuffer onConnect();

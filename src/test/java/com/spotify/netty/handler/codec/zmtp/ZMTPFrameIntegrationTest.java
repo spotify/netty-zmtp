@@ -50,7 +50,7 @@ public class ZMTPFrameIntegrationTest {
       public boolean onMessage(final ZMTPIncomingMessage msg) {
         // Verify that we can parse the identity correctly
         assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.session().getRemoteIdentity());
+                          msg.session().remoteIdentity());
 
         System.err.println(msg);
 
@@ -96,7 +96,7 @@ public class ZMTPFrameIntegrationTest {
 
         // Verify that we can parse the identity correctly
         assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.session().getRemoteIdentity());
+                          msg.session().remoteIdentity());
 
         // Verify that frames received is correct (+1 envelope delimiter)
         assertEquals(m.size() + 1, msg.message().size());

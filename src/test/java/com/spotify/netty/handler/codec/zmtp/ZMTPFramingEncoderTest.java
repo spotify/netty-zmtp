@@ -20,8 +20,8 @@ public class ZMTPFramingEncoderTest {
   @Test
   public void testEncodeZMTP1() throws Exception {
 
-    ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
-    session.setActualVersion(1);
+    ZMTPSession session = new ZMTPSession(1024);
+    session.actualVersion(1);
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "id1", "", "f0");
@@ -35,8 +35,8 @@ public class ZMTPFramingEncoderTest {
 
     ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "id1", "", "f0");
 
-    ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
-    session.setActualVersion(2);
+    ZMTPSession session = new ZMTPSession(1024);
+    session.actualVersion(2);
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     ChannelBuffer buf = (ChannelBuffer)enc.encode(null, null, message);
@@ -50,8 +50,8 @@ public class ZMTPFramingEncoderTest {
     buf.writeBytes(bytes(1, 3, 0x69, 0x64, 0x30, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0x01, 0xf4));
     buf.writeBytes(LARGE_FILL.getBytes(UTF_8));
 
-    ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
-    session.setActualVersion(2);
+    ZMTPSession session = new ZMTPSession(1024);
+    session.actualVersion(2);
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     cmp(buf, (ChannelBuffer)enc.encode(null, null, message));

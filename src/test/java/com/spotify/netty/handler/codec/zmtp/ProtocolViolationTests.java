@@ -76,7 +76,7 @@ public class ProtocolViolationTests {
 
         return Channels.pipeline(
             new ExecutionHandler(executor),
-            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes())),
+            new ZMTP10Codec(new ZMTPSession(identity.getBytes())),
             new SimpleChannelUpstreamHandler() {
 
               @Override
