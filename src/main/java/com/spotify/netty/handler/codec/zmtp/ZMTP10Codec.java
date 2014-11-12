@@ -24,7 +24,7 @@ public class ZMTP10Codec extends CodecBase {
 
   @Override
   protected ChannelBuffer onConnect() {
-    return makeZMTP1Greeting(session.getLocalIdentity());
+    return makeZMTP1Greeting(session.localIdentity());
   }
 
   @Override

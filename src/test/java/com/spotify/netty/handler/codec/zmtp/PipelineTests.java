@@ -7,18 +7,16 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.buf;
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.cmp;
+import static org.junit.Assert.assertEquals;
 
 /**
- * These tests has a full pipeline setup.
- */
+* These tests has a full pipeline setup.
+*/
 public class PipelineTests {
 
   byte[] LONG_MSG = ("To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your " +
@@ -42,7 +40,7 @@ public class PipelineTests {
       }
     });
     PipelineTester pipelineTester = new PipelineTester(pipeline);
-    Assert.assertEquals(buf, pipelineTester.readClient());
+    assertEquals(buf, pipelineTester.readClient());
 
     ChannelBuffer another = ChannelBuffers.wrappedBuffer("foo".getBytes());
     pipelineTester.writeClient(TestUtil.clone(another));
@@ -57,7 +55,7 @@ public class PipelineTests {
   @Test
   public void testZMTPPipeline() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(s, true));
 
     PipelineTester pt = new PipelineTester(p);
@@ -68,21 +66,16 @@ public class PipelineTests {
     pt.writeClient(buf(1, 1, 0x65, 1, 0, 0, 1, 0x62));
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(1, envelope.size());
-    cmp(buf(0x65), envelope.get(0).getDataBuffer());
-
-    List<ZMTPFrame> body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(0x62), body.get(0).getDataBuffer());
-
-
+    assertEquals(3, m.message().size());
+    cmp(buf(0x65), m.message().frame(0).data());
+    cmp(buf(), m.message().frame(1).data());
+    cmp(buf(0x62), m.message().frame(2).data());
   }
 
   @Test
   public void testZMTPPipelineFragmented() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP20Codec(s, true));
 
     PipelineTester pt = new PipelineTester(p);
@@ -93,21 +86,16 @@ public class PipelineTests {
     pt.writeClient(buf(0, 0, 1, 0x62));
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(1, envelope.size());
-    cmp(buf(0x65), envelope.get(0).getDataBuffer());
-
-    List<ZMTPFrame> body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(0x62), body.get(0).getDataBuffer());
-
-
+    assertEquals(3, m.message().size());
+    cmp(buf(0x65), m.message().frame(0).data());
+    cmp(buf(), m.message().frame(1).data());
+    cmp(buf(0x62), m.message().frame(2).data());
   }
 
   @Test
   public void testZMTP1PipelineLongMessage() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -126,19 +114,16 @@ public class PipelineTests {
     pt.writeClient(cb);
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(0, envelope.size());
-
-    List<ZMTPFrame> body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).getDataBuffer());
+    assertEquals(2, m.message().size());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
   @Test
   // tests the case when the message to be parsed is fragmented inside the long long size field
   public void testZMTP1PipelineLongMessageFragmentedLong() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -164,19 +149,16 @@ public class PipelineTests {
 
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(0, envelope.size());
-
-    List<ZMTPFrame> body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).getDataBuffer());
+    assertEquals(2, m.message().size());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
   @Test
   // tests the case when the message to be parsed is fragmented between 0xff flag and 8 octet length
   public void testZMTP1PipelineLongMessageFragmentedSize() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -202,12 +184,9 @@ public class PipelineTests {
 
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(0, envelope.size());
-
-    List<ZMTPFrame> body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).getDataBuffer());
+    assertEquals(2, m.message().size());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
 
@@ -215,7 +194,7 @@ public class PipelineTests {
   // tests fragmentation in the size field of the second message
   public void testZMTP1PipelineMultiMessage() {
     ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+        1024, "foo".getBytes(), ZMTPSocketType.REQ);
     ChannelPipeline p = Channels.pipeline(new ZMTP10Codec(s));
 
     PipelineTester pt = new PipelineTester(p);
@@ -238,12 +217,9 @@ public class PipelineTests {
     pt.writeClient(cb);
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(0, envelope.size());
-
-    List<ZMTPFrame> body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).getDataBuffer());
+    assertEquals(2, m.message().size());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
 
     // send the rest of the second message
     cb = ChannelBuffers.dynamicBuffer();
@@ -255,13 +231,9 @@ public class PipelineTests {
 
     m = (ZMTPIncomingMessage)pt.readServer();
 
-    envelope = m.getMessage().getEnvelope();
-    Assert.assertEquals(0, envelope.size());
-
-    body = m.getMessage().getContent();
-    Assert.assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).getDataBuffer());
-
+    assertEquals(2, m.message().size());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
 }

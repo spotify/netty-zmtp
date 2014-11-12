@@ -21,7 +21,7 @@ public class ZMTP20Codec extends CodecBase {
    */
   public ZMTP20Codec(ZMTPSession session, boolean interop) {
     super(session);
-    if (session.getSocketType() == null) {
+    if (session.socketType() == null) {
       throw new IllegalArgumentException("ZMTP/2.0 requires a socket type");
     }
     this.interop = interop;
@@ -49,7 +49,7 @@ public class ZMTP20Codec extends CodecBase {
         buffer.resetReaderIndex();
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
-        channel.write(ChannelBuffers.wrappedBuffer(session.getLocalIdentity()));
+        channel.write(ChannelBuffers.wrappedBuffer(session.localIdentity()));
         done(version, ZMTP10Codec.readZMTP1RemoteIdentity(buffer));
         return true;
       } else {
@@ -106,14 +106,14 @@ public class ZMTP20Codec extends CodecBase {
     }
     out.writeByte(0x01);
     // socket-type
-    ZMTPSocketType socketType = session.getSocketType();
+    ZMTPSocketType socketType = session.socketType();
     assert socketType != null;
     out.writeByte(socketType.ordinal());
     // identity
     // the final-short flag octet
     out.writeByte(0x00);
-    out.writeByte(session.getLocalIdentity().length);
-    out.writeBytes(session.getLocalIdentity());
+    out.writeByte(session.localIdentity().length);
+    out.writeBytes(session.localIdentity());
     return out;
   }
 
@@ -123,7 +123,7 @@ public class ZMTP20Codec extends CodecBase {
    */
   private ChannelBuffer makeZMTP2CompatSignature() {
     ChannelBuffer out = ChannelBuffers.dynamicBuffer();
-    ZMTPUtils.encodeLength(session.getLocalIdentity().length + 1, out, true);
+    ZMTPUtils.encodeLength(session.localIdentity().length + 1, out, true);
     out.writeByte(0x7f);
     return out;
   }

@@ -16,7 +16,6 @@
 
 package com.spotify.netty.zmtp;
 
-import com.spotify.netty.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty.handler.codec.zmtp.ZMTPMessageParser;
 import com.spotify.netty.handler.codec.zmtp.ZMTPMessageParsingException;
@@ -27,27 +26,26 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static java.util.Arrays.asList;
-
 public class Benchmark {
 
   @Ignore("this is a benchmark")
   @Test
   public void benchmarkEncoding() throws ZMTPMessageParsingException {
     final ProgressMeter meter = new ProgressMeter("messages");
-    ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.create("first identity frame"),
-               ZMTPFrame.create("second identity frame")),
-        asList(ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata"),
-               ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata"),
-               ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata"),
-               ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata")));
-    final ZMTPMessageParser parser = new ZMTPMessageParser(true, 1024 * 1024, 1);
+    ZMTPMessage message = ZMTPMessage.fromStringsUTF8(
+        "first identity frame",
+        "second identity frame",
+        "",
+        "datadatadatadatadatadatadatadatadatadata",
+        "datadatadatadatadatadatadatadatadatadata",
+        "datadatadatadatadatadatadatadatadatadata",
+        "datadatadatadatadatadatadatadatadatadata");
+    final ZMTPMessageParser parser = new ZMTPMessageParser(1024 * 1024, 1);
     long sum = 0;
     for (long i = 0; i < 1000000; i++) {
       for (long j = 0; j < 1000; j++) {
-        final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(message, true, 1));
-        ZMTPUtils.writeMessage(message, buffer, true, 1);
+        final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(message, 1));
+        ZMTPUtils.writeMessage(message, buffer, 1);
         message = parser.parse(buffer).getMessage();
 
         sum += buffer.readableBytes();
