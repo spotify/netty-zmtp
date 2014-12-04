@@ -67,7 +67,7 @@ import static org.junit.Assert.assertNull;
 @RunWith(Theories.class)
 public class ZMTPMessageParserTest {
 
-  public static final int CPUS = 2;
+  public static final int CPUS = 6;
   public static final ExecutorService EXECUTOR = MoreExecutors.getExitingExecutorService(
       (ThreadPoolExecutor) Executors.newFixedThreadPool(CPUS), 0, SECONDS);
 
