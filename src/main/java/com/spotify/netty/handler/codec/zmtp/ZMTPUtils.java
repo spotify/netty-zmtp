@@ -16,14 +16,14 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-
 import java.util.List;
 import java.util.UUID;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+import static io.netty.buffer.ByteBufUtil.swapLong;
 import static java.nio.ByteOrder.BIG_ENDIAN;
-import static org.jboss.netty.buffer.ChannelBuffers.swapLong;
 
 /**
  * Helper utilities for zmtp protocol
@@ -40,7 +40,7 @@ public class ZMTPUtils {
    * @return length
    * @throws IndexOutOfBoundsException if there is not enough octets to be read.
    */
-  static public long decodeLength(final ChannelBuffer in) {
+  static public long decodeLength(final ByteBuf in) {
     if (in.readableBytes() < 1) {
       return -1;
     }
@@ -59,14 +59,14 @@ public class ZMTPUtils {
     return size;
   }
 
-  static public void encodeLength(final long size, final ChannelBuffer out) {
+  static public void encodeLength(final long size, final ByteBuf out) {
     encodeLength(size, out, false);
   }
 
   /**
    * Helper to encode a zmtp length field
    */
-  static public void encodeLength(final long size, final ChannelBuffer out, boolean forceLong) {
+  static public void encodeLength(final long size, final ByteBuf out, boolean forceLong) {
     if (size < 255 && !forceLong) {
       // Encoded as a single byte
       out.writeByte((byte) size);
@@ -76,7 +76,7 @@ public class ZMTPUtils {
     }
   }
 
-  static void encodeZMTP2FrameHeader(final long size, final byte flags, final ChannelBuffer out) {
+  static void encodeZMTP2FrameHeader(final long size, final byte flags, final ByteBuf out) {
     if (size < 256) {
       out.writeByte(flags);
       out.writeByte((byte)size);
@@ -86,7 +86,7 @@ public class ZMTPUtils {
     }
   }
 
-   static void writeLong(final ChannelBuffer buffer, final long value) {
+   static void writeLong(final ByteBuf buffer, final long value) {
     if (buffer.order() == BIG_ENDIAN) {
       buffer.writeLong(value);
     } else {
@@ -99,7 +99,7 @@ public class ZMTPUtils {
    *
    * @return byte array format (big endian)
    */
-  static public byte[] getBytesFromUUID(final UUID uuid) {
+  public static byte[] encodeUUID(final UUID uuid) {
     final long most = uuid.getMostSignificantBits();
     final long least = uuid.getLeastSignificantBits();
 
@@ -119,7 +119,7 @@ public class ZMTPUtils {
    * @param buffer The target buffer.
    * @param more   True to write a more flag, false to write a final flag.
    */
-  public static void writeFrame(final ZMTPFrame frame, final ChannelBuffer buffer,
+  public static void writeFrame(final ZMTPFrame frame, final ByteBuf buffer,
                                 final boolean more, final int version) {
     if (version == 1) {
       encodeLength(frame.size() + 1, buffer);
@@ -128,8 +128,8 @@ public class ZMTPUtils {
       encodeZMTP2FrameHeader(frame.size(), more ? MORE_FLAG : FINAL_FLAG, buffer);
     }
     if (frame.hasData()) {
-      final ChannelBuffer source = frame.getDataBuffer();
-      buffer.ensureWritableBytes(source.readableBytes());
+      final ByteBuf source = frame.data();
+      buffer.ensureWritable(source.readableBytes());
       source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
   }
@@ -142,17 +142,17 @@ public class ZMTPUtils {
    * @param enveloped Whether the envelope and delimiter should be written.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static void writeMessage(final ZMTPMessage message, final ChannelBuffer buffer,
+  public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer,
                                   final boolean enveloped, int version) {
 
     // Write envelope
     if (enveloped) {
       // Sanity check
-      if (message.getContent().isEmpty()) {
+      if (message.content().isEmpty()) {
         throw new IllegalArgumentException("Cannot write enveloped message with no content");
       }
 
-      final List<ZMTPFrame> envelope = message.getEnvelope();
+      final List<ZMTPFrame> envelope = message.envelope();
       for (int i = 0; i < envelope.size(); i++) {
         writeFrame(envelope.get(i), buffer, true, version);
       }
@@ -161,7 +161,7 @@ public class ZMTPUtils {
       writeFrame(DELIMITER, buffer, true, version);
     }
 
-    final List<ZMTPFrame> content = message.getContent();
+    final List<ZMTPFrame> content = message.content();
     final int n = content.size();
     final int lastFrame = n - 1;
     for (int i = 0; i < n; i++) {
@@ -201,11 +201,11 @@ public class ZMTPUtils {
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static int messageSize(final ZMTPMessage message, final boolean enveloped,
                                 final int version) {
-    final int contentSize = framesSize(message.getContent(), version);
+    final int contentSize = framesSize(message.content(), version);
     if (!enveloped) {
       return contentSize;
     }
-    final int envelopeSize = framesSize(message.getEnvelope(), version) + frameSize(DELIMITER, version);
+    final int envelopeSize = framesSize(message.envelope(), version) + frameSize(DELIMITER, version);
     return envelopeSize + contentSize;
   }
 
@@ -232,7 +232,7 @@ public class ZMTPUtils {
     if (data == null) {
       return null;
     }
-    return toString(ChannelBuffers.wrappedBuffer(data));
+    return toString(Unpooled.wrappedBuffer(data));
   }
 
   /**
@@ -241,7 +241,7 @@ public class ZMTPUtils {
    * @param data The data
    * @return A string representation of the data
    */
-  public static String toString(final ChannelBuffer data) {
+  public static String toString(final ByteBuf data) {
     if (data == null) {
       return null;
     }
@@ -266,7 +266,7 @@ public class ZMTPUtils {
     for (int i = 0; i < frames.size(); i++) {
       final ZMTPFrame frame = frames.get(i);
       builder.append('"');
-      builder.append(toString(frame.getDataBuffer()));
+      builder.append(toString(frame.data()));
       builder.append('"');
       if (i < frames.size() - 1) {
         builder.append(',');

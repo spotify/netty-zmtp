@@ -16,16 +16,16 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.netty.buffer.ByteBuf;
+
 import static com.spotify.netty.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
-import static java.nio.ByteOrder.BIG_ENDIAN;
+import static io.netty.buffer.ByteBufUtil.swapLong;
 import static java.lang.Math.min;
-import static org.jboss.netty.buffer.ChannelBuffers.swapLong;
+import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
  * Decodes ZMTP messages from a channel buffer, reading and accumulating frame by frame, keeping
@@ -69,7 +69,7 @@ public class ZMTPMessageParser {
    * @param buffer Buffer with data
    * @return A {@link ZMTPMessage} if it was completely parsed, otherwise null.
    */
-  public ZMTPParsedMessage parse(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
+  public ZMTPParsedMessage parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
 
     // If we're in discarding mode, continue discarding data
     if (isOversized(size)) {
@@ -176,7 +176,7 @@ public class ZMTPMessageParser {
    *
    * @return A truncated message if done discarding, null if not yet done.
    */
-  private ZMTPParsedMessage discardFrames(final ChannelBuffer buffer)
+  private ZMTPParsedMessage discardFrames(final ByteBuf buffer)
       throws ZMTPMessageParsingException {
 
     while (buffer.readableBytes() > 0) {
@@ -214,14 +214,14 @@ public class ZMTPMessageParser {
     return null;
   }
 
-  private boolean parseZMTPHeader(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
+  private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPMessageParsingException {
     return version == 1 ? parseZMTP1Header(buffer) : parseZMTP2Header(buffer);
   }
 
   /**
    * Parse a frame header.
    */
-  private boolean parseZMTP1Header(final ChannelBuffer buffer) throws ZMTPMessageParsingException {
+  private boolean parseZMTP1Header(final ByteBuf buffer) throws ZMTPMessageParsingException {
     final long len = ZMTPUtils.decodeLength(buffer);
 
     if (len > Integer.MAX_VALUE) {
@@ -248,7 +248,7 @@ public class ZMTPMessageParser {
     return true;
   }
 
-  private boolean parseZMTP2Header(ChannelBuffer buffer) throws ZMTPMessageParsingException {
+  private boolean parseZMTP2Header(ByteBuf buffer) throws ZMTPMessageParsingException {
     if (buffer.readableBytes() < 2) {
       return false;
     }

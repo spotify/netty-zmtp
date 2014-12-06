@@ -18,22 +18,22 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import com.google.common.collect.Queues;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.BlockingQueue;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static com.spotify.netty.handler.codec.zmtp.ZMTPSession.DEFAULT_SIZE_LIMIT;
@@ -56,16 +56,30 @@ public class EndToEndTest {
 
   private Channel bind(final SocketAddress address, final ChannelHandler codec,
                        final ChannelHandler handler) {
-    final ServerBootstrap bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory());
-    bootstrap.setPipeline(Channels.pipeline(codec, handler));
-    return bootstrap.bind(address);
+    final ServerBootstrap bootstrap = new ServerBootstrap();
+    bootstrap.group(new NioEventLoopGroup(1), new NioEventLoopGroup());
+    bootstrap.channel(NioServerSocketChannel.class);
+    bootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
+      @Override
+      protected void initChannel(final NioSocketChannel ch) throws Exception {
+        ch.pipeline().addLast(codec, handler);
+      }
+    });
+    return bootstrap.bind(address).awaitUninterruptibly().channel();
   }
 
   private Channel connect(final SocketAddress address, final ChannelHandler codec,
                           final ChannelHandler handler) {
-    final ClientBootstrap bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory());
-    bootstrap.setPipeline(Channels.pipeline(codec, handler));
-    return bootstrap.connect(address).getChannel();
+    final Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(new NioEventLoopGroup());
+    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
+      @Override
+      protected void initChannel(final NioSocketChannel ch) throws Exception {
+        ch.pipeline().addLast(codec, handler);
+      }
+    });
+    return bootstrap.connect(address).awaitUninterruptibly().channel();
   }
 
   public void testRequestReply(final ChannelHandler serverCodec, final ChannelHandler clientCodec)
@@ -75,7 +89,7 @@ public class EndToEndTest {
     Handler server = new Handler();
     Handler client = new Handler();
     Channel serverChannel = bind(ANY_PORT, serverCodec, server);
-    SocketAddress address = serverChannel.getLocalAddress();
+    SocketAddress address = serverChannel.localAddress();
     Channel clientChannel = connect(address, clientCodec, client);
     Channel clientConnectedChannel = client.connected.poll(5, SECONDS);
     assertThat(clientConnectedChannel, is(notNullValue()));
@@ -90,13 +104,13 @@ public class EndToEndTest {
     assertThat("unexpected client connection", client.connected.poll(), is(nullValue()));
 
     // Send and receive request
-    clientChannel.write(helloWorldMessage());
+    clientChannel.writeAndFlush(helloWorldMessage());
     ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
     assertThat(receivedRequest, is(notNullValue()));
     assertThat(receivedRequest.getMessage(), is(helloWorldMessage()));
 
     // Send and receive reply
-    serverConnectedChannel.write(fooBarMessage());
+    serverConnectedChannel.writeAndFlush(fooBarMessage());
     ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
     assertThat(receivedReply, is(notNullValue()));
     assertThat(receivedReply.getMessage(), is(fooBarMessage()));
@@ -153,22 +167,20 @@ public class EndToEndTest {
     return ZMTPMessage.fromStringsUTF8(true, "", "foo", "bar");
   }
 
-  private static class Handler extends SimpleChannelUpstreamHandler {
+  private static class Handler extends ChannelInboundHandlerAdapter {
 
     private BlockingQueue<Channel> connected = Queues.newLinkedBlockingQueue();
     private BlockingQueue<ZMTPIncomingMessage> messages = Queues.newLinkedBlockingQueue();
 
     @Override
-    public void channelConnected(final ChannelHandlerContext ctx,
-                                 final ChannelStateEvent e) throws Exception {
-      super.channelConnected(ctx, e);
-      connected.add(ctx.getChannel());
+    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+      super.channelActive(ctx);
+      connected.add(ctx.channel());
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
-        throws Exception {
-      messages.put((ZMTPIncomingMessage) e.getMessage());
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
+      messages.put((ZMTPIncomingMessage) msg);
     }
   }
 }

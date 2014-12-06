@@ -16,13 +16,15 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.channel.ChannelFuture;
 import org.junit.Test;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.UUID;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -37,7 +39,7 @@ public class ZMTPFrameIntegrationTest {
     final ZMTPTestConnector tester = new ZMTPTestConnector() {
       @Override
       public void preConnect(final ZMQ.Socket socket) {
-        socket.setIdentity(ZMTPUtils.getBytesFromUUID(remoteId));
+        socket.setIdentity(ZMTPUtils.encodeUUID(remoteId));
       }
 
       @Override
@@ -48,15 +50,15 @@ public class ZMTPFrameIntegrationTest {
       @Override
       public boolean onMessage(final ZMTPIncomingMessage msg) {
         // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.getSession().getRemoteIdentity());
+        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId),
+                          msg.getSession().remoteIdentity());
 
         System.err.println(msg);
 
         // Verify that frames received is correct
-        assertEquals(1, msg.getMessage().getContent().size());
-        assertEquals(0, msg.getMessage().getEnvelope().size());
-        assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(0).getData());
+        assertEquals(1, msg.getMessage().content().size());
+        assertEquals(0, msg.getMessage().envelope().size());
+        assertEquals(Unpooled.wrappedBuffer(f.getData()), msg.getMessage().contentFrame(0).data());
 
         f.destroy();
 
@@ -82,7 +84,7 @@ public class ZMTPFrameIntegrationTest {
           m.addString("test-frame-" + i);
         }
 
-        socket.setIdentity(ZMTPUtils.getBytesFromUUID(remoteId));
+        socket.setIdentity(ZMTPUtils.encodeUUID(remoteId));
       }
 
       @Override
@@ -95,15 +97,16 @@ public class ZMTPFrameIntegrationTest {
         int framePos = 0;
 
         // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.getBytesFromUUID(remoteId),
-                          msg.getSession().getRemoteIdentity());
+        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId),
+                          msg.getSession().remoteIdentity());
 
         // Verify that frames received is correct
-        assertEquals(m.size(), msg.getMessage().getContent().size());
-        assertEquals(0, msg.getMessage().getEnvelope().size());
+        assertEquals(m.size(), msg.getMessage().content().size());
+        assertEquals(0, msg.getMessage().envelope().size());
 
         for (final ZFrame f : m) {
-          assertArrayEquals(f.getData(), msg.getMessage().getContentFrame(framePos).getData());
+          assertEquals(Unpooled.wrappedBuffer(f.getData()),
+                       msg.getMessage().contentFrame(framePos).data());
           framePos++;
         }
 

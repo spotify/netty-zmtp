@@ -16,96 +16,97 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
+import static org.junit.Assert.assertFalse;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ProtocolViolationTests {
 
-  private ServerBootstrap serverBootstrap;
   private Channel serverChannel;
   private InetSocketAddress serverAddress;
 
   private String identity = "identity";
+  private NioEventLoopGroup bossGroup;
+  private NioEventLoopGroup group;
 
-  interface MockHandler {
+  @ChannelHandler.Sharable
+  private static class MockHandler extends ChannelInboundHandlerAdapter {
 
-    public void channelConnected(final ChannelHandlerContext ctx, final ChannelStateEvent e);
+    private volatile boolean activeCalled;
+    private volatile boolean readCalled;
 
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e);
+    @Override
+    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+      super.channelActive(ctx);
+      activeCalled = true;
+    }
+
+    @Override
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
+      super.channelRead(ctx, msg);
+      readCalled = true;
+    }
+
+    @Override
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
+        throws Exception {
+      // ignore
+    }
   }
 
-  final MockHandler mockHandler = mock(MockHandler.class);
+  private final MockHandler mockHandler = new MockHandler();
 
   @Before
   public void setup() {
-    serverBootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
-        Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
-
-    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
-          Runtime.getRuntime().availableProcessors(),
-          1024 * 1024,
-          128 * 1024 * 1024
-      );
-
-      public ChannelPipeline getPipeline() throws Exception {
-
-        return Channels.pipeline(
-            new ExecutionHandler(executor),
+    final ServerBootstrap serverBootstrap = new ServerBootstrap();
+    serverBootstrap.channel(NioServerSocketChannel.class);
+    bossGroup = new NioEventLoopGroup(1);
+    group = new NioEventLoopGroup();
+    serverBootstrap.group(bossGroup, group);
+    serverBootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
+      @Override
+      protected void initChannel(final NioSocketChannel ch) throws Exception {
+        ch.pipeline().addLast(
             new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes())),
-            new SimpleChannelUpstreamHandler() {
-
-              @Override
-              public void channelConnected(final ChannelHandlerContext ctx,
-                                           final ChannelStateEvent e) throws Exception {
-                mockHandler.channelConnected(ctx, e);
-              }
-
-              @Override
-              public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
-                  throws Exception {
-                mockHandler.messageReceived(ctx, e);
-              }
-            });
+            mockHandler);
       }
     });
 
-    serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0));
-    serverAddress = (InetSocketAddress) serverChannel.getLocalAddress();
+    serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0))
+        .awaitUninterruptibly().channel();
+    serverAddress = (InetSocketAddress) serverChannel.localAddress();
   }
 
   @After
   public void teardown() {
     if (serverChannel != null) {
       serverChannel.close();
-      serverChannel.getCloseFuture().awaitUninterruptibly();
+      serverChannel.closeFuture().awaitUninterruptibly();
     }
-    if (serverBootstrap != null) {
-      serverBootstrap.releaseExternalResources();
+    if (bossGroup != null) {
+      bossGroup.shutdownGracefully().awaitUninterruptibly();
+    }
+    if (group != null) {
+      group.shutdownGracefully().awaitUninterruptibly();
     }
   }
 
@@ -116,31 +117,27 @@ public class ProtocolViolationTests {
     }
   }
 
-  private void testConnect(final int payloadSize) throws InterruptedException {
-    final ClientBootstrap clientBootstrap =
-        new ClientBootstrap(new NioClientSocketChannelFactory());
-    clientBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+  private void testConnect(final int payloadSize) throws Exception {
+    final Bootstrap b = new Bootstrap();
+    b.group(new NioEventLoopGroup());
+    b.channel(NioSocketChannel.class);
+    b.handler(new ChannelInitializer<NioSocketChannel>() {
       @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(new SimpleChannelUpstreamHandler());
+      protected void initChannel(final NioSocketChannel ch) throws Exception {
       }
     });
-    final ChannelFuture future = clientBootstrap.connect(serverAddress);
-    future.awaitUninterruptibly();
 
-    final Channel channel = future.getChannel();
+    final Channel channel = b.connect(serverAddress).awaitUninterruptibly().channel();
 
     final StringBuilder payload = new StringBuilder();
     for (int i = 0; i < payloadSize; i++) {
       payload.append('0');
     }
-    channel.write(ChannelBuffers.copiedBuffer(payload.toString().getBytes()));
+    channel.writeAndFlush(Unpooled.copiedBuffer(payload.toString().getBytes()));
 
     Thread.sleep(100);
 
-    verify(mockHandler, never())
-        .channelConnected(any(ChannelHandlerContext.class), any(ChannelStateEvent.class));
-    verify(mockHandler, never())
-        .messageReceived(any(ChannelHandlerContext.class), any(MessageEvent.class));
+    assertFalse(mockHandler.activeCalled);
+    assertFalse(mockHandler.readCalled);
   }
 }

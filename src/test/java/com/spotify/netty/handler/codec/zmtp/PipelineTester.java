@@ -1,20 +1,21 @@
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
-import org.jboss.netty.channel.local.DefaultLocalServerChannelFactory;
-import org.jboss.netty.channel.local.LocalAddress;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.local.LocalAddress;
+import io.netty.channel.local.LocalChannel;
+import io.netty.channel.local.LocalServerChannel;
 
 /**
  * Tests the behaviours of ChannelPipelines, using the local transport method.
@@ -23,62 +24,75 @@ import java.util.concurrent.LinkedBlockingQueue;
  * and writing to it.
  */
 class PipelineTester {
-  private BlockingQueue<ChannelBuffer> emittedOutside = new LinkedBlockingQueue<ChannelBuffer>();
+  private BlockingQueue<ByteBuf> emittedOutside = new LinkedBlockingQueue<ByteBuf>();
   private BlockingQueue<Object> emittedInside = new LinkedBlockingQueue<Object>();
   private Channel outerChannel = null;
   private Channel innerChannel = null;
 
+  private static final AtomicInteger port = new AtomicInteger();
+
   /**
    * Constructs a server using pipeline and a client communicating with it.
    *
-   * @param pipeline a ChannelPipeline to put in the server.
+   * @param handlers Server channel handlers.
    */
-  public PipelineTester(ChannelPipeline pipeline) {
-    LocalAddress address = new LocalAddress(LocalAddress.EPHEMERAL);
+  public PipelineTester(final ChannelHandler... handlers) {
+    final LocalAddress address = new LocalAddress("pipeline-tester-" + port.incrementAndGet());
 
-    ServerBootstrap sb = new ServerBootstrap(new DefaultLocalServerChannelFactory());
-
-    pipeline.addLast("pipelineTesterEndpoint", new SimpleChannelHandler() {
+    final ServerBootstrap sb = new ServerBootstrap();
+    sb.group(new DefaultEventLoopGroup(1), new DefaultEventLoopGroup());
+    sb.channel(LocalServerChannel.class);
+    sb.childHandler(new ChannelInitializer<LocalChannel>() {
       @Override
-      public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        emittedInside.put(e.getMessage());
+      protected void initChannel(final LocalChannel ch) throws Exception {
+        ch.pipeline().addLast(handlers);
+        ch.pipeline().addLast("pipelineTesterEndpoint", new ChannelInboundHandlerAdapter() {
+
+          @Override
+          public void channelRead(final ChannelHandlerContext ctx, final Object msg)
+              throws Exception {
+            emittedInside.put(msg);
+          }
+
+          @Override
+          public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+            innerChannel = ctx.channel();
+          }
+        });
       }
+    });
+    sb.bind(address).awaitUninterruptibly();
 
+    final Bootstrap cb = new Bootstrap();
+    cb.group(new DefaultEventLoopGroup());
+    cb.channel(LocalChannel.class);
+    cb.handler(new ChannelInitializer<LocalChannel>() {
       @Override
-      public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
-          throws Exception {
-        super.channelConnected(ctx, e);
-        innerChannel = e.getChannel();
+      protected void initChannel(final LocalChannel ch) throws Exception {
+        ch.pipeline().addLast("1", new ChannelInboundHandlerAdapter() {
+          @Override
+          public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+            outerChannel = ctx.channel();
+          }
+
+          @Override
+          public void channelRead(final ChannelHandlerContext ctx, final Object msg)
+              throws Exception {
+            emittedOutside.put((ByteBuf) msg);
+          }
+        });
       }
     });
 
-    sb.setPipeline(pipeline);
-
-    sb.bind(address);
-    ClientBootstrap cb = new ClientBootstrap(new DefaultLocalClientChannelFactory());
-    cb.getPipeline().addLast("1", new SimpleChannelHandler() {
-      @Override
-      public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
-          throws Exception {
-        super.channelConnected(ctx, e);
-        outerChannel = e.getChannel();
-      }
-
-      @Override
-      public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        emittedOutside.put((ChannelBuffer) e.getMessage());
-      }
-    });
     cb.connect(address).awaitUninterruptibly();
-
   }
 
   /**
    * Read the ChannelBuffers emitted from this pipeline in the client end.
    *
-   * @return a ChannelBuffer from the the client FIFO
+   * @return a ByteBuf from the the client FIFO
    */
-  public ChannelBuffer readClient() {
+  public ByteBuf readClient() {
     try {
       return emittedOutside.take();
     } catch (InterruptedException e) {
@@ -87,16 +101,16 @@ class PipelineTester {
   }
 
   /**
-   * Write a ChannelBuffer to the pipeline from the client end.
+   * Write a ByteBuf to the pipeline from the client end.
    *
-   * @param buf the ChannelBuffer to write
+   * @param buf the ByteBuf to write
    */
-  public void writeClient(ChannelBuffer buf) {
-    outerChannel.write(buf);
+  public void writeClient(ByteBuf buf) {
+    outerChannel.writeAndFlush(buf);
   }
 
   /**
-   * Read an Object from the server end of the pipeline. This can be a ChannelBuffer, or, if
+   * Read an Object from the server end of the pipeline. This can be a ByteBuf, or, if
    * there is a FrameDecoder some sort of pojo.
    *
    * @return an Object read from the server end.
@@ -115,6 +129,6 @@ class PipelineTester {
    * @param message the Object to be written
    */
   public void writeServer(Object message) {
-    innerChannel.write(message);
+    innerChannel.writeAndFlush(message);
   }
 }

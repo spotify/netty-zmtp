@@ -1,13 +1,14 @@
 package com.spotify.netty.handler.codec.zmtp;
 
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.buf;
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.cmp;
@@ -79,7 +80,7 @@ public class HandshakeTest {
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), channel);
     assertTrue(done);
-    verify(channel).write(buf(0x66, 0x6f, 0x6f));
+    verify(channel).writeAndFlush(buf(0x66, 0x6f, 0x6f));
     verify(handshakeListener).handshakeDone(1, BAR);
   }
 
@@ -91,7 +92,7 @@ public class HandshakeTest {
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     boolean done1 = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), channel);
     assertFalse(done1);
-    verify(channel).write(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
+    verify(channel).writeAndFlush(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
     boolean done2 = h.inputOutput(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), channel);
     assertTrue(done2);
     verifyNoMoreInteractions(channel);
@@ -104,11 +105,11 @@ public class HandshakeTest {
         new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
-    ChannelBuffer cb = buf(
+    ByteBuf cb = buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72);
     boolean done1 = h.inputOutput(cb, channel);
     assertFalse(done1);
-    verify(channel).write(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
+    verify(channel).writeAndFlush(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
     boolean done2 = h.inputOutput(cb, channel);
     assertTrue(done2);
     verifyNoMoreInteractions(channel);
@@ -168,12 +169,12 @@ public class HandshakeTest {
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 9, 0x7f);
     boolean done = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), channel);
     assertFalse(done);
-    verify(channel).write(buf(1, 2, 0, 8, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79));
+    verify(channel).writeAndFlush(buf(1, 2, 0, 8, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79));
   }
 
   @Test
   public void testParseZMTP2Greeting() throws Exception {
-    ChannelBuffer b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0x00, 0x01, 0x61);
+    ByteBuf b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0x00, 0x01, 0x61);
     assertArrayEquals("a".getBytes(), ZMTP20Codec.parseZMTP2Greeting(b, true));
   }
 
@@ -195,7 +196,7 @@ public class HandshakeTest {
   @Test
   public void testDetectProtocolVersion() {
     try {
-      ZMTP20Codec.detectProtocolVersion(ChannelBuffers.wrappedBuffer(new byte[0]));
+      ZMTP20Codec.detectProtocolVersion(Unpooled.wrappedBuffer(new byte[0]));
       fail("Should have thown IndexOutOfBoundsException");
     } catch (IndexOutOfBoundsException e) {
       // ignore
@@ -217,7 +218,7 @@ public class HandshakeTest {
   @Test
   public void testParseZMTP2GreetingMalformed() {
     try {
-      ChannelBuffer b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0xf0, 0x01, 0x61);
+      ByteBuf b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0xf0, 0x01, 0x61);
       ZMTP20Codec.parseZMTP2Greeting(b, true);
       fail("13th byte is not 0x00, should throw exception");
     } catch (ZMTPException e) {

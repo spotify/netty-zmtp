@@ -1,35 +1,38 @@
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Tests related to CodecBase and ZMTP*Codec
  */
 public class CodecTest {
+
+  @Rule public ExpectedException expectedException = ExpectedException.none();
+
   @Test
   public void testOverlyLongIdentity() throws Exception {
     byte[] overlyLong = new byte[256];
     Arrays.fill(overlyLong, (byte) 'a');
-    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ByteBuf buffer = Unpooled.buffer();
     ZMTPUtils.encodeLength(overlyLong.length + 1, buffer);
     buffer.writeByte(0);
     buffer.writeBytes(overlyLong);
-    try {
-      Assert.assertArrayEquals(overlyLong, CodecBase.readZMTP1RemoteIdentity(buffer));
-      Assert.fail("Should have thrown exception");
-    } catch (ZMTPException e) {
-      //pass
-    }
+
+    expectedException.expect(ZMTPException.class);
+    CodecBase.readZMTP1RemoteIdentity(buffer);
   }
 
   @Test
   public void testLongZMTP1FrameLengthMissingLong() {
-    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     long size = ZMTPUtils.decodeLength(buffer);
     Assert.assertEquals("Length shouldn't have been determined",
@@ -38,7 +41,7 @@ public class CodecTest {
 
   @Test
   public void testLongZMTP1FrameLengthWithLong() {
-    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     buffer.writeLong(4);
     long size = ZMTPUtils.decodeLength(buffer);
@@ -48,7 +51,7 @@ public class CodecTest {
 
   @Test
   public void testZMTP1LenghtEmptyBuffer() {
-    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ByteBuf buffer = Unpooled.buffer();
     long size = ZMTPUtils.decodeLength(buffer);
     Assert.assertEquals("Empty buffer should return -1 frame length",
                         -1, size);

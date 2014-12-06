@@ -33,11 +33,11 @@ public class ZMTPParsedMessage {
     return truncated;
   }
 
-  public long getByteSize() {
+  public long byteSize() {
     return byteSize;
   }
 
-  public ZMTPMessage getMessage() {
+  public ZMTPMessage message() {
     return message;
   }
 

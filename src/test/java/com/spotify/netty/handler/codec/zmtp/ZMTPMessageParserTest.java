@@ -21,8 +21,6 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
@@ -35,6 +33,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
@@ -73,7 +74,7 @@ public class ZMTPMessageParserTest {
 
   @Test
   public void testZMTP1LongFrameSize() throws ZMTPMessageParsingException {
-    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
     ZMTPParsedMessage msg = parser.parse(buffer);
@@ -83,10 +84,10 @@ public class ZMTPMessageParserTest {
 
   @Test
   public void testZMTP1BufferLengthEmpty() throws ZMTPMessageParsingException {
-    ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+    ByteBuf buffer = Unpooled.buffer();
     ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
     ZMTPParsedMessage msg = parser.parse(buffer);
-    assertNull("Empty ChannelBuffer should result in an empty ZMTPParsedMessage",
+    assertNull("Empty ByteBuf should result in an empty ZMTPParsedMessage",
                msg);
   }
 
@@ -153,7 +154,7 @@ public class ZMTPMessageParserTest {
     out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                        enveloped, limit, input, expected));
 
-    final ChannelBuffer serialized = serialize(input, version);
+    final ByteBuf serialized = serialize(input, version);
     final int serializedLength = serialized.readableBytes();
 
     // Test parsing the whole message
@@ -170,7 +171,7 @@ public class ZMTPMessageParserTest {
     final List<String> content = nCopies(contentSize, ".");
     final List<String> frames = newArrayList(concat(envelope, content));
     final ZMTPMessage trivialMessage = ZMTPMessage.fromStringsUTF8(enveloped, frames);
-    final ChannelBuffer trivialSerialized = serialize(frames, version);
+    final ByteBuf trivialSerialized = serialize(frames, version);
     final int trivialLength = trivialSerialized.readableBytes();
 
     // Test parsing fragmented input
@@ -200,7 +201,7 @@ public class ZMTPMessageParserTest {
         trivialSerialized.setIndex(0, trivialLength);
         final ZMTPParsedMessage parsedTrivial = parser.parse(trivialSerialized);
         assertFalse(parsedTrivial.isTruncated());
-        assertEquals(trivialMessage, parsedTrivial.getMessage());
+        assertEquals(trivialMessage, parsedTrivial.message());
       }
     });
 
@@ -372,15 +373,15 @@ public class ZMTPMessageParserTest {
     }
   }
 
-  public static ChannelBuffer serialize(final boolean enveloped, final ZMTPMessage message,
+  public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message,
                                         int version) {
-    final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(
+    final ByteBuf buffer = Unpooled.buffer(ZMTPUtils.messageSize(
         message, enveloped, version));
     ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
     return buffer;
   }
 
-  private ChannelBuffer serialize(final List<String> frames, int version) {
+  private ByteBuf serialize(final List<String> frames, int version) {
     return serialize(false, ZMTPMessage.fromStringsUTF8(false, frames), version);
   }
 

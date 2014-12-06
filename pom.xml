@@ -48,12 +48,11 @@
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty</artifactId>
-      <version>3.6.6.Final</version>
+      <artifactId>netty-all</artifactId>
+      <version>4.1.0.Beta3</version>
       <!-- the user of this lib should already have a dependency on netty -->
       <scope>provided</scope>
     </dependency>
-
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>annotations</artifactId>
@@ -62,31 +61,29 @@
       <scope>provided</scope>
     </dependency>
 
+    <!--test deps-->
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
       <version>0.3.4</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.2</version>
+      <version>4.12</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <version>1.9.5</version>
+      <version>1.10.8</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>15.0</version>
+      <version>18.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

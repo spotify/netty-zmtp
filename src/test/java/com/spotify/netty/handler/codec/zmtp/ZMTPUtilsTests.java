@@ -16,14 +16,13 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.BigEndianHeapChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.buffer.LittleEndianHeapChannelBuffer;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import static com.spotify.netty.handler.codec.zmtp.TestUtil.cmp;
 import static java.lang.Boolean.FALSE;
@@ -39,7 +38,7 @@ public class ZMTPUtilsTests {
       for (int size = 0; size < 1024; size++) {
         final ZMTPFrame frame = ZMTPFrame.create(new byte[size]);
         int estimatedSize = ZMTPUtils.frameSize(frame, 1);
-        final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+        final ByteBuf buffer = Unpooled.buffer();
         ZMTPUtils.writeFrame(frame, buffer, more, 1);
         int writtenSize = buffer.readableBytes();
         assertEquals(writtenSize, estimatedSize);
@@ -69,7 +68,7 @@ public class ZMTPUtilsTests {
 
           final ZMTPMessage message = new ZMTPMessage(envelope, payload);
           int estimatedSize = ZMTPUtils.messageSize(message, enveloped, 1);
-          final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+          final ByteBuf buffer = Unpooled.buffer();
           ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
           int writtenSize = buffer.readableBytes();
           assertEquals(writtenSize, estimatedSize);
@@ -81,14 +80,14 @@ public class ZMTPUtilsTests {
 
   @Test
   public void testWriteLongBE() {
-    ChannelBuffer cb = new BigEndianHeapChannelBuffer(8);
+    ByteBuf cb = Unpooled.buffer();
     ZMTPUtils.writeLong(cb, 1);
     cmp(cb, 0,0,0,0,0,0,0,1);
   }
 
   @Test
   public void testWriteLongLE() {
-    ChannelBuffer cb = new LittleEndianHeapChannelBuffer(8);
+    ByteBuf cb = Unpooled.buffer();
     ZMTPUtils.writeLong(cb, 1);
     cmp(cb, 0,0,0,0,0,0,0,1);
   }

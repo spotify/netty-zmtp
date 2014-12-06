@@ -16,12 +16,13 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.channel.Channel;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.UUID;
+
+import io.netty.channel.Channel;
 
 /**
  * Represents a ongoing zmtp session
@@ -65,7 +66,7 @@ public class ZMTPSession {
     this.sizeLimit = sizeLimit;
     this.useLocalIdentity = (localIdent != null);
     if (localIdent == null) {
-      this.localIdent = ZMTPUtils.getBytesFromUUID(UUID.randomUUID());
+      this.localIdent = ZMTPUtils.encodeUUID(UUID.randomUUID());
     } else {
       this.localIdent = localIdent;
     }
@@ -75,15 +76,15 @@ public class ZMTPSession {
   /**
    * @return The local address of the session
    */
-  public SocketAddress getLocalAddress() {
-    return channel.getLocalAddress();
+  public SocketAddress localAddress() {
+    return channel.localAddress();
   }
 
   /**
    * @return The remote address of the session
    */
-  public SocketAddress getRemoteAddress() {
-    return channel.getRemoteAddress();
+  public SocketAddress remoteAddress() {
+    return channel.remoteAddress();
   }
 
   /**
@@ -91,14 +92,14 @@ public class ZMTPSession {
    *
    * @return Returns the type of connection
    */
-  public ZMTPConnectionType getConnectionType() {
+  public ZMTPConnectionType connectionType() {
     return type;
   }
 
   /**
    * Changes the type of connection of the session
    */
-  void setConnectionType(final ZMTPConnectionType type) {
+  void connectionType(final ZMTPConnectionType type) {
     this.type = type;
   }
 
@@ -112,14 +113,14 @@ public class ZMTPSession {
   /**
    * Get the remote session id (can be used for persistent queuing)
    */
-  public byte[] getRemoteIdentity() {
+  public byte[] remoteIdentity() {
     return remoteIdent;
   }
 
   /**
    * Return the local identity
    */
-  public byte[] getLocalIdentity() {
+  public byte[] localIdentity() {
     return localIdent;
   }
 
@@ -135,7 +136,7 @@ public class ZMTPSession {
    *
    * @param remoteIdent Remote identity, if null an identity will be created
    */
-  public void setRemoteIdentity(@Nullable final byte[] remoteIdent) {
+  public void remoteIdentity(@Nullable final byte[] remoteIdent) {
     if (this.remoteIdent != null) {
       throw new IllegalStateException("Remote identity already set");
     }
@@ -143,20 +144,20 @@ public class ZMTPSession {
     this.remoteIdent = remoteIdent;
     if (this.remoteIdent == null) {
       // Create a new remote identity
-      this.remoteIdent = ZMTPUtils.getBytesFromUUID(UUID.randomUUID());
+      this.remoteIdent = ZMTPUtils.encodeUUID(UUID.randomUUID());
     }
   }
 
-  public Channel getChannel() {
+  public Channel channel() {
     return channel;
   }
 
-  public void setChannel(final Channel channel) {
+  public void channel(final Channel channel) {
     this.channel = channel;
   }
 
 
-  public long getSizeLimit() {
+  public long sizeLimit() {
     return sizeLimit;
   }
 
@@ -168,16 +169,16 @@ public class ZMTPSession {
    *
    * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
    */
-  public int getActualVersion() {
+  public int actualVersion() {
     return actualVersion;
   }
 
-  public void setActualVersion(int actualVersion) {
+  public void actualVersion(int actualVersion) {
       this.actualVersion = actualVersion;
   }
 
   @Nullable
-  public ZMTPSocketType getSocketType() {
+  public ZMTPSocketType socketType() {
     return socketType;
   }
 

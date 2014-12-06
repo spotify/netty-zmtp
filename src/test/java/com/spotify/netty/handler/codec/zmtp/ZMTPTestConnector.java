@@ -16,19 +16,18 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
 import org.zeromq.ZMQ;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
+import java.util.List;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.MessageToMessageDecoder;
 
 /**
  * Helper to create connections to a zmtp server via netty
@@ -55,25 +54,26 @@ public abstract class ZMTPTestConnector {
     serverSocket.bind("tcp://" + ip + ":" + port);
 
     // Configure the client.
-    final ClientBootstrap bootstrap =
-        new ClientBootstrap(new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                              Executors.newCachedThreadPool()));
+    final Bootstrap bootstrap = new Bootstrap();
+    final NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    bootstrap.group(eventLoopGroup);
+    bootstrap.channel(NioSocketChannel.class);
 
     // Set up the pipeline factory.
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(
+    bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
+      @Override
+      protected void initChannel(final NioSocketChannel ch) throws Exception {
+        ch.pipeline().addLast(
             new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, "client".getBytes())),
-            new OneToOneDecoder() {
+            new MessageToMessageDecoder<ZMTPIncomingMessage>() {
               @Override
-              protected Object decode(final ChannelHandlerContext ctx, final Channel channel,
-                                      final Object msg) throws Exception {
-                if (onMessage((ZMTPIncomingMessage) msg)) {
+              protected void decode(final ChannelHandlerContext ctx, final ZMTPIncomingMessage msg,
+                                    final List<Object> out)
+                  throws Exception {
+                if (onMessage(msg)) {
                   receivedMessage = true;
-                  channel.close();
+                  ctx.close();
                 }
-
-                return null;
               }
             });
       }
@@ -87,10 +87,10 @@ public abstract class ZMTPTestConnector {
     afterConnect(serverSocket, future);
 
     // Wait until the connection is closed or the connection attempt fails.
-    future.getChannel().getCloseFuture().awaitUninterruptibly();
+    future.channel().closeFuture().awaitUninterruptibly();
 
     // Shut down thread pools to exit.
-    bootstrap.releaseExternalResources();
+    eventLoopGroup.shutdownGracefully().awaitUninterruptibly();
 
     serverSocket.close();
     context.term();

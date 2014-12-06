@@ -1,17 +1,18 @@
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
-import org.jboss.netty.handler.codec.replay.VoidEnum;
+
+import java.util.List;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.ReplayingDecoder;
 
 /**
  * An abstract base class for common functionality to the ZMTP codecs.
  */
-abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
+abstract class CodecBase extends ReplayingDecoder<Void> {
 
   protected final ZMTPSession session;
   protected HandshakeListener listener;
@@ -21,45 +22,43 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
   }
 
   @Override
-  public void channelConnected(final ChannelHandlerContext ctx, final ChannelStateEvent e)
-      throws Exception {
+  public void channelActive(final ChannelHandlerContext ctx) throws Exception {
 
     setListener(new HandshakeListener() {
       @Override
       public void handshakeDone(int protocolVersion, byte[] remoteIdentity) {
-        session.setRemoteIdentity(remoteIdentity);
-        session.setActualVersion(protocolVersion);
-        updatePipeline(ctx.getPipeline(), session);
-        ctx.sendUpstream(e);
+        session.remoteIdentity(remoteIdentity);
+        session.actualVersion(protocolVersion);
+        updatePipeline(ctx.pipeline(), session);
+        ctx.fireChannelActive();
       }
     });
 
-    Channel channel = e.getChannel();
+    final Channel channel = ctx.channel();
 
-    channel.write(onConnect());
-    this.session.setChannel(e.getChannel());
+    channel.writeAndFlush(onConnect());
+    this.session.channel(channel);
   }
 
-  abstract ChannelBuffer onConnect();
+  abstract ByteBuf onConnect();
 
-  abstract boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException;
+  abstract boolean inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException;
 
   @Override
-  protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer,
-                          VoidEnum _) throws ZMTPException {
-    buffer.markReaderIndex();
-    boolean done = inputOutput(buffer, channel);
+  protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
+      throws Exception {
+
+    in.markReaderIndex();
+    boolean done = inputOutput(in, ctx.channel());
     if (!done) {
-      return null;
+      return;
     }
 
     // This follows the pattern for dynamic pipelines documented in
-    // http://netty.io/3.6/api/org/jboss/netty/handler/codec/replay/ReplayingDecoder.html
+    // http://netty.io/4.0/api/io/netty/handler/codec/ReplayingDecoder.html
     if (actualReadableBytes() > 0) {
-      return buffer.readBytes(actualReadableBytes());
+      out.add(in.readBytes(actualReadableBytes()));
     }
-
-    return null;
   }
 
   void setListener(HandshakeListener listener) {
@@ -69,7 +68,7 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
 
   private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
-    pipeline.addAfter(pipeline.getContext(this).getName(), "zmtpEncoder",
+    pipeline.addAfter(pipeline.context(this).name(), "zmtpEncoder",
                       new ZMTPFramingEncoder(session));
     pipeline.addAfter("zmtpEncoder", "zmtpDecoder",
                       new ZMTPFramingDecoder(session));
@@ -79,7 +78,7 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
   /**
    * Parse and return the remote identity octets from a ZMTP/1.0 greeting.
    */
-  static byte[] readZMTP1RemoteIdentity(final ChannelBuffer buffer) throws ZMTPException {
+  static byte[] readZMTP1RemoteIdentity(final ByteBuf buffer) throws ZMTPException {
     buffer.markReaderIndex();
 
     final long len = ZMTPUtils.decodeLength(buffer);

@@ -1,8 +1,9 @@
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.junit.Assert;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Reused static methods.
@@ -17,29 +18,25 @@ class TestUtil {
     return bs;
   }
 
-  public static ChannelBuffer buf(int ...bytes) {
-    ChannelBuffer cb = ChannelBuffers.dynamicBuffer(bytes.length);
-    cb.writeBytes(bytes(bytes));
-    return cb;
+  public static ByteBuf buf(int ...bytes) {
+    return buf(bytes(bytes));
   }
 
-  public static ChannelBuffer buf(byte[] data) {
-    ChannelBuffer cb = ChannelBuffers.dynamicBuffer(data.length);
-    cb.writeBytes(data);
-    return cb;
+  public static ByteBuf buf(byte[] data) {
+    return Unpooled.copiedBuffer(data);
   }
 
-  public static void cmp(ChannelBuffer buf, int... bytes) {
+  public static void cmp(ByteBuf buf, int... bytes) {
     cmp(buf, buf(bytes));
   }
 
   /**
    * Compare ChannelBuffers left and right and raise an Assert.fail() if there are differences
    *
-   * @param expected the ChannelBuffer you expect
-   * @param actual the ChannelBuffer you actually got
+   * @param expected the ByteBuf you expect
+   * @param actual the ByteBuf you actually got
    */
-  public static void cmp(ChannelBuffer expected, ChannelBuffer actual) {
+  public static void cmp(ByteBuf expected, ByteBuf actual) {
     int expectedPos = expected.readerIndex();
     int actualPos = actual.readerIndex();
     int expectedReadableCount = expected.readableBytes();
@@ -62,18 +59,18 @@ class TestUtil {
   }
 
   /**
-   * Returns a clone of a ChannelBuffer.
-   * @param buf the ChannelBuffer to clone
+   * Returns a clone of a ByteBuf.
+   * @param buf the ByteBuf to clone
    * @return a clone.
    */
-  public static ChannelBuffer clone(ChannelBuffer buf) {
-    return ChannelBuffers.wrappedBuffer(buf.array());
+  public static ByteBuf clone(ByteBuf buf) {
+    return Unpooled.copiedBuffer(buf);
   }
 
   /*
    * Useful for debugging stuff.
 
-  public static String print(ChannelBuffer buf) {
+  public static String print(ByteBuf buf) {
     return printBytes(buf.array(), buf.readerIndex(), buf.readableBytes());
   }
   */

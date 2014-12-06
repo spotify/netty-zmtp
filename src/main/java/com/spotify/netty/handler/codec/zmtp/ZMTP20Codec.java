@@ -1,8 +1,8 @@
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 
 /**
  * A ZMTP20Codec instance is a ChannelUpstreamHandler that, when placed in a ChannelPipeline,
@@ -21,13 +21,13 @@ public class ZMTP20Codec extends CodecBase {
    */
   public ZMTP20Codec(ZMTPSession session, boolean interop) {
     super(session);
-    if (session.getSocketType() == null) {
+    if (session.socketType() == null) {
       throw new IllegalArgumentException("ZMTP/2.0 requires a socket type");
     }
     this.interop = interop;
   }
 
-  protected ChannelBuffer onConnect() {
+  protected ByteBuf onConnect() {
     if (interop) {
       return makeZMTP2CompatSignature();
     } else {
@@ -36,7 +36,7 @@ public class ZMTP20Codec extends CodecBase {
   }
 
   @Override
-  boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException {
+  boolean inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException {
     if (splitHandshake) {
       done(2, parseZMTP2Greeting(buffer, false));
       return true;
@@ -49,12 +49,12 @@ public class ZMTP20Codec extends CodecBase {
         buffer.resetReaderIndex();
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
-        channel.write(ChannelBuffers.wrappedBuffer(session.getLocalIdentity()));
+        channel.writeAndFlush(Unpooled.wrappedBuffer(session.localIdentity()));
         done(version, ZMTP10Codec.readZMTP1RemoteIdentity(buffer));
         return true;
       } else {
         splitHandshake = true;
-        channel.write(makeZMTP2Greeting(false));
+        channel.writeAndFlush(makeZMTP2Greeting(false));
         return false;
       }
     } else {
@@ -77,7 +77,7 @@ public class ZMTP20Codec extends CodecBase {
    * @return false if not enough data is available, else true
    * @throws IndexOutOfBoundsException if there is not enough data available in buffer
    */
-  static int detectProtocolVersion(final ChannelBuffer buffer) {
+  static int detectProtocolVersion(final ByteBuf buffer) {
     if (buffer.readByte() != (byte)0xff) {
       return 1;
     }
@@ -89,15 +89,15 @@ public class ZMTP20Codec extends CodecBase {
   }
 
   /**
-   * Make a ChannelBuffer containing a ZMTP/2.0 greeting, possibly leaving out the 10 initial
+   * Make a ByteBuf containing a ZMTP/2.0 greeting, possibly leaving out the 10 initial
    * signature octets if includeSignature is false.
    *
    * @param includeSignature true if a full greeting should be sent, false if the initial 10
    *                         octets should be left out
-   * @return a ChannelBuffer containing the greeting
+   * @return a ByteBuf containing the greeting
    */
-  private ChannelBuffer makeZMTP2Greeting(boolean includeSignature) {
-    ChannelBuffer out = ChannelBuffers.dynamicBuffer();
+  private ByteBuf makeZMTP2Greeting(boolean includeSignature) {
+    ByteBuf out = Unpooled.buffer();
     if (includeSignature) {
       ZMTPUtils.encodeLength(0, out, true);
       // last byte of signature
@@ -106,29 +106,29 @@ public class ZMTP20Codec extends CodecBase {
     }
     out.writeByte(0x01);
     // socket-type
-    ZMTPSocketType socketType = session.getSocketType();
+    ZMTPSocketType socketType = session.socketType();
     assert socketType != null;
     out.writeByte(socketType.ordinal());
     // identity
     // the final-short flag octet
     out.writeByte(0x00);
-    out.writeByte(session.getLocalIdentity().length);
-    out.writeBytes(session.getLocalIdentity());
+    out.writeByte(session.localIdentity().length);
+    out.writeBytes(session.localIdentity());
     return out;
   }
 
   /**
-   * Create and return a ChannelBuffer containing the ZMTP/2.0 compatibility detection signature
+   * Create and return a ByteBuf containing the ZMTP/2.0 compatibility detection signature
    * message as specified in the Backwards Compatibility section of http://rfc.zeromq.org/spec:15
    */
-  private ChannelBuffer makeZMTP2CompatSignature() {
-    ChannelBuffer out = ChannelBuffers.dynamicBuffer();
-    ZMTPUtils.encodeLength(session.getLocalIdentity().length + 1, out, true);
+  private ByteBuf makeZMTP2CompatSignature() {
+    ByteBuf out = Unpooled.buffer();
+    ZMTPUtils.encodeLength(session.localIdentity().length + 1, out, true);
     out.writeByte(0x7f);
     return out;
   }
 
-  static byte[] parseZMTP2Greeting(ChannelBuffer buffer, boolean expectSignature) throws ZMTPException {
+  static byte[] parseZMTP2Greeting(ByteBuf buffer, boolean expectSignature) throws ZMTPException {
     if (expectSignature) {
       if (buffer.readByte() != (byte)0xff) {
         throw new ZMTPException("Illegal ZMTP/2.0 greeting, first octet not 0xff");

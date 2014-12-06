@@ -16,40 +16,41 @@
 
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+
+import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ZMQIntegrationTest {
 
-  private ServerBootstrap serverBootstrap;
   private Channel serverChannel;
   private InetSocketAddress serverAddress;
+  private NioEventLoopGroup bossGroup;
+  private NioEventLoopGroup group;
 
   private String identity = "identity";
 
@@ -61,51 +62,51 @@ public class ZMQIntegrationTest {
 
   @Before
   public void setup() {
-    serverBootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
-        Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+    final ServerBootstrap b = new ServerBootstrap();
+    bossGroup = new NioEventLoopGroup(1);
+    group = new NioEventLoopGroup();
 
-    serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      Executor executor = new OrderedMemoryAwareThreadPoolExecutor(
-          Runtime.getRuntime().availableProcessors(),
-          1024 * 1024,
-          128 * 1024 * 1024
-      );
-
-      public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(
-            new ExecutionHandler(executor),
+    b.channel(NioServerSocketChannel.class);
+    b.group(bossGroup, group);
+    b.childHandler(new ChannelInitializer<NioSocketChannel>() {
+      @Override
+      protected void initChannel(final NioSocketChannel ch) throws Exception {
+        ch.pipeline().addLast(
             new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 1024, identity.getBytes(),
                                             ZMTPSocketType.REQ), false),
-            new SimpleChannelUpstreamHandler() {
+            new ChannelInboundHandlerAdapter() {
 
               @Override
-              public void channelConnected(final ChannelHandlerContext ctx,
-                                           final ChannelStateEvent e) throws Exception {
-                super.channelConnected(ctx, e);
-                channelsConnected.add(ctx.getChannel());
+              public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+                super.channelActive(ctx);
+                channelsConnected.add(ctx.channel());
               }
 
               @Override
-              public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e)
+              public void channelRead(final ChannelHandlerContext ctx, final Object msg)
                   throws Exception {
-                incomingMessages.put((ZMTPIncomingMessage) e.getMessage());
+                incomingMessages.put((ZMTPIncomingMessage) msg);
               }
             });
       }
     });
 
-    serverChannel = serverBootstrap.bind(new InetSocketAddress("localhost", 0));
-    serverAddress = (InetSocketAddress) serverChannel.getLocalAddress();
+    final InetSocketAddress address = new InetSocketAddress("localhost", 0);
+    serverChannel = b.bind(address).awaitUninterruptibly().channel();
+    serverAddress = (InetSocketAddress) serverChannel.localAddress();
   }
 
   @After
   public void teardown() {
     if (serverChannel != null) {
       serverChannel.close();
-      serverChannel.getCloseFuture().awaitUninterruptibly();
+      serverChannel.closeFuture().awaitUninterruptibly();
     }
-    if (serverBootstrap != null) {
-      serverBootstrap.releaseExternalResources();
+    if (bossGroup != null) {
+      bossGroup.shutdownGracefully().awaitUninterruptibly();
+    }
+    if (group != null) {
+      group.shutdownGracefully().awaitUninterruptibly();
     }
   }
 
@@ -118,23 +119,23 @@ public class ZMQIntegrationTest {
     request.send(socket, false);
 
     final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
-    final ZMTPMessage receivedMessage = receivedRequest.getMessage();
-    receivedRequest.getSession().getChannel().write(receivedMessage);
+    final ZMTPMessage received = receivedRequest.getMessage();
+    receivedRequest.getSession().channel().writeAndFlush(received);
 
     final ZMsg reply = ZMsg.recvMsg(socket);
-    Iterator<ZFrame> reqIter = request.iterator();
-    Iterator<ZFrame> replyIter = reply.iterator();
+    final Iterator<ZFrame> reqIter = request.iterator();
+    final Iterator<ZFrame> replyIter = reply.iterator();
     while (reqIter.hasNext()) {
       assertTrue(replyIter.hasNext());
       assertArrayEquals(reqIter.next().getData(), replyIter.next().getData());
     }
     assertFalse(replyIter.hasNext());
 
-    assertEquals(1, receivedMessage.getEnvelope().size());
-    assertEquals(2, receivedMessage.getContent().size());
-    assertArrayEquals("envelope".getBytes(), receivedMessage.getEnvelope().get(0).getData());
-    assertArrayEquals("hello".getBytes(), receivedMessage.getContent().get(0).getData());
-    assertArrayEquals("world".getBytes(), receivedMessage.getContent().get(1).getData());
+    assertEquals(1, received.envelope().size());
+    assertEquals(2, received.content().size());
+    assertEquals(Unpooled.copiedBuffer("envelope", UTF_8), received.envelope().get(0).data());
+    assertEquals(Unpooled.copiedBuffer("hello", UTF_8), received.content().get(0).data());
+    assertEquals(Unpooled.copiedBuffer("world", UTF_8), received.content().get(1).data());
   }
 
   @Test
@@ -148,7 +149,7 @@ public class ZMQIntegrationTest {
         asList(ZMTPFrame.create("hello"), ZMTPFrame.create("world")));
 
     final Channel channel = channelsConnected.take();
-    channel.write(request);
+    channel.writeAndFlush(request);
 
     final ZMsg receivedReply = ZMsg.recvMsg(socket);
 

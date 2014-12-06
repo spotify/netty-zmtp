@@ -1,8 +1,9 @@
 package com.spotify.netty.handler.codec.zmtp;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 
 /**
  * A ZMTP10Codec instance is a ChannelUpstreamHandler that, when placed in a ChannelPipeline,
@@ -23,12 +24,12 @@ public class ZMTP10Codec extends CodecBase {
   }
 
   @Override
-  protected ChannelBuffer onConnect() {
-    return makeZMTP1Greeting(session.getLocalIdentity());
+  protected ByteBuf onConnect() {
+    return makeZMTP1Greeting(session.localIdentity());
   }
 
   @Override
-  boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException {
+  boolean inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException {
     byte[] remoteIdentity = readZMTP1RemoteIdentity(buffer);
     if (listener != null) {
       listener.handshakeDone(1, remoteIdentity);
@@ -37,13 +38,13 @@ public class ZMTP10Codec extends CodecBase {
   }
 
   /**
-   * Create and return a ChannelBuffer containing an ZMTP/1.0 greeting based on on the constructor
+   * Create and return a ByteBuf containing an ZMTP/1.0 greeting based on on the constructor
    * provided session.
    *
-   * @return a ChannelBuffer with a greeting
+   * @return a ByteBuf with a greeting
    */
-  private static ChannelBuffer makeZMTP1Greeting(byte[] localIdentity) {
-    ChannelBuffer out = ChannelBuffers.dynamicBuffer();
+  private static ByteBuf makeZMTP1Greeting(byte[] localIdentity) {
+    ByteBuf out = Unpooled.buffer();
     ZMTPUtils.encodeLength(localIdentity.length + 1, out);
     out.writeByte(0x00);
     out.writeBytes(localIdentity);

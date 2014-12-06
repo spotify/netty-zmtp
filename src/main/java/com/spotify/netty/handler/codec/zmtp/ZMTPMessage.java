@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.spotify.netty.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
+import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
-import static org.jboss.netty.util.CharsetUtil.UTF_8;
 
 public class ZMTPMessage {
 
@@ -155,14 +155,14 @@ public class ZMTPMessage {
   /**
    * Return the envelope
    */
-  public List<ZMTPFrame> getEnvelope() {
+  public List<ZMTPFrame> envelope() {
     return envelope;
   }
 
   /**
    * @return Current list of content in the message
    */
-  public List<ZMTPFrame> getContent() {
+  public List<ZMTPFrame> content() {
     return content;
   }
 
@@ -172,7 +172,7 @@ public class ZMTPMessage {
    * @param frameId frame to return (0 based)
    * @return ZMTPFrame identified by frameId
    */
-  public ZMTPFrame getContentFrame(final int frameId) {
+  public ZMTPFrame contentFrame(final int frameId) {
     if (frameId < 0 || frameId >= content.size()) {
       throw new IllegalArgumentException("Invalid frame id " + frameId);
     }
