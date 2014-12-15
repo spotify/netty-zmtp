@@ -49,7 +49,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.1.0.Beta3</version>
+      <version>4.0.24.Final</version>
       <!-- the user of this lib should already have a dependency on netty -->
       <scope>provided</scope>
     </dependency>

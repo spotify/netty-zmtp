@@ -12,9 +12,9 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
+import io.netty.channel.local.LocalEventLoopGroup;
 import io.netty.channel.local.LocalServerChannel;
 
 /**
@@ -40,7 +40,7 @@ class PipelineTester {
     final LocalAddress address = new LocalAddress("pipeline-tester-" + port.incrementAndGet());
 
     final ServerBootstrap sb = new ServerBootstrap();
-    sb.group(new DefaultEventLoopGroup(1), new DefaultEventLoopGroup());
+    sb.group(new LocalEventLoopGroup(1), new LocalEventLoopGroup());
     sb.channel(LocalServerChannel.class);
     sb.childHandler(new ChannelInitializer<LocalChannel>() {
       @Override
@@ -64,7 +64,7 @@ class PipelineTester {
     sb.bind(address).awaitUninterruptibly();
 
     final Bootstrap cb = new Bootstrap();
-    cb.group(new DefaultEventLoopGroup());
+    cb.group(new LocalEventLoopGroup());
     cb.channel(LocalChannel.class);
     cb.handler(new ChannelInitializer<LocalChannel>() {
       @Override
