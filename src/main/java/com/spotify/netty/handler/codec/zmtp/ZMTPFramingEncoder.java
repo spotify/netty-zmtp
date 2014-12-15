@@ -20,7 +20,8 @@ package com.spotify.netty.handler.codec.zmtp;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 
@@ -31,22 +32,24 @@ class ZMTPFramingEncoder extends MessageToMessageEncoder<ZMTPMessage> {
 
 
   private final ZMTPSession session;
+  private final ByteBufAllocator allocator;
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
+    this(session, PooledByteBufAllocator.DEFAULT);
+  }
+
+  public ZMTPFramingEncoder(final ZMTPSession session, final ByteBufAllocator allocator) {
     this.session = session;
+    this.allocator = allocator;
   }
 
   @Override
   protected void encode(final ChannelHandlerContext ctx, final ZMTPMessage message,
                         final List<Object> out)
       throws Exception {
-    // TODO (dano): integrate with write batching to avoid buffer creation and reduce garbage
-
     final int size = ZMTPUtils.messageSize(message, session.isEnveloped(), session.actualVersion());
-    final ByteBuf buffer = Unpooled.buffer(size);
-
+    final ByteBuf buffer = allocator.directBuffer(size);
     ZMTPUtils.writeMessage(message, buffer, session.isEnveloped(), session.actualVersion());
-
     out.add(buffer);
   }
 }
