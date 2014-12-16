@@ -59,6 +59,22 @@ public class ZMTPMessageParser {
   }
 
   /**
+   * Read a ZMTP frame from a {@link io.netty.buffer.ByteBuf}.
+   *
+   * @param length length of buffer
+   * @return A {@link ZMTPFrame} containg the data read from the buffer.
+   */
+  private ZMTPFrame readFrame(final ByteBuf buffer, final int length) {
+    if (length > 0) {
+      final byte[] data = new byte[length];
+      buffer.readBytes(data);
+      return new ZMTPFrame(data);
+    } else {
+      return ZMTPFrame.EMPTY_FRAME;
+    }
+  }
+
+  /**
    * Parses as many whole frames from the buffer as possible, until the final frame is encountered.
    * If the message was completed, it returns the frames of the message. Otherwise it returns null
    * to indicate that more data is needed.
@@ -103,7 +119,7 @@ public class ZMTPMessageParser {
       size += frameSize;
 
       // Read frame content
-      final ZMTPFrame frame = ZMTPFrame.read(buffer, frameSize);
+      final ZMTPFrame frame = readFrame(buffer, frameSize);
 
       if (!frame.hasData() && part == head) {
         // Skip the delimiter

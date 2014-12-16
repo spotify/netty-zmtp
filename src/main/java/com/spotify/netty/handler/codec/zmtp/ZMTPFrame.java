@@ -33,7 +33,7 @@ public class ZMTPFrame {
 
   private final byte[] data;
 
-  private ZMTPFrame(final byte[] data) {
+  ZMTPFrame(final byte[] data) {
     this.data = data;
   }
 
@@ -144,22 +144,6 @@ public class ZMTPFrame {
   @Override
   public int hashCode() {
     return data != null ? Arrays.hashCode(data) : 0;
-  }
-
-  /**
-   * Helper used during decoding of a ZMTP frame
-   *
-   * @param length length of buffer
-   * @return A {@link ZMTPFrame} containg the data read from the buffer.
-   */
-  static public ZMTPFrame read(final ByteBuf buffer, final int length) {
-    if (length > 0) {
-      final byte[] data = new byte[length];
-      buffer.readBytes(data);
-      return new ZMTPFrame(data);
-    } else {
-      return EMPTY_FRAME;
-    }
   }
 
   @Override
