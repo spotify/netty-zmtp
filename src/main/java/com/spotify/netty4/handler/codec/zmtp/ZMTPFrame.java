@@ -24,7 +24,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 
 
 public class ZMTPFrame {
@@ -69,7 +68,7 @@ public class ZMTPFrame {
    * @return a frame containing the string as default byte encoding
    */
   static public ZMTPFrame create(final String data) {
-    return create(data.getBytes());
+    return wrap(data.getBytes());
   }
 
   /**
@@ -95,31 +94,31 @@ public class ZMTPFrame {
     if (data.length() == 0) {
       return EMPTY_FRAME;
     } else {
-      return create(copiedBuffer(data, charset));
+      return wrap(data.getBytes(charset));
     }
   }
 
   /**
-   * Create a new frame from a byte array.
+   * Create a new frame from a byte array. The byte array will not be copied.
    */
-  static public ZMTPFrame create(final byte[] data) {
+  public static ZMTPFrame wrap(final byte[] data) {
     if (data == null || data.length == 0) {
       return EMPTY_FRAME;
     } else {
-      return create(copiedBuffer(data));
+      return new ZMTPFrame(data);
     }
   }
 
   /**
-   * Create a new frame from a channel buffer.
+   * Create a new frame from a buffer. The buffer is not retained.
    */
-  public static ZMTPFrame create(final ByteBuf buf) {
+  public static ZMTPFrame copy(final ByteBuf buf) {
     if (!buf.isReadable()) {
       return EMPTY_FRAME;
     } else {
-      final ByteBuf copy = Unpooled.buffer(buf.readableBytes());
-      copy.writeBytes(buf.slice());
-      return new ZMTPFrame(copy.array());
+      final byte[] data = new byte[buf.readableBytes()];
+      buf.slice().readBytes(data);
+      return new ZMTPFrame(data);
     }
   }
 

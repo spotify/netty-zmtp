@@ -62,7 +62,7 @@ public class ZMTPFramingEncoderTest {
   public void testEncodeZMTP2Long() throws Exception {
     ZMTPMessage message = new ZMTPMessage(
         asList(ZMTPFrame.create("id0")),
-        asList(ZMTPFrame.create(LARGE_FILL)));
+        asList(ZMTPFrame.wrap(LARGE_FILL)));
     ByteBuf buf = Unpooled.buffer();
     buf.writeBytes(bytes(1, 3, 0x69, 0x64, 0x30, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0x01, 0xf4));
     buf.writeBytes(LARGE_FILL);

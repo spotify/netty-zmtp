@@ -93,7 +93,7 @@ public class ZMTPMessage {
         if (bytes.length == 0) {
           return EMPTY_FRAME;
         }
-        return ZMTPFrame.create(bytes);
+        return ZMTPFrame.wrap(bytes);
       }
 
       @Override
