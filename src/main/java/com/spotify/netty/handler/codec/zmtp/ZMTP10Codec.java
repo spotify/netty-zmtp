@@ -13,11 +13,9 @@ import io.netty.channel.Channel;
 public class ZMTP10Codec extends CodecBase {
 
   /**
-   * Constructs a codec with the specified local identity. If identity is null, the connection type
-   * of connections using this codec is treated as ZMTPConnectionType.Broadcast and neither
-   * sent nor received frames will be enveloped.
+   * Constructs a codec with the specified session.
    *
-   * @param session the session that configures this codec
+   * @param session the session that configures this codec.
    */
   public ZMTP10Codec(ZMTPSession session) {
     super(session);
