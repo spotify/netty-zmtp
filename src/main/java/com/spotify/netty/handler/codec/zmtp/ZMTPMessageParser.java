@@ -34,8 +34,8 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
 public class ZMTPMessageParser {
 
   private static final byte LONG_FLAG = 0x02;
-  private final boolean enveloped;
 
+  private final boolean enveloped;
   private final long sizeLimit;
   private final int version;
 
