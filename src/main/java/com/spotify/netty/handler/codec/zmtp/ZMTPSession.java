@@ -25,7 +25,7 @@ import java.util.UUID;
 import io.netty.channel.Channel;
 
 /**
- * Represents a ongoing zmtp session
+ * Represents an ongoing zmtp session
  */
 public class ZMTPSession {
 
@@ -35,7 +35,6 @@ public class ZMTPSession {
   private final byte[] localIdent;
   private final long sizeLimit;
   private final ZMTPSocketType socketType;
-
 
   private ZMTPConnectionType type;
   private Channel channel;
@@ -107,7 +106,7 @@ public class ZMTPSession {
    * Helper to determine if messages in this session are enveloped
    */
   public boolean isEnveloped() {
-    return (type == ZMTPConnectionType.Addressed);
+    return (type == ZMTPConnectionType.ADDRESSED);
   }
 
   /**
@@ -194,5 +193,9 @@ public class ZMTPSession {
            ", remoteIdent=" + Arrays.toString(remoteIdent) +
            ", actualVersion=" + actualVersion +
            '}';
+  }
+
+  public boolean interop() {
+    return false;
   }
 }

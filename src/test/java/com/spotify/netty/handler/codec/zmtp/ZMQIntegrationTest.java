@@ -72,7 +72,7 @@ public class ZMQIntegrationTest {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
-            new ZMTP20Codec(new ZMTPSession(ZMTPConnectionType.Addressed, 1024, identity.getBytes(),
+            new ZMTPCodec(new ZMTPSession(ZMTPConnectionType.ADDRESSED, 1024, identity.getBytes(),
                                             ZMTPSocketType.REQ), false),
             new ChannelInboundHandlerAdapter() {
 

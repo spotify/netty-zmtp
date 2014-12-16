@@ -27,7 +27,7 @@ public class CodecTest {
     buffer.writeBytes(overlyLong);
 
     expectedException.expect(ZMTPException.class);
-    CodecBase.readZMTP1RemoteIdentity(buffer);
+    ZMTPUtils.readZMTP1RemoteIdentity(buffer);
   }
 
   @Test

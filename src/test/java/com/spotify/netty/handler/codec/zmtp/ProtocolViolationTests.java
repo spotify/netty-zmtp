@@ -86,7 +86,7 @@ public class ProtocolViolationTests {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
-            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes())),
+            new ZMTP10Handshaker(new ZMTPSession(ZMTPConnectionType.ADDRESSED, identity.getBytes())),
             mockHandler);
       }
     });

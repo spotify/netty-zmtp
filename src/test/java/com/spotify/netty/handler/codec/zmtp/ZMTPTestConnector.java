@@ -64,7 +64,7 @@ public abstract class ZMTPTestConnector {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
-            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, "client".getBytes())),
+            new ZMTP10Handshaker(new ZMTPSession(ZMTPConnectionType.ADDRESSED, "client".getBytes())),
             new MessageToMessageDecoder<ZMTPIncomingMessage>() {
               @Override
               protected void decode(final ChannelHandlerContext ctx, final ZMTPIncomingMessage msg,

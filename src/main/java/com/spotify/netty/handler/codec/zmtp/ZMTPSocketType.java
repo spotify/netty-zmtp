@@ -17,5 +17,5 @@ public enum ZMTPSocketType {
   DEALER,
   ROUTER,
   PULL,
-  PUSH
+  socketType, PUSH
 }

@@ -10,29 +10,23 @@ import io.netty.channel.Channel;
  * will perform a ZMTP/1.0 handshake with the connected peer and replace itself with the proper
  * pipeline components to encode and decode ZMTP frames.
  */
-public class ZMTP10Codec extends CodecBase {
+public class ZMTP10Handshaker implements ZMTPHandshaker {
 
-  /**
-   * Constructs a codec with the specified session.
-   *
-   * @param session the session that configures this codec.
-   */
-  public ZMTP10Codec(ZMTPSession session) {
-    super(session);
+  private final byte[] localIdentity;
+
+  public ZMTP10Handshaker(final byte[] localIdentity) {
+    this.localIdentity = localIdentity;
   }
 
   @Override
-  protected ByteBuf onConnect() {
-    return makeZMTP1Greeting(session.localIdentity());
+  public ByteBuf onConnect() {
+    return makeZMTP1Greeting(localIdentity);
   }
 
   @Override
-  boolean inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException {
-    byte[] remoteIdentity = readZMTP1RemoteIdentity(buffer);
-    if (listener != null) {
-      listener.handshakeDone(1, remoteIdentity);
-    }
-    return true;
+  public ZMTPHandshake inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException {
+    final byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(buffer);
+    return new ZMTPHandshake(1, remoteIdentity);
   }
 
   /**

@@ -276,4 +276,37 @@ public class ZMTPUtils {
     return builder.toString();
   }
 
+  /**
+   * Parse and return the remote identity octets from a ZMTP/1.0 greeting.
+   */
+  static byte[] readZMTP1RemoteIdentity(final ByteBuf buffer) throws ZMTPException {
+    buffer.markReaderIndex();
+
+    final long len = decodeLength(buffer);
+    if (len > 256) {
+      // spec says the ident string can be up to 255 chars
+      throw new ZMTPException("Remote identity longer than the allowed 255 octets");
+    }
+
+    // Bail out if there's not enough data
+    if (len == -1 || buffer.readableBytes() < len) {
+      buffer.resetReaderIndex();
+      throw new IndexOutOfBoundsException("not enough data");
+    }
+    // skip the flags byte
+    buffer.skipBytes(1);
+
+    if (len == 1) {
+      return null;
+    }
+    final byte[] identity = new byte[(int)len - 1];
+    buffer.readBytes(identity);
+    return identity;
+  }
+
+  static <T> T checkNotNull(T obj, String message) {
+    if (obj == null)
+      throw new NullPointerException(message);
+    return obj;
+  }
 }
