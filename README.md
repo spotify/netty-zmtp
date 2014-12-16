@@ -19,7 +19,7 @@ but it's not a drop-in replacement for JZMQ like e.g. JeroMQ attempts to be.
 We have successfully used these handlers to implement services capable of
 processing millions of messages per second.
 
-Currently this project targets Java 6+ and Netty 3.x. It does not have any
+Currently this project targets Java 6+ and Netty 4.x. It does not have any
 native dependency on e.g. libzmq.
 
 ## Usage
@@ -28,6 +28,16 @@ To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your
 `ChannelPipeline` and it will turn incoming buffers into  `ZMTPIncomingMessage`
 instances up the pipeline and accept `ZMTPMessage` instances that gets
 serialized into buffers downstream.
+
+### `pom.xml`
+
+```xml
+<dependency>
+  <groupId>com.spotify</groupId>
+  <artifactId>netty4-zmtp</artifactId>
+  <version>0.4.0</version>
+</dependency>
+```
 
 ## Feedback
 
