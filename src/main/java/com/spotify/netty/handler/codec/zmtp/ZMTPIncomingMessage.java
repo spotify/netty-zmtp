@@ -39,14 +39,14 @@ public class ZMTPIncomingMessage {
    *
    * @return The session this message was received on.
    */
-  public ZMTPSession getSession() {
+  public ZMTPSession session() {
     return session;
   }
 
   /**
    * Get the total size in bytes of the message, including truncated frames.
    */
-  public long getByteSize() {
+  public long byteSize() {
     return byteSize;
   }
 
@@ -96,6 +96,8 @@ public class ZMTPIncomingMessage {
     return "ZMTPIncomingMessage{" +
            "session=" + session +
            ", message=" + message +
+           ", truncated=" + truncated +
+           ", byteSize=" + byteSize +
            '}';
   }
 }

@@ -30,7 +30,6 @@ import io.netty.handler.codec.MessageToMessageEncoder;
  */
 class ZMTPFramingEncoder extends MessageToMessageEncoder<ZMTPMessage> {
 
-
   private final ZMTPSession session;
   private final ByteBufAllocator allocator;
 

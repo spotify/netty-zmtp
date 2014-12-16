@@ -28,8 +28,8 @@ import static java.util.Arrays.asList;
 
 public class ZMTPMessage {
 
-  List<ZMTPFrame> envelope = new ArrayList<ZMTPFrame>();
-  List<ZMTPFrame> content = new ArrayList<ZMTPFrame>();
+  private List<ZMTPFrame> envelope;
+  private List<ZMTPFrame> content;
 
   /**
    * Create a new message from envelope and content frames.

@@ -120,7 +120,7 @@ public class ZMQIntegrationTest {
 
     final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
     final ZMTPMessage received = receivedRequest.getMessage();
-    receivedRequest.getSession().channel().writeAndFlush(received);
+    receivedRequest.session().channel().writeAndFlush(received);
 
     final ZMsg reply = ZMsg.recvMsg(socket);
     final Iterator<ZFrame> reqIter = request.iterator();
