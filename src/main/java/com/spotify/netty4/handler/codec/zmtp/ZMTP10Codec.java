@@ -3,7 +3,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
  * A ZMTP10Codec instance is a ChannelUpstreamHandler that, when placed in a ChannelPipeline,
@@ -27,7 +27,7 @@ public class ZMTP10Codec extends CodecBase {
   }
 
   @Override
-  boolean inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException {
+  boolean inputOutput(final ByteBuf buffer, final ChannelHandlerContext ctx) throws ZMTPException {
     byte[] remoteIdentity = readZMTP1RemoteIdentity(buffer);
     if (listener != null) {
       listener.handshakeDone(1, remoteIdentity);

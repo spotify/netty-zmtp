@@ -4,7 +4,6 @@ package com.spotify.netty4.handler.codec.zmtp;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -34,22 +33,20 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
       }
     });
 
-    final Channel channel = ctx.channel();
-
-    channel.writeAndFlush(onConnect());
-    this.session.channel(channel);
+    ctx.writeAndFlush(onConnect());
+    this.session.channel(ctx.channel());
   }
 
   abstract ByteBuf onConnect();
 
-  abstract boolean inputOutput(final ByteBuf buffer, final Channel channel) throws ZMTPException;
+  abstract boolean inputOutput(final ByteBuf buffer, final ChannelHandlerContext ctx) throws ZMTPException;
 
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
 
     in.markReaderIndex();
-    boolean done = inputOutput(in, ctx.channel());
+    boolean done = inputOutput(in, ctx);
     if (!done) {
       return;
     }
