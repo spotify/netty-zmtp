@@ -47,7 +47,7 @@ class ZMTPFramingEncoder extends MessageToMessageEncoder<ZMTPMessage> {
                         final List<Object> out)
       throws Exception {
     final int size = ZMTPUtils.messageSize(message, session.isEnveloped(), session.actualVersion());
-    final ByteBuf buffer = allocator.directBuffer(size);
+    final ByteBuf buffer = allocator.buffer(size);
     ZMTPUtils.writeMessage(message, buffer, session.isEnveloped(), session.actualVersion());
     out.add(buffer);
   }
