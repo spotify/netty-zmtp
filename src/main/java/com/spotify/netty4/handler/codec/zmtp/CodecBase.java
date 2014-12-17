@@ -65,9 +65,10 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
 
   private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
-    pipeline.addAfter(pipeline.context(this).name(), "zmtpEncoder",
+    final ChannelHandlerContext ctx = pipeline.context(this);
+    pipeline.addAfter(ctx.executor(), ctx.name(), "zmtpEncoder",
                       new ZMTPFramingEncoder(session));
-    pipeline.addAfter("zmtpEncoder", "zmtpDecoder",
+    pipeline.addAfter(ctx.executor(), "zmtpEncoder", "zmtpDecoder",
                       new ZMTPFramingDecoder(session));
     pipeline.remove(this);
   }
