@@ -6,6 +6,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.CombinedChannelDuplexHandler;
 import io.netty.handler.codec.ReplayingDecoder;
 
 /**
@@ -66,12 +67,11 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
 
   private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
-    final ChannelHandlerContext ctx = pipeline.context(this);
-    pipeline.addAfter(ctx.executor(), ctx.name(), "zmtpEncoder",
-                      new ZMTPFramingEncoder(session));
-    pipeline.addAfter(ctx.executor(), "zmtpEncoder", "zmtpDecoder",
-                      new ZMTPFramingDecoder(session));
-    pipeline.remove(this);
+    pipeline.replace(
+        this, "zmtp-codec",
+        new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
+            new ZMTPFramingDecoder(session),
+            new ZMTPFramingEncoder(session)));
   }
 
   /**
