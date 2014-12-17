@@ -39,7 +39,8 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
 
   abstract ByteBuf onConnect();
 
-  abstract boolean inputOutput(final ByteBuf buffer, final ChannelHandlerContext ctx) throws ZMTPException;
+  abstract boolean inputOutput(final ByteBuf buffer, final ChannelHandlerContext ctx)
+      throws ZMTPException;
 
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
@@ -96,7 +97,7 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
     if (len == 1) {
       return null;
     }
-    final byte[] identity = new byte[(int)len - 1];
+    final byte[] identity = new byte[(int) len - 1];
     buffer.readBytes(identity);
     return identity;
   }
