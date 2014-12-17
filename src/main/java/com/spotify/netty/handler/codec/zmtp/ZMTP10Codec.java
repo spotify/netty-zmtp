@@ -2,7 +2,6 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
 
 /**
  * A ZMTP10Codec instance is a ChannelUpstreamHandler that, when placed in a ChannelPipeline,
@@ -28,7 +27,7 @@ public class ZMTP10Codec extends CodecBase {
   }
 
   @Override
-  boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException {
+  boolean inputOutput(final ChannelBuffer buffer, final MessageWriter out) throws ZMTPException {
     byte[] remoteIdentity = readZMTP1RemoteIdentity(buffer);
     if (listener != null) {
       listener.handshakeDone(1, remoteIdentity);

@@ -3,7 +3,6 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -29,7 +28,7 @@ public class HandshakeTest {
   byte[] BAR = "bar".getBytes();
 
   @Mock HandshakeListener handshakeListener;
-  @Mock Channel channel;
+  @Mock MessageWriter out;
 
   @Before
   public void setup() {
@@ -65,9 +64,9 @@ public class HandshakeTest {
     ZMTP10Codec h = new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, FOO));
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0x04, 0x00, 0x66, 0x6f, 0x6f);
-    boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), channel);
+    boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), out);
     assertTrue(done);
-    verifyZeroInteractions(channel);
+    verifyZeroInteractions(out);
     verify(handshakeListener).handshakeDone(1, BAR);
   }
 
@@ -77,9 +76,9 @@ public class HandshakeTest {
         new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
-    boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), channel);
+    boolean done = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), out);
     assertTrue(done);
-    verify(channel).write(buf(0x66, 0x6f, 0x6f));
+    verify(out).write(buf(0x66, 0x6f, 0x6f));
     verify(handshakeListener).handshakeDone(1, BAR);
   }
 
@@ -89,12 +88,12 @@ public class HandshakeTest {
         new ZMTPSession(ZMTPConnectionType.Addressed, 0, FOO, ZMTPSocketType.PUB), true);
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
-    boolean done1 = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), channel);
+    boolean done1 = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), out);
     assertFalse(done1);
-    verify(channel).write(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
-    boolean done2 = h.inputOutput(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), channel);
+    verify(out).write(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
+    boolean done2 = h.inputOutput(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), out);
     assertTrue(done2);
-    verifyNoMoreInteractions(channel);
+    verifyNoMoreInteractions(out);
     verify(handshakeListener).handshakeDone(2, BAR);
   }
 
@@ -106,12 +105,12 @@ public class HandshakeTest {
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ChannelBuffer cb = buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72);
-    boolean done1 = h.inputOutput(cb, channel);
+    boolean done1 = h.inputOutput(cb, out);
     assertFalse(done1);
-    verify(channel).write(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
-    boolean done2 = h.inputOutput(cb, channel);
+    verify(out).write(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
+    boolean done2 = h.inputOutput(cb, out);
     assertTrue(done2);
-    verifyNoMoreInteractions(channel);
+    verifyNoMoreInteractions(out);
     verify(handshakeListener).handshakeDone(2, BAR);
   }
 
@@ -123,13 +122,13 @@ public class HandshakeTest {
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
 
     try {
-      h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f), channel);
+      h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f), out);
       fail("not enough data in greeting (because compat mode) shuld have thrown exception");
     } catch (IndexOutOfBoundsException e) {
       // expected
     }
     boolean done = h.inputOutput(
-        buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), channel);
+        buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), out);
     assertTrue(done);
     verify(handshakeListener).handshakeDone(2, BAR);
   }
@@ -142,7 +141,7 @@ public class HandshakeTest {
     h.setListener(handshakeListener);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     boolean done = h.inputOutput(buf(
-        0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), channel);
+        0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), out);
     assertTrue(done);
     verify(handshakeListener).handshakeDone(2, BAR);
   }
@@ -153,7 +152,7 @@ public class HandshakeTest {
         new ZMTPSession(ZMTPConnectionType.Addressed, 1024, FOO, ZMTPSocketType.PUB), false);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     try {
-      assertNull(h.inputOutput(buf(0x04, 0, 0x62, 0x61, 0x72), channel));
+      assertNull(h.inputOutput(buf(0x04, 0, 0x62, 0x61, 0x72), out));
       fail("An ZMTP/1 greeting is invalid in plain ZMTP/2. Should have thrown exception");
     } catch (ZMTPException e) {
       // pass
@@ -166,9 +165,9 @@ public class HandshakeTest {
         new ZMTPSession(ZMTPConnectionType.Addressed, 1024, "identity".getBytes(), ZMTPSocketType.PUB),
         true);
     cmp(h.onConnect(), 0xff, 0, 0, 0, 0, 0, 0, 0, 9, 0x7f);
-    boolean done = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), channel);
+    boolean done = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), out);
     assertFalse(done);
-    verify(channel).write(buf(1, 2, 0, 8, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79));
+    verify(out).write(buf(1, 2, 0, 8, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79));
   }
 
   @Test

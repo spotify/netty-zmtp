@@ -5,6 +5,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
 import org.jboss.netty.handler.codec.replay.VoidEnum;
 
@@ -34,21 +35,19 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
       }
     });
 
-    Channel channel = e.getChannel();
-
-    channel.write(onConnect());
-    this.session.setChannel(e.getChannel());
+    Channels.write(ctx, Channels.future(ctx.getChannel()), onConnect());
+    this.session.setChannel(ctx.getChannel());
   }
 
   abstract ChannelBuffer onConnect();
 
-  abstract boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException;
+  abstract boolean inputOutput(final ChannelBuffer buffer, final MessageWriter out) throws ZMTPException;
 
   @Override
   protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer,
                           VoidEnum _) throws ZMTPException {
     buffer.markReaderIndex();
-    boolean done = inputOutput(buffer, channel);
+    boolean done = inputOutput(buffer, new MessageWriter(ctx));
     if (!done) {
       return null;
     }

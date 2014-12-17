@@ -2,7 +2,6 @@ package com.spotify.netty.handler.codec.zmtp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
 
 /**
  * A ZMTP20Codec instance is a ChannelUpstreamHandler that, when placed in a ChannelPipeline,
@@ -36,7 +35,7 @@ public class ZMTP20Codec extends CodecBase {
   }
 
   @Override
-  boolean inputOutput(final ChannelBuffer buffer, final Channel channel) throws ZMTPException {
+  boolean inputOutput(final ChannelBuffer buffer, final MessageWriter out) throws ZMTPException {
     if (splitHandshake) {
       done(2, parseZMTP2Greeting(buffer, false));
       return true;
@@ -49,12 +48,12 @@ public class ZMTP20Codec extends CodecBase {
         buffer.resetReaderIndex();
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
-        channel.write(ChannelBuffers.wrappedBuffer(session.getLocalIdentity()));
+        out.write(ChannelBuffers.wrappedBuffer(session.getLocalIdentity()));
         done(version, ZMTP10Codec.readZMTP1RemoteIdentity(buffer));
         return true;
       } else {
         splitHandshake = true;
-        channel.write(makeZMTP2Greeting(false));
+        out.write(makeZMTP2Greeting(false));
         return false;
       }
     } else {
@@ -62,7 +61,6 @@ public class ZMTP20Codec extends CodecBase {
       return true;
     }
   }
-
 
   private void done(int version, byte[] remoteIdentity) {
     if (listener != null) {
