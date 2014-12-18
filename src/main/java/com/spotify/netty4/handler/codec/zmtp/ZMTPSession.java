@@ -25,7 +25,7 @@ import java.util.UUID;
 import io.netty.channel.Channel;
 
 /**
- * Represents a ongoing zmtp session
+ * Represents an ongoing zmtp session
  */
 public class ZMTPSession {
 
@@ -155,7 +155,7 @@ public class ZMTPSession {
 
   /**
    * An integer representing the actual version of an ZMTP connection. Note that this property
-   * does not effect which protcol versions support (To pick a version, select one of the CodecBase
+   * does not effect which protocol versions support (To pick a version, select one of the CodecBase
    * subclasses) and the actualVersion might be lower than the highest supported version of your
    * CodecBase subclass due to interoperability downgrades.
    *
