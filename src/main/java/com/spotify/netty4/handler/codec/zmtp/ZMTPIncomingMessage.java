@@ -17,30 +17,19 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 /**
- * A ZMTP message along with the session it was received on.
+ * An incoming ZMTP message.
  */
 public class ZMTPIncomingMessage {
 
-  private final ZMTPSession session;
   private final ZMTPMessage message;
   private final boolean truncated;
   private final long byteSize;
 
-  public ZMTPIncomingMessage(final ZMTPSession session, final ZMTPMessage message,
+  public ZMTPIncomingMessage(final ZMTPMessage message,
                              final boolean truncated, final long byteSize) {
-    this.session = session;
     this.message = message;
     this.truncated = truncated;
     this.byteSize = byteSize;
-  }
-
-  /**
-   * Return the session this message was received on.
-   *
-   * @return The session this message was received on.
-   */
-  public ZMTPSession session() {
-    return session;
   }
 
   /**
@@ -55,47 +44,45 @@ public class ZMTPIncomingMessage {
    *
    * @return The message.
    */
-  public ZMTPMessage getMessage() {
+  public ZMTPMessage message() {
     return message;
   }
 
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    final ZMTPIncomingMessage that = (ZMTPIncomingMessage) o;
-
-    if (message != null ? !message.equals(that.message) : that.message != null) {
-      return false;
-    }
-    if (session != null ? !session.equals(that.session) : that.session != null) {
-      return false;
-    }
-
-    return true;
-  }
-
+  /**
+   * Check if this incoming message was truncated during parsing due to exceeding the size limit.
+   *
+   * @return True if truncated, false otherwise.
+   */
   public boolean isTruncated() {
     return truncated;
   }
 
   @Override
+  public boolean equals(final Object o) {
+    if (this == o) { return true; }
+    if (o == null || getClass() != o.getClass()) { return false; }
+
+    final ZMTPIncomingMessage that = (ZMTPIncomingMessage) o;
+
+    if (byteSize != that.byteSize) { return false; }
+    if (truncated != that.truncated) { return false; }
+    if (message != null ? !message.equals(that.message) : that.message != null) { return false; }
+
+    return true;
+  }
+
+  @Override
   public int hashCode() {
-    int result = session != null ? session.hashCode() : 0;
-    result = 31 * result + (message != null ? message.hashCode() : 0);
+    int result = message != null ? message.hashCode() : 0;
+    result = 31 * result + (truncated ? 1 : 0);
+    result = 31 * result + (int) (byteSize ^ (byteSize >>> 32));
     return result;
   }
 
   @Override
   public String toString() {
     return "ZMTPIncomingMessage{" +
-           "session=" + session +
-           ", message=" + message +
+           "message=" + message +
            ", truncated=" + truncated +
            ", byteSize=" + byteSize +
            '}';

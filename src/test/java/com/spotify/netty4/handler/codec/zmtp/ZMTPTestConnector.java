@@ -63,9 +63,16 @@ public abstract class ZMTPTestConnector {
     bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
+        final ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, "client".getBytes());
         ch.pipeline().addLast(
-            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, "client".getBytes())),
+            new ZMTP10Codec(session),
             new MessageToMessageDecoder<ZMTPIncomingMessage>() {
+              @Override
+              public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+                super.channelActive(ctx);
+                onConnect(session);
+              }
+
               @Override
               protected void decode(final ChannelHandlerContext ctx, final ZMTPIncomingMessage msg,
                                     final List<Object> out)
@@ -97,4 +104,6 @@ public abstract class ZMTPTestConnector {
 
     return receivedMessage;
   }
+
+  protected abstract void onConnect(final ZMTPSession session);
 }

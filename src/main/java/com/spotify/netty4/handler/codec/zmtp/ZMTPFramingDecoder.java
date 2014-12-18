@@ -53,6 +53,6 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
       return;
     }
 
-    out.add(new ZMTPIncomingMessage(session, msg.message(), msg.isTruncated(), msg.byteSize()));
+    out.add(new ZMTPIncomingMessage(msg.message(), msg.isTruncated(), msg.byteSize()));
   }
 }

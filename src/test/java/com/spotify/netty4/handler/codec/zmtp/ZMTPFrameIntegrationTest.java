@@ -48,17 +48,19 @@ public class ZMTPFrameIntegrationTest {
       }
 
       @Override
-      public boolean onMessage(final ZMTPIncomingMessage msg) {
+      protected void onConnect(final ZMTPSession session) {
         // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId),
-                          msg.session().remoteIdentity());
+        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId), session.remoteIdentity());
+      }
 
+      @Override
+      public boolean onMessage(final ZMTPIncomingMessage msg) {
         System.err.println(msg);
 
         // Verify that frames received is correct
-        assertEquals(1, msg.getMessage().content().size());
-        assertEquals(0, msg.getMessage().envelope().size());
-        assertEquals(Unpooled.wrappedBuffer(f.getData()), msg.getMessage().contentFrame(0).data());
+        assertEquals(1, msg.message().content().size());
+        assertEquals(0, msg.message().envelope().size());
+        assertEquals(Unpooled.wrappedBuffer(f.getData()), msg.message().contentFrame(0).data());
 
         f.destroy();
 
@@ -92,21 +94,24 @@ public class ZMTPFrameIntegrationTest {
         m.duplicate().send(socket);
       }
 
+
+      @Override
+      protected void onConnect(final ZMTPSession session) {
+        // Verify that we can parse the identity correctly
+        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId), session.remoteIdentity());
+      }
+
       @Override
       public boolean onMessage(final ZMTPIncomingMessage msg) {
         int framePos = 0;
 
-        // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId),
-                          msg.session().remoteIdentity());
-
         // Verify that frames received is correct
-        assertEquals(m.size(), msg.getMessage().content().size());
-        assertEquals(0, msg.getMessage().envelope().size());
+        assertEquals(m.size(), msg.message().content().size());
+        assertEquals(0, msg.message().envelope().size());
 
         for (final ZFrame f : m) {
           assertEquals(Unpooled.wrappedBuffer(f.getData()),
-                       msg.getMessage().contentFrame(framePos).data());
+                       msg.message().contentFrame(framePos).data());
           framePos++;
         }
 

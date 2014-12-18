@@ -107,13 +107,13 @@ public class EndToEndTest {
     clientChannel.writeAndFlush(helloWorldMessage());
     ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
     assertThat(receivedRequest, is(notNullValue()));
-    assertThat(receivedRequest.getMessage(), is(helloWorldMessage()));
+    assertThat(receivedRequest.message(), is(helloWorldMessage()));
 
     // Send and receive reply
     serverConnectedChannel.writeAndFlush(fooBarMessage());
     ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
     assertThat(receivedReply, is(notNullValue()));
-    assertThat(receivedReply.getMessage(), is(fooBarMessage()));
+    assertThat(receivedReply.message(), is(fooBarMessage()));
 
     // Make sure there's no left over messages/connections on the wires
     Thread.sleep(1000);

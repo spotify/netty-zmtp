@@ -65,11 +65,11 @@ public class PipelineTests {
     pt.writeClient(buf(1, 1, 0x65, 1, 0, 0, 1, 0x62));
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().envelope();
+    List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(1, envelope.size());
     cmp(buf(0x65), envelope.get(0).data());
 
-    List<ZMTPFrame> body = m.getMessage().content();
+    List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(0x62), body.get(0).data());
 
@@ -89,11 +89,11 @@ public class PipelineTests {
     pt.writeClient(buf(0, 0, 1, 0x62));
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().envelope();
+    List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(1, envelope.size());
     cmp(buf(0x65), envelope.get(0).data());
 
-    List<ZMTPFrame> body = m.getMessage().content();
+    List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(0x62), body.get(0).data());
 
@@ -121,10 +121,10 @@ public class PipelineTests {
     pt.writeClient(cb);
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().envelope();
+    List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
 
-    List<ZMTPFrame> body = m.getMessage().content();
+    List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(LONG_MSG), body.get(0).data());
   }
@@ -158,10 +158,10 @@ public class PipelineTests {
 
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().envelope();
+    List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
 
-    List<ZMTPFrame> body = m.getMessage().content();
+    List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(LONG_MSG), body.get(0).data());
   }
@@ -195,10 +195,10 @@ public class PipelineTests {
 
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().envelope();
+    List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
 
-    List<ZMTPFrame> body = m.getMessage().content();
+    List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(LONG_MSG), body.get(0).data());
   }
@@ -230,10 +230,10 @@ public class PipelineTests {
     pt.writeClient(cb);
     ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
 
-    List<ZMTPFrame> envelope = m.getMessage().envelope();
+    List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
 
-    List<ZMTPFrame> body = m.getMessage().content();
+    List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(LONG_MSG), body.get(0).data());
 
@@ -247,10 +247,10 @@ public class PipelineTests {
 
     m = (ZMTPIncomingMessage)pt.readServer();
 
-    envelope = m.getMessage().envelope();
+    envelope = m.message().envelope();
     assertEquals(0, envelope.size());
 
-    body = m.getMessage().content();
+    body = m.message().content();
     assertEquals(1, body.size());
     cmp(buf(LONG_MSG), body.get(0).data());
 
