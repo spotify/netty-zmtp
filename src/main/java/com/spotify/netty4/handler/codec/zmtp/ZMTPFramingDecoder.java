@@ -30,7 +30,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 class ZMTPFramingDecoder extends ByteToMessageDecoder {
 
   private final ZMTPMessageParser parser;
-  private final ZMTPSession session;
 
   /**
    * Creates a new decoder
@@ -38,7 +37,6 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
   public ZMTPFramingDecoder(final ZMTPSession session) {
     this.parser = new ZMTPMessageParser(session.isEnveloped(), session.sizeLimit(),
                                         session.actualVersion());
-    this.session = session;
   }
 
   /**
@@ -47,12 +45,9 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
-
-    final ZMTPParsedMessage msg = parser.parse(in);
-    if (msg == null) {
-      return;
+    final ZMTPIncomingMessage msg = parser.parse(in);
+    if (msg != null) {
+      out.add(msg);
     }
-
-    out.add(new ZMTPIncomingMessage(msg.message(), msg.isTruncated(), msg.byteSize()));
   }
 }

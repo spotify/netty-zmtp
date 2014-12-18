@@ -77,7 +77,7 @@ public class ZMTPMessageParserTest {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
-    ZMTPParsedMessage msg = parser.parse(buffer);
+    ZMTPIncomingMessage msg = parser.parse(buffer);
     assertNull("Message shouldn't be parsed for missing frame size",
                msg);
   }
@@ -86,8 +86,8 @@ public class ZMTPMessageParserTest {
   public void testZMTP1BufferLengthEmpty() throws ZMTPMessageParsingException {
     ByteBuf buffer = Unpooled.buffer();
     ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
-    ZMTPParsedMessage msg = parser.parse(buffer);
-    assertNull("Empty ByteBuf should result in an empty ZMTPParsedMessage",
+    ZMTPIncomingMessage msg = parser.parse(buffer);
+    assertNull("Empty ByteBuf should result in an empty ZMTPIncomingMessage",
                msg);
   }
 
@@ -150,7 +150,7 @@ public class ZMTPMessageParserTest {
   }
 
   private void testParse(final boolean enveloped, final Limit limit, final List<String> input,
-                         final ZMTPParsedMessage expected, int version) throws Exception {
+                         final ZMTPIncomingMessage expected, int version) throws Exception {
     out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                        enveloped, limit, input, expected));
 
@@ -160,7 +160,7 @@ public class ZMTPMessageParserTest {
     // Test parsing the whole message
     {
       final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
-      final ZMTPParsedMessage parsed = parser.parse(serialized);
+      final ZMTPIncomingMessage parsed = parser.parse(serialized);
       serialized.setIndex(0, serializedLength);
       assertEquals("expected: " + expected + ", parsed: " + parsed, expected, parsed);
     }
@@ -179,7 +179,7 @@ public class ZMTPMessageParserTest {
       @Override
       public void fragments(final int[] limits, final int count) throws Exception {
         serialized.setIndex(0, serializedLength);
-        ZMTPParsedMessage parsed = null;
+        ZMTPIncomingMessage parsed = null;
         final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
@@ -194,12 +194,12 @@ public class ZMTPMessageParserTest {
 
         // Verify that the parser can be reused to parse the same message
         serialized.setIndex(0, serializedLength);
-        final ZMTPParsedMessage reparsed = parser.parse(serialized);
+        final ZMTPIncomingMessage reparsed = parser.parse(serialized);
         assertEquals(expected, reparsed);
 
         // Verify that the parser can be reused to parse a well-behaved message
         trivialSerialized.setIndex(0, trivialLength);
-        final ZMTPParsedMessage parsedTrivial = parser.parse(trivialSerialized);
+        final ZMTPIncomingMessage parsedTrivial = parser.parse(trivialSerialized);
         assertFalse(parsedTrivial.isTruncated());
         assertEquals(trivialMessage, parsedTrivial.message());
       }
@@ -228,10 +228,10 @@ public class ZMTPMessageParserTest {
 
     private static Verification verification(final List<String> input,
                                              final Expectation e) {
-      final ZMTPParsedMessage expected;
+      final ZMTPIncomingMessage expected;
       if (e.expected == null) {
         final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(e.enveloped, input);
-        expected = new ZMTPParsedMessage(false, byteSizeUTF8(input), message);
+        expected = new ZMTPIncomingMessage(message, false, byteSizeUTF8(input));
       } else {
         expected = e.expected;
       }
@@ -275,18 +275,18 @@ public class ZMTPMessageParserTest {
                                            final List<ZMTPFrame> envelope,
                                            final List<ZMTPFrame> content) {
       return expectation(false, sizeLimit,
-                         new ZMTPParsedMessage(false, byteSize(envelope, content),
-                                               new ZMTPMessage(envelope, content)));
+                         new ZMTPIncomingMessage(new ZMTPMessage(envelope, content), false,
+                                                 byteSize(envelope, content)));
     }
 
     public static Expectation nonEnveloped(final Limit sizeLimit,
-                                           final ZMTPParsedMessage expected) {
+                                           final ZMTPIncomingMessage expected) {
       return expectation(false, sizeLimit, expected);
     }
 
     public static Expectation nonEnveloped(final Limit sizeLimit, final Output o) {
       final ZMTPMessage message = new ZMTPMessage(o.envelope, o.content);
-      final ZMTPParsedMessage expected = new ZMTPParsedMessage(o.truncated, o.byteSize, message);
+      final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(message, o.truncated, o.byteSize);
       return expectation(false, sizeLimit, expected);
     }
 
@@ -300,15 +300,15 @@ public class ZMTPMessageParserTest {
 
     public static Expectation enveloped(final Limit sizeLimit, final Output o) {
       final ZMTPMessage message = new ZMTPMessage(o.envelope, o.content);
-      final ZMTPParsedMessage expected = new ZMTPParsedMessage(o.truncated, o.byteSize, message);
+      final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(message, o.truncated, o.byteSize);
       return expectation(true, sizeLimit, expected);
     }
 
     public static Expectation enveloped(final Limit sizeLimit, final long byteSize,
                                         final List<ZMTPFrame> envelope,
                                         final List<ZMTPFrame> content) {
-      final ZMTPParsedMessage expected = new ZMTPParsedMessage(
-          false, byteSize, new ZMTPMessage(envelope, content));
+      final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(
+          new ZMTPMessage(envelope, content), false, byteSize);
       return expectation(true, sizeLimit, expected);
     }
 
@@ -321,7 +321,7 @@ public class ZMTPMessageParserTest {
       return byteSize(envelope) + byteSize(content);
     }
 
-    public static Expectation enveloped(final Limit sizeLimit, final ZMTPParsedMessage expected) {
+    public static Expectation enveloped(final Limit sizeLimit, final ZMTPIncomingMessage expected) {
       return expectation(true, sizeLimit, expected);
     }
 
@@ -364,7 +364,7 @@ public class ZMTPMessageParserTest {
     }
 
     public static Expectation expectation(final boolean enveloped, final Limit sizeLimit,
-                                          final ZMTPParsedMessage expected) {
+                                          final ZMTPIncomingMessage expected) {
       return new Expectation(enveloped, sizeLimit, expected);
     }
 
@@ -390,10 +390,10 @@ public class ZMTPMessageParserTest {
     private final boolean enveloped;
     private final Limit sizeLimit;
     private final List<String> inputFrames;
-    private final ZMTPParsedMessage expectedMessage;
+    private final ZMTPIncomingMessage expectedMessage;
 
     public Verification(final boolean enveloped, final Limit sizeLimit,
-                        final List<String> inputFrames, final ZMTPParsedMessage expectedMessage) {
+                        final List<String> inputFrames, final ZMTPIncomingMessage expectedMessage) {
 
       this.enveloped = enveloped;
       this.sizeLimit = sizeLimit;
@@ -445,7 +445,7 @@ public class ZMTPMessageParserTest {
 
     final boolean enveloped;
     final Limit sizeLimit;
-    final ZMTPParsedMessage expected;
+    final ZMTPIncomingMessage expected;
 
     Expectation(final boolean enveloped, final Limit sizeLimit) {
       this.enveloped = enveloped;
@@ -453,7 +453,7 @@ public class ZMTPMessageParserTest {
       this.expected = null;
     }
 
-    Expectation(final boolean enveloped, final Limit sizeLimit, final ZMTPParsedMessage expected) {
+    Expectation(final boolean enveloped, final Limit sizeLimit, final ZMTPIncomingMessage expected) {
       this.enveloped = enveloped;
       this.sizeLimit = sizeLimit;
       this.expected = expected;

@@ -85,7 +85,7 @@ public class ZMTPMessageParser {
    * @param buffer Buffer with data
    * @return A {@link ZMTPMessage} if it was completely parsed, otherwise null.
    */
-  public ZMTPParsedMessage parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
+  public ZMTPIncomingMessage parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
 
     // If we're in discarding mode, continue discarding data
     if (isOversized(size)) {
@@ -147,7 +147,7 @@ public class ZMTPMessageParser {
   /**
    * Create a message from the parsed frames and reset the parser.
    */
-  private ZMTPParsedMessage finish(final boolean truncated) {
+  private ZMTPIncomingMessage finish(final boolean truncated) {
     final List<ZMTPFrame> envelope;
     final List<ZMTPFrame> content;
 
@@ -164,9 +164,9 @@ public class ZMTPMessageParser {
     }
 
     final ZMTPMessage message = new ZMTPMessage(envelope, content);
-    final ZMTPParsedMessage parsedMessage = new ZMTPParsedMessage(truncated, size, message);
+    final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(message, truncated, size);
     reset();
-    return parsedMessage;
+    return incomingMessage;
   }
 
   /**
@@ -192,7 +192,7 @@ public class ZMTPMessageParser {
    *
    * @return A truncated message if done discarding, null if not yet done.
    */
-  private ZMTPParsedMessage discardFrames(final ByteBuf buffer)
+  private ZMTPIncomingMessage discardFrames(final ByteBuf buffer)
       throws ZMTPMessageParsingException {
 
     while (buffer.readableBytes() > 0) {
