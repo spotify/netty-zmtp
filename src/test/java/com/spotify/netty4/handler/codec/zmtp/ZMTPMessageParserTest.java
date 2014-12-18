@@ -78,8 +78,7 @@ public class ZMTPMessageParserTest {
     buffer.writeByte(0xFF);
     ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
     ZMTPIncomingMessage msg = parser.parse(buffer);
-    assertNull("Message shouldn't be parsed for missing frame size",
-               msg);
+    assertNull("Message shouldn't be parsed for missing frame size", msg);
   }
 
   @Test
@@ -87,8 +86,7 @@ public class ZMTPMessageParserTest {
     ByteBuf buffer = Unpooled.buffer();
     ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
     ZMTPIncomingMessage msg = parser.parse(buffer);
-    assertNull("Empty ByteBuf should result in an empty ZMTPIncomingMessage",
-               msg);
+    assertNull("Empty ByteBuf should result in an empty ZMTPIncomingMessage", msg);
   }
 
   @DataPoints
@@ -134,7 +132,7 @@ public class ZMTPMessageParserTest {
   @Theory
   public void testParse(final Parameters parameters) throws Exception {
     final List<Future<?>> futures = newArrayList();
-    for (final Verification v : parameters.getVerifications()) {
+    for (final Verification v : parameters.verifications()) {
       futures.add(EXECUTOR.submit(new Callable<Object>() {
         @Override
         public Object call() throws Exception {
@@ -279,23 +277,10 @@ public class ZMTPMessageParserTest {
                                                  byteSize(envelope, content)));
     }
 
-    public static Expectation nonEnveloped(final Limit sizeLimit,
-                                           final ZMTPIncomingMessage expected) {
-      return expectation(false, sizeLimit, expected);
-    }
-
     public static Expectation nonEnveloped(final Limit sizeLimit, final Output o) {
       final ZMTPMessage message = new ZMTPMessage(o.envelope, o.content);
       final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(message, o.truncated, o.byteSize);
       return expectation(false, sizeLimit, expected);
-    }
-
-    public static Expectation enveloped() {
-      return expectation(true, unlimited());
-    }
-
-    public static Expectation enveloped(final Limit sizeLimit) {
-      return expectation(true, sizeLimit);
     }
 
     public static Expectation enveloped(final Limit sizeLimit, final Output o) {
@@ -319,10 +304,6 @@ public class ZMTPMessageParserTest {
 
     private static long byteSize(final List<ZMTPFrame> envelope, final List<ZMTPFrame> content) {
       return byteSize(envelope) + byteSize(content);
-    }
-
-    public static Expectation enveloped(final Limit sizeLimit, final ZMTPIncomingMessage expected) {
-      return expectation(true, sizeLimit, expected);
     }
 
     public static List<String> input(final String... frames) {
@@ -368,7 +349,7 @@ public class ZMTPMessageParserTest {
       return new Expectation(enveloped, sizeLimit, expected);
     }
 
-    public List<Verification> getVerifications() {
+    public List<Verification> verifications() {
       return verifications;
     }
   }
