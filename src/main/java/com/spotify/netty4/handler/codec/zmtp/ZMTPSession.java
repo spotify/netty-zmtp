@@ -35,9 +35,8 @@ public class ZMTPSession {
   private final byte[] localIdent;
   private final long sizeLimit;
   private final ZMTPSocketType socketType;
+  private final ZMTPConnectionType type;
 
-
-  private ZMTPConnectionType type;
   private Channel channel;
   private byte[] remoteIdent;
   private volatile int actualVersion;
@@ -94,13 +93,6 @@ public class ZMTPSession {
    */
   public ZMTPConnectionType connectionType() {
     return type;
-  }
-
-  /**
-   * Changes the type of connection of the session
-   */
-  void connectionType(final ZMTPConnectionType type) {
-    this.type = type;
   }
 
   /**
