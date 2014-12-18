@@ -37,6 +37,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.ReferenceCountUtil;
 
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -85,6 +86,7 @@ public class ZMQIntegrationTest {
               @Override
               public void channelRead(final ChannelHandlerContext ctx, final Object msg)
                   throws Exception {
+                ReferenceCountUtil.releaseLater(msg);
                 incomingMessages.put((ZMTPIncomingMessage) msg);
               }
             });
@@ -121,6 +123,7 @@ public class ZMQIntegrationTest {
     final Channel channel = channelsConnected.take();
     final ZMTPIncomingMessage receivedRequest = incomingMessages.take();
     final ZMTPMessage received = receivedRequest.message();
+    received.retain();
     channel.writeAndFlush(received);
 
     final ZMsg reply = ZMsg.recvMsg(socket);
@@ -134,9 +137,9 @@ public class ZMQIntegrationTest {
 
     assertEquals(1, received.envelope().size());
     assertEquals(2, received.content().size());
-    assertEquals(Unpooled.copiedBuffer("envelope", UTF_8), received.envelope().get(0).data());
-    assertEquals(Unpooled.copiedBuffer("hello", UTF_8), received.content().get(0).data());
-    assertEquals(Unpooled.copiedBuffer("world", UTF_8), received.content().get(1).data());
+    assertEquals(Unpooled.copiedBuffer("envelope", UTF_8), received.envelope().get(0).content());
+    assertEquals(Unpooled.copiedBuffer("hello", UTF_8), received.content().get(0).content());
+    assertEquals(Unpooled.copiedBuffer("world", UTF_8), received.content().get(1).content());
   }
 
   @Test
@@ -146,8 +149,8 @@ public class ZMQIntegrationTest {
     socket.connect("tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
 
     final ZMTPMessage request = new ZMTPMessage(
-        asList(ZMTPFrame.create("envelope")),
-        asList(ZMTPFrame.create("hello"), ZMTPFrame.create("world")));
+        asList(ZMTPFrame.from("envelope")),
+        asList(ZMTPFrame.from("hello"), ZMTPFrame.from("world")));
 
     final Channel channel = channelsConnected.take();
     channel.writeAndFlush(request);

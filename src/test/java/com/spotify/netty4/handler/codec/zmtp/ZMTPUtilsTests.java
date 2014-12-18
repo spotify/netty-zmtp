@@ -36,7 +36,7 @@ public class ZMTPUtilsTests {
   public void frameSizeTest() {
     for (boolean more : asList(TRUE, FALSE)) {
       for (int size = 0; size < 1024; size++) {
-        final ZMTPFrame frame = ZMTPFrame.wrap(new byte[size]);
+        final ZMTPFrame frame = ZMTPFrame.from(new byte[size]);
         int estimatedSize = ZMTPUtils.frameSize(frame, 1);
         final ByteBuf buffer = Unpooled.buffer();
         ZMTPUtils.writeFrame(frame, buffer, more, 1);
@@ -51,12 +51,12 @@ public class ZMTPUtilsTests {
     final List<ZMTPFrame> EMPTY = new ArrayList<ZMTPFrame>();
     final List<ZMTPFrame> manyFrameSizes = new ArrayList<ZMTPFrame>();
     for (int i = 0; i < 1024; i++) {
-      manyFrameSizes.add(ZMTPFrame.wrap(new byte[i]));
+      manyFrameSizes.add(ZMTPFrame.from(new byte[i]));
     }
     @SuppressWarnings("unchecked") final List<List<ZMTPFrame>> frameSets = asList(
         EMPTY,
-        asList(ZMTPFrame.create("foo")),
-        asList(ZMTPFrame.create("foo"), ZMTPFrame.create("bar")),
+        asList(ZMTPFrame.from("foo")),
+        asList(ZMTPFrame.from("foo"), ZMTPFrame.from("bar")),
         manyFrameSizes);
 
     for (boolean enveloped : asList(TRUE, FALSE)) {

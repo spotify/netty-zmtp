@@ -37,12 +37,12 @@ public class Benchmark {
   public void benchmarkEncoding() throws ZMTPMessageParsingException {
     final ProgressMeter meter = new ProgressMeter("messages");
     ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.create("first identity frame"),
-               ZMTPFrame.create("second identity frame")),
-        asList(ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata"),
-               ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata"),
-               ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata"),
-               ZMTPFrame.create("datadatadatadatadatadatadatadatadatadata")));
+        asList(ZMTPFrame.from("first identity frame"),
+               ZMTPFrame.from("second identity frame")),
+        asList(ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
+               ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
+               ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
+               ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata")));
     final ZMTPMessageParser parser = new ZMTPMessageParser(true, 1024 * 1024, 1);
     long sum = 0;
     for (long i = 0; i < 1000000; i++) {

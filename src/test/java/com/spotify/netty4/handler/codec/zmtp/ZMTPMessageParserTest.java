@@ -239,7 +239,7 @@ public class ZMTPMessageParserTest {
     private static long byteSizeUTF8(final List<String> frames) {
       long size = 0;
       for (final String frame : frames) {
-        size += byteSize(ZMTPFrame.create(frame));
+        size += byteSize(ZMTPFrame.from(frame));
       }
       return size;
     }
@@ -318,7 +318,7 @@ public class ZMTPMessageParserTest {
       return Lists.transform(frames, new Function<String, ZMTPFrame>() {
         @Override
         public ZMTPFrame apply(final String input) {
-          return ZMTPFrame.create(input);
+          return ZMTPFrame.from(input);
         }
       });
     }

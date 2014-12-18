@@ -16,6 +16,7 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalEventLoopGroup;
 import io.netty.channel.local.LocalServerChannel;
+import io.netty.util.ReferenceCountUtil;
 
 /**
  * Tests the behaviours of ChannelPipelines, using the local transport method.
@@ -51,6 +52,7 @@ class PipelineTester {
           @Override
           public void channelRead(final ChannelHandlerContext ctx, final Object msg)
               throws Exception {
+            ReferenceCountUtil.releaseLater(msg);
             emittedInside.put(msg);
           }
 
@@ -78,6 +80,7 @@ class PipelineTester {
           @Override
           public void channelRead(final ChannelHandlerContext ctx, final Object msg)
               throws Exception {
+            ReferenceCountUtil.releaseLater(msg);
             emittedOutside.put((ByteBuf) msg);
           }
         });

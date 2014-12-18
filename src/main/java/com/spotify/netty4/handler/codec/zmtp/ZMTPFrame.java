@@ -16,71 +16,42 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.buffer.Unpooled;
 
-import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
+import static io.netty.util.CharsetUtil.UTF_8;
 
 
-public class ZMTPFrame {
+public class ZMTPFrame extends DefaultByteBufHolder {
 
-  public static final ZMTPFrame EMPTY_FRAME = create();
+  public static final ZMTPFrame EMPTY_FRAME = new ZMTPFrame(Unpooled.EMPTY_BUFFER);
 
-  private final byte[] data;
-
-  ZMTPFrame(final byte[] data) {
-    this.data = data;
+  ZMTPFrame(final ByteBuf content) {
+    super(content);
   }
 
   /**
    * @return Is the current frame empty
    */
-  public boolean hasData() {
-    // Empty frame only contains flag byte
-    return data != null;
-  }
-
-  /**
-   * Return the channel buffer container the frame data.
-   */
-  public ByteBuf data() {
-    if (data == null) {
-      return EMPTY_BUFFER;
-    } else {
-      return Unpooled.wrappedBuffer(data);
-    }
+  public boolean hasContent() {
+    return content().isReadable();
   }
 
   /**
    * Returns the length of the data
    */
   public int size() {
-    return data == null ? 0 : data.length;
+    return content().readableBytes();
   }
 
   /**
-   * Create a frame from a string
-   *
-   * @return a frame containing the string as default byte encoding
+   * Create a frame from a string, UTF-8 encoded.
    */
-  static public ZMTPFrame create(final String data) {
-    return wrap(data.getBytes());
-  }
-
-  /**
-   * Create a new frame from a string
-   *
-   * @param data        String
-   * @param charsetName Used to get the bytes
-   * @return a ZMTP frame containing the byte encoded string
-   */
-  static public ZMTPFrame create(final String data, final String charsetName)
-      throws UnsupportedEncodingException {
-    return create(data, Charset.forName(charsetName));
+  static public ZMTPFrame from(final String data) {
+    return from(data, UTF_8);
   }
 
   /**
@@ -90,69 +61,57 @@ public class ZMTPFrame {
    * @param charset Used to get the bytes
    * @return a ZMTP frame containing the byte encoded string
    */
-  public static ZMTPFrame create(final String data, final Charset charset) {
+  public static ZMTPFrame from(final String data, final Charset charset) {
     if (data.length() == 0) {
       return EMPTY_FRAME;
     } else {
-      return wrap(data.getBytes(charset));
+      return from(Unpooled.wrappedBuffer(charset.encode(data)));
     }
   }
 
   /**
-   * Create a new frame from a byte array. The byte array will not be copied.
+   * Create a new frame from a byte array.
    */
-  public static ZMTPFrame wrap(final byte[] data) {
+  public static ZMTPFrame from(final byte[] data) {
     if (data == null || data.length == 0) {
       return EMPTY_FRAME;
     } else {
-      return new ZMTPFrame(data);
+      return new ZMTPFrame(Unpooled.wrappedBuffer(data));
     }
   }
 
   /**
-   * Create a new frame from a buffer. The buffer is not retained.
+   * Create a new frame from a buffer. Claims ownership of the buffer.
    */
-  public static ZMTPFrame copy(final ByteBuf buf) {
+  public static ZMTPFrame from(final ByteBuf buf) {
     if (!buf.isReadable()) {
       return EMPTY_FRAME;
     } else {
-      final byte[] data = new byte[buf.readableBytes()];
-      buf.slice().readBytes(data);
-      return new ZMTPFrame(data);
+      return new ZMTPFrame(buf);
     }
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) { return true; }
+    if (o == null || getClass() != o.getClass()) { return false; }
 
     final ZMTPFrame zmtpFrame = (ZMTPFrame) o;
 
-    if (!Arrays.equals(data, zmtpFrame.data)) {
-      return false;
-    }
+    if (content() != null ? !content().equals(zmtpFrame.content()) : zmtpFrame.content() != null) { return false; }
 
     return true;
   }
 
   @Override
   public int hashCode() {
-    return data != null ? Arrays.hashCode(data) : 0;
+    return content() != null ? content().hashCode() : 0;
   }
 
   @Override
   public String toString() {
     return "ZMTPFrame{\"" +
-           ZMTPUtils.toString(data()) +
+           ZMTPUtils.toString(content()) +
            "\"}";
-  }
-
-  public static ZMTPFrame create() {
-    return new ZMTPFrame(null);
   }
 }

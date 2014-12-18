@@ -34,6 +34,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.ReferenceCountUtil;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSession.DEFAULT_SIZE_LIMIT;
@@ -180,6 +181,7 @@ public class EndToEndTest {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
+      ReferenceCountUtil.releaseLater(msg);
       messages.put((ZMTPIncomingMessage) msg);
     }
   }

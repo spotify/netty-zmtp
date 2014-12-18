@@ -32,21 +32,22 @@ public class ZMTPFramingEncoderTest {
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.create("id0"), ZMTPFrame.create("id1")),
-        asList(ZMTPFrame.create("f0")));
+        asList(ZMTPFrame.from("id0"), ZMTPFrame.from("id1")),
+        asList(ZMTPFrame.from("f0")));
 
     final List<Object> out = Lists.newArrayList();
     enc.encode(null, message, out);
     final ByteBuf buf = (ByteBuf) out.get(0);
     cmp(buf, 4, 1, 0x69, 0x64, 0x30, 4, 1, 0x69, 0x64, 0x31, 1, 1, 3, 0, 0x66, 0x30);
+    buf.release();
   }
 
   @Test
   public void testEncodeZMTP2() throws Exception {
 
     ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.create("id0"), ZMTPFrame.create("id1")),
-        asList(ZMTPFrame.create("f0")));
+        asList(ZMTPFrame.from("id0"), ZMTPFrame.from("id1")),
+        asList(ZMTPFrame.from("f0")));
 
     ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
     session.actualVersion(2);
@@ -56,13 +57,14 @@ public class ZMTPFramingEncoderTest {
     enc.encode(null, message, out);
     final ByteBuf buf = (ByteBuf) out.get(0);
     cmp(buf, 1, 3, 0x69, 0x64, 0x30, 1, 3, 0x69, 0x64, 0x31, 1, 0, 0, 2, 0x66, 0x30);
+    buf.release();
   }
 
   @Test
   public void testEncodeZMTP2Long() throws Exception {
     ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.create("id0")),
-        asList(ZMTPFrame.wrap(LARGE_FILL)));
+        asList(ZMTPFrame.from("id0")),
+        asList(ZMTPFrame.from(LARGE_FILL)));
     ByteBuf buf = Unpooled.buffer();
     buf.writeBytes(bytes(1, 3, 0x69, 0x64, 0x30, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0x01, 0xf4));
     buf.writeBytes(LARGE_FILL);
@@ -77,5 +79,7 @@ public class ZMTPFramingEncoderTest {
 
     cmp(buf, buf2);
 
+    buf.release();
+    buf2.release();
   }
 }

@@ -58,7 +58,7 @@ public class ZMTPMessageTest {
     return Lists.transform(frames, new Function<String, ZMTPFrame>() {
       @Override
       public ZMTPFrame apply(final String input) {
-        return ZMTPFrame.create(input);
+        return ZMTPFrame.from(input);
       }
     });
   }

@@ -30,7 +30,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
 /**
- * Helper to create connections to a zmtp server via netty
+ * Helper to from connections to a zmtp server via netty
  */
 public abstract class ZMTPTestConnector {
 

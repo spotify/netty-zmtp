@@ -22,11 +22,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.netty.util.AbstractReferenceCounted;
+
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
-public class ZMTPMessage {
+public class ZMTPMessage extends AbstractReferenceCounted {
 
   private List<ZMTPFrame> envelope;
   private List<ZMTPFrame> content;
@@ -72,28 +74,7 @@ public class ZMTPMessage {
     return from(enveloped, new AbstractList<ZMTPFrame>() {
       @Override
       public ZMTPFrame get(final int index) {
-        return ZMTPFrame.create(frames.get(index), charset);
-      }
-
-      @Override
-      public int size() {
-        return frames.size();
-      }
-    });
-  }
-
-  /**
-   * Create a new message from a list of byte array frames.
-   */
-  public static ZMTPMessage fromByteArrays(final boolean enveloped, final List<byte[]> frames) {
-    return from(enveloped, new AbstractList<ZMTPFrame>() {
-      @Override
-      public ZMTPFrame get(final int index) {
-        byte[] bytes = frames.get(index);
-        if (bytes.length == 0) {
-          return EMPTY_FRAME;
-        }
-        return ZMTPFrame.wrap(bytes);
+        return ZMTPFrame.from(frames.get(index), charset);
       }
 
       @Override
@@ -143,16 +124,6 @@ public class ZMTPMessage {
   }
 
   /**
-   * Create a new message from a list of frames.
-   *
-   * @deprecated Use {@link #from(boolean, List)} instead.
-   */
-  @Deprecated
-  public static ZMTPMessage parse(final List<ZMTPFrame> frames, final boolean enveloped) {
-    return from(enveloped, frames);
-  }
-
-  /**
    * Return the envelope
    */
   public List<ZMTPFrame> envelope() {
@@ -180,9 +151,16 @@ public class ZMTPMessage {
     return content.get(frameId);
   }
 
-  /**
-   * Helper to convert the object into a string
-   */
+  @Override
+  protected void deallocate() {
+    for (final ZMTPFrame frame : envelope) {
+      frame.release();
+    }
+    for (final ZMTPFrame frame : content) {
+      frame.release();
+    }
+  }
+
   @Override
   public String toString() {
     return "ZMTPMessage{" + ZMTPUtils.toString(envelope) + "," + ZMTPUtils.toString(content) + '}';

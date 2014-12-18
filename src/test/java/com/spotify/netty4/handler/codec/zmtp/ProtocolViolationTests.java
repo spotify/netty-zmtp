@@ -35,6 +35,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.ReferenceCountUtil;
 
 import static org.junit.Assert.assertFalse;
 
@@ -63,6 +64,7 @@ public class ProtocolViolationTests {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       super.channelRead(ctx, msg);
+      ReferenceCountUtil.releaseLater(msg);
       readCalled = true;
     }
 

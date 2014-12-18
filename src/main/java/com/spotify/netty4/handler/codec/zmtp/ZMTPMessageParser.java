@@ -66,8 +66,8 @@ public class ZMTPMessageParser {
    */
   private ZMTPFrame readFrame(final ByteBuf buffer, final int length) {
     if (length > 0) {
-      final byte[] data = new byte[length];
-      buffer.readBytes(data);
+      final ByteBuf data = buffer.readSlice(length);
+      data.retain();
       return new ZMTPFrame(data);
     } else {
       return ZMTPFrame.EMPTY_FRAME;
@@ -121,7 +121,7 @@ public class ZMTPMessageParser {
       // Read frame content
       final ZMTPFrame frame = readFrame(buffer, frameSize);
 
-      if (!frame.hasData() && part == head) {
+      if (!frame.hasContent() && part == head) {
         // Skip the delimiter
         delimited = true;
         part = tail;

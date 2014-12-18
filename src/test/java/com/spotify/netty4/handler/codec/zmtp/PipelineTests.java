@@ -67,11 +67,11 @@ public class PipelineTests {
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(1, envelope.size());
-    cmp(buf(0x65), envelope.get(0).data());
+    cmp(buf(0x65), envelope.get(0).content());
 
     List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(0x62), body.get(0).data());
+    cmp(buf(0x62), body.get(0).content());
 
 
   }
@@ -91,11 +91,11 @@ public class PipelineTests {
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(1, envelope.size());
-    cmp(buf(0x65), envelope.get(0).data());
+    cmp(buf(0x65), envelope.get(0).content());
 
     List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(0x62), body.get(0).data());
+    cmp(buf(0x62), body.get(0).content());
 
 
   }
@@ -126,7 +126,7 @@ public class PipelineTests {
 
     List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).data());
+    cmp(buf(LONG_MSG), body.get(0).content());
   }
 
   @Test
@@ -163,7 +163,7 @@ public class PipelineTests {
 
     List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).data());
+    cmp(buf(LONG_MSG), body.get(0).content());
   }
 
   @Test
@@ -200,7 +200,7 @@ public class PipelineTests {
 
     List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).data());
+    cmp(buf(LONG_MSG), body.get(0).content());
   }
 
 
@@ -235,7 +235,7 @@ public class PipelineTests {
 
     List<ZMTPFrame> body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).data());
+    cmp(buf(LONG_MSG), body.get(0).content());
 
     // send the rest of the second message
     cb = Unpooled.buffer();
@@ -252,7 +252,7 @@ public class PipelineTests {
 
     body = m.message().content();
     assertEquals(1, body.size());
-    cmp(buf(LONG_MSG), body.get(0).data());
+    cmp(buf(LONG_MSG), body.get(0).content());
 
   }
 

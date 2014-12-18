@@ -32,7 +32,7 @@ public class ZMTPUtils {
 
   public static final byte MORE_FLAG = 0x1;
   public static final byte FINAL_FLAG = 0x0;
-  public static final ZMTPFrame DELIMITER = ZMTPFrame.create();
+  public static final ZMTPFrame DELIMITER = ZMTPFrame.EMPTY_FRAME;
 
   /**
    * Helper to decode a ZMTP/1.0 length field
@@ -127,8 +127,8 @@ public class ZMTPUtils {
     } else { // version == 2
       encodeZMTP2FrameHeader(frame.size(), more ? MORE_FLAG : FINAL_FLAG, buffer);
     }
-    if (frame.hasData()) {
-      final ByteBuf source = frame.data();
+    if (frame.hasContent()) {
+      final ByteBuf source = frame.content();
       buffer.ensureWritable(source.readableBytes());
       source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
@@ -266,7 +266,7 @@ public class ZMTPUtils {
     for (int i = 0; i < frames.size(); i++) {
       final ZMTPFrame frame = frames.get(i);
       builder.append('"');
-      builder.append(toString(frame.data()));
+      builder.append(toString(frame.content()));
       builder.append('"');
       if (i < frames.size() - 1) {
         builder.append(',');
