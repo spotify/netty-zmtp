@@ -18,11 +18,8 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.UUID;
-
-import io.netty.channel.Channel;
 
 /**
  * Represents an ongoing zmtp session
@@ -37,8 +34,7 @@ public class ZMTPSession {
   private final ZMTPSocketType socketType;
   private final ZMTPConnectionType type;
 
-  private Channel channel;
-  private byte[] remoteIdent;
+  private volatile byte[] remoteIdent;
   private volatile int actualVersion;
 
   public ZMTPSession(final ZMTPConnectionType type) {
@@ -70,20 +66,6 @@ public class ZMTPSession {
       this.localIdent = localIdent;
     }
     this.socketType = socketType;
-  }
-
-  /**
-   * @return The local address of the session
-   */
-  public SocketAddress localAddress() {
-    return channel.localAddress();
-  }
-
-  /**
-   * @return The remote address of the session
-   */
-  public SocketAddress remoteAddress() {
-    return channel.remoteAddress();
   }
 
   /**
@@ -140,22 +122,13 @@ public class ZMTPSession {
     }
   }
 
-  public Channel channel() {
-    return channel;
-  }
-
-  public void channel(final Channel channel) {
-    this.channel = channel;
-  }
-
-
   public long sizeLimit() {
     return sizeLimit;
   }
 
   /**
-   * An integer representing the actual version of an ZMTP connection. Note that this property
-   * does not effect which protocol versions support (To pick a version, select one of the CodecBase
+   * An integer representing the actual version of an ZMTP connection. Note that this property does
+   * not effect which protocol versions support (To pick a version, select one of the CodecBase
    * subclasses) and the actualVersion might be lower than the highest supported version of your
    * CodecBase subclass due to interoperability downgrades.
    *
@@ -166,7 +139,7 @@ public class ZMTPSession {
   }
 
   public void actualVersion(int actualVersion) {
-      this.actualVersion = actualVersion;
+    this.actualVersion = actualVersion;
   }
 
   @Nullable
@@ -182,7 +155,6 @@ public class ZMTPSession {
            ", sizeLimit=" + sizeLimit +
            ", socketType=" + socketType +
            ", type=" + type +
-           ", channel=" + channel +
            ", remoteIdent=" + Arrays.toString(remoteIdent) +
            ", actualVersion=" + actualVersion +
            '}';

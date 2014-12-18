@@ -35,7 +35,6 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
     });
 
     ctx.writeAndFlush(onConnect());
-    this.session.channel(ctx.channel());
   }
 
   abstract ByteBuf onConnect();
