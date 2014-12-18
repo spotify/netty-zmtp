@@ -16,10 +16,12 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import io.netty.util.ReferenceCounted;
+
 /**
  * An incoming ZMTP message.
  */
-public class ZMTPIncomingMessage {
+public class ZMTPIncomingMessage implements ReferenceCounted {
 
   private final ZMTPMessage message;
   private final boolean truncated;
@@ -55,6 +57,31 @@ public class ZMTPIncomingMessage {
    */
   public boolean isTruncated() {
     return truncated;
+  }
+
+  @Override
+  public int refCnt() {
+    return message.refCnt();
+  }
+
+  @Override
+  public ReferenceCounted retain() {
+    return message.retain();
+  }
+
+  @Override
+  public ReferenceCounted retain(final int increment) {
+    return message.retain(increment);
+  }
+
+  @Override
+  public boolean release() {
+    return message.release();
+  }
+
+  @Override
+  public boolean release(final int decrement) {
+    return message.release(decrement);
   }
 
   @Override
