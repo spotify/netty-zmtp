@@ -21,6 +21,10 @@ public class ZMTP10Codec extends CodecBase {
     super(session);
   }
 
+  public <T> ZMTP10Codec(final ZMTPSession session, final ZMTPMessageConsumer<T> consumer) {
+    super(session, consumer);
+  }
+
   @Override
   protected ByteBuf onConnect() {
     return makeZMTP1Greeting(session.localIdentity());

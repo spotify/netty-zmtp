@@ -17,6 +17,8 @@
 package com.spotify.netty4.zmtp;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessageProducer;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParser;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParsingException;
@@ -43,7 +45,9 @@ public class Benchmark {
                ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
                ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
                ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata")));
-    final ZMTPMessageParser parser = new ZMTPMessageParser(true, 1024 * 1024, 1);
+    final ZMTPMessageParser<ZMTPIncomingMessage> parser =
+        new ZMTPMessageParser<ZMTPIncomingMessage>(1024 * 1024, 1,
+                                                   new ZMTPIncomingMessageProducer(true));
     long sum = 0;
     for (long i = 0; i < 1000000; i++) {
       for (long j = 0; j < 1000; j++) {

@@ -16,10 +16,6 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import io.netty.buffer.ByteBuf;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
@@ -31,19 +27,16 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
  * Decodes ZMTP messages from a channel buffer, reading and accumulating frame by frame, keeping
  * state and updating buffer reader indices as necessary.
  */
-public class ZMTPMessageParser {
+public class ZMTPMessageParser<T> {
 
   private static final byte LONG_FLAG = 0x02;
 
-  private final boolean enveloped;
   private final long sizeLimit;
   private final int version;
 
-  private List<ZMTPFrame> head;
-  private List<ZMTPFrame> tail;
-  private List<ZMTPFrame> part;
+  private final ZMTPMessageConsumer<T> consumer;
+
   private boolean hasMore;
-  private boolean delimited;
   private long size;
   private int frameSize;
 
@@ -51,27 +44,12 @@ public class ZMTPMessageParser {
   private int frameRemaining;
   private boolean headerParsed;
 
-  public ZMTPMessageParser(final boolean enveloped, final long sizeLimit, int version) {
-    this.enveloped = enveloped;
+  public ZMTPMessageParser(final long sizeLimit, final int version,
+                           final ZMTPMessageConsumer<T> consumer) {
     this.sizeLimit = sizeLimit;
     this.version = version;
+    this.consumer = consumer;
     reset();
-  }
-
-  /**
-   * Read a ZMTP frame from a {@link io.netty.buffer.ByteBuf}.
-   *
-   * @param length length of buffer
-   * @return A {@link ZMTPFrame} containg the data read from the buffer.
-   */
-  private ZMTPFrame readFrame(final ByteBuf buffer, final int length) {
-    if (length > 0) {
-      final ByteBuf data = buffer.readSlice(length);
-      data.retain();
-      return new ZMTPFrame(data);
-    } else {
-      return ZMTPFrame.EMPTY_FRAME;
-    }
   }
 
   /**
@@ -85,7 +63,7 @@ public class ZMTPMessageParser {
    * @param buffer Buffer with data
    * @return A {@link ZMTPMessage} if it was completely parsed, otherwise null.
    */
-  public ZMTPIncomingMessage parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
+  public T parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
 
     // If we're in discarding mode, continue discarding data
     if (isOversized(size)) {
@@ -118,16 +96,7 @@ public class ZMTPMessageParser {
 
       size += frameSize;
 
-      // Read frame content
-      final ZMTPFrame frame = readFrame(buffer, frameSize);
-
-      if (!frame.hasContent() && part == head) {
-        // Skip the delimiter
-        delimited = true;
-        part = tail;
-      } else {
-        part.add(frame);
-      }
+      consumer.consumeFrame(buffer, frameSize, hasMore);
 
       if (!hasMore) {
         return finish(false);
@@ -138,6 +107,14 @@ public class ZMTPMessageParser {
   }
 
   /**
+   * Reset parser in preparation for the next message.
+   */
+  private void reset() {
+    hasMore = true;
+    size = 0;
+  }
+
+  /**
    * Check if the message is too large and frames should be discarded.
    */
   private boolean isOversized(final long size) {
@@ -145,54 +122,11 @@ public class ZMTPMessageParser {
   }
 
   /**
-   * Create a message from the parsed frames and reset the parser.
-   */
-  private ZMTPIncomingMessage finish(final boolean truncated) {
-    final List<ZMTPFrame> envelope;
-    final List<ZMTPFrame> content;
-
-    // If we're expecting enveloped messages but didn't get a delimiter, then we treat that as a
-    // message without an envelope and assign the received frames to the content part of the
-    // message instead of the envelope. This is to allow the parser to deal with situations where
-    // we're not really sure if we're going to get enveloped messages or not.
-    if (enveloped && !delimited && !truncated) {
-      envelope = Collections.emptyList();
-      content = head;
-    } else {
-      envelope = head;
-      content = tail;
-    }
-
-    final ZMTPMessage message = new ZMTPMessage(envelope, content);
-    final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(message, truncated, size);
-    reset();
-    return incomingMessage;
-  }
-
-  /**
-   * Reset parser in preparation for the next message.
-   */
-  private void reset() {
-    if (enveloped) {
-      head = new ArrayList<ZMTPFrame>(3);
-      tail = new ArrayList<ZMTPFrame>(3);
-      part = head;
-    } else {
-      head = Collections.emptyList();
-      tail = new ArrayList<ZMTPFrame>(3);
-      part = tail;
-    }
-    hasMore = true;
-    delimited = false;
-    size = 0;
-  }
-
-  /**
    * Discard frames for current message.
    *
    * @return A truncated message if done discarding, null if not yet done.
    */
-  private ZMTPIncomingMessage discardFrames(final ByteBuf buffer)
+  private T discardFrames(final ByteBuf buffer)
       throws ZMTPMessageParsingException {
 
     while (buffer.readableBytes() > 0) {
@@ -207,6 +141,7 @@ public class ZMTPMessageParser {
         }
         size += frameSize;
         frameRemaining = frameSize;
+        consumer.discardFrame(frameSize, hasMore);
       }
 
       // Discard bytes
@@ -228,6 +163,14 @@ public class ZMTPMessageParser {
     }
 
     return null;
+  }
+
+  /**
+   * Reset the parser and return a result from the consumer.
+   */
+  private T finish(final boolean truncated) {
+    reset();
+    return consumer.finish(truncated);
   }
 
   private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPMessageParsingException {
@@ -288,5 +231,11 @@ public class ZMTPMessageParser {
     }
     frameSize = (int)len;
     return true;
+  }
+
+  public static <T> ZMTPMessageParser<T> create(final int version, final long sizeLimit,
+                                                final ZMTPMessageConsumer<T> consumer) {
+    return new ZMTPMessageParser<T>(sizeLimit, version, consumer);
+
   }
 }

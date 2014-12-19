@@ -135,6 +135,9 @@ public class ZMTPSession {
    * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
    */
   public int actualVersion() {
+    if (actualVersion == 0) {
+      throw new IllegalStateException("actual version not yet set");
+    }
     return actualVersion;
   }
 

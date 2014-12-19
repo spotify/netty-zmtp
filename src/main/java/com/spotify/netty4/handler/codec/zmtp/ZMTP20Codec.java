@@ -12,6 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
 public class ZMTP20Codec extends CodecBase {
 
   private final boolean interop;
+
   private boolean splitHandshake;
 
   /**
@@ -19,7 +20,16 @@ public class ZMTP20Codec extends CodecBase {
    * @param session the session that configures this codec
    * @param interop whether this socket should implement the ZMTP/1.0 interoperability handshake
    */
-  public ZMTP20Codec(ZMTPSession session, boolean interop) {
+  public <T> ZMTP20Codec(final ZMTPSession session, final boolean interop,
+                         final ZMTPMessageConsumer<T> consumer) {
+    super(session, consumer);
+    if (session.socketType() == null) {
+      throw new IllegalArgumentException("ZMTP/2.0 requires a socket type");
+    }
+    this.interop = interop;
+  }
+
+  public ZMTP20Codec(final ZMTPSession session, final boolean interop) {
     super(session);
     if (session.socketType() == null) {
       throw new IllegalArgumentException("ZMTP/2.0 requires a socket type");

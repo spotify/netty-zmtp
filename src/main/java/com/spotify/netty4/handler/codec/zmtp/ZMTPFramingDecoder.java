@@ -23,20 +23,17 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
 /**
- * Netty FrameDecoder for zmtp protocol
- *
- * Decodes ZMTP frames into a ZMTPMessage - will return a ZMTPMessage as a message event
+ * Netty decoder for ZMTP
  */
 class ZMTPFramingDecoder extends ByteToMessageDecoder {
 
-  private final ZMTPMessageParser parser;
+  private final ZMTPMessageParser<?> parser;
 
   /**
-   * Creates a new decoder
+   * Creates a new decoder.
    */
-  public ZMTPFramingDecoder(final ZMTPSession session) {
-    this.parser = new ZMTPMessageParser(session.isEnveloped(), session.sizeLimit(),
-                                        session.actualVersion());
+  public ZMTPFramingDecoder(final ZMTPMessageParser<?> parser) {
+    this.parser = parser;
   }
 
   /**
@@ -45,7 +42,7 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
-    final ZMTPIncomingMessage msg = parser.parse(in);
+    final Object msg = parser.parse(in);
     if (msg != null) {
       out.add(msg);
     }

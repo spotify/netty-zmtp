@@ -76,7 +76,8 @@ public class ZMTPMessageParserTest {
   public void testZMTP1LongFrameSize() throws ZMTPMessageParsingException {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
-    ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
+    ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(true);
+    ZMTPMessageParser<ZMTPIncomingMessage> parser = ZMTPMessageParser.create(1, 1024, consumer);
     ZMTPIncomingMessage msg = parser.parse(buffer);
     assertNull("Message shouldn't be parsed for missing frame size", msg);
   }
@@ -84,7 +85,8 @@ public class ZMTPMessageParserTest {
   @Test
   public void testZMTP1BufferLengthEmpty() throws ZMTPMessageParsingException {
     ByteBuf buffer = Unpooled.buffer();
-    ZMTPMessageParser parser = new ZMTPMessageParser(false, 1024, 1);
+    ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(true);
+    ZMTPMessageParser<ZMTPIncomingMessage> parser = ZMTPMessageParser.create(1, 1024, consumer);
     ZMTPIncomingMessage msg = parser.parse(buffer);
     assertNull("Empty ByteBuf should result in an empty ZMTPIncomingMessage", msg);
   }
@@ -148,7 +150,7 @@ public class ZMTPMessageParserTest {
   }
 
   private void testParse(final boolean enveloped, final Limit limit, final List<String> input,
-                         final ZMTPIncomingMessage expected, int version) throws Exception {
+                         final ZMTPIncomingMessage expected, final int version) throws Exception {
     out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                        enveloped, limit, input, expected));
 
@@ -157,7 +159,9 @@ public class ZMTPMessageParserTest {
 
     // Test parsing the whole message
     {
-      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
+      final ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(enveloped);
+      final ZMTPMessageParser<ZMTPIncomingMessage> parser =
+          ZMTPMessageParser.create(version, limit.value, consumer);
       final ZMTPIncomingMessage parsed = parser.parse(serialized);
       serialized.setIndex(0, serializedLength);
       assertEquals("expected: " + expected + ", parsed: " + parsed, expected, parsed);
@@ -178,7 +182,9 @@ public class ZMTPMessageParserTest {
       public void fragments(final int[] limits, final int count) throws Exception {
         serialized.setIndex(0, serializedLength);
         ZMTPIncomingMessage parsed = null;
-        final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
+        final ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(enveloped);
+        final ZMTPMessageParser<ZMTPIncomingMessage> parser =
+            ZMTPMessageParser.create(version, limit.value, consumer);
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
           serialized.writerIndex(limit);
@@ -352,13 +358,21 @@ public class ZMTPMessageParserTest {
     public List<Verification> verifications() {
       return verifications;
     }
+
+    @Override
+    public String toString() {
+      return "Parameters{" +
+             "inputFrames=" + inputFrames +
+             ", verifications=" + verifications +
+             '}';
+    }
   }
 
   public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message,
                                         int version) {
     final ByteBuf buffer = Unpooled.buffer(ZMTPUtils.messageSize(
         message, enveloped, version));
-    ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
+    ZMTPUtils.writeMessage(message, buffer, enveloped, version);
     return buffer;
   }
 
@@ -380,6 +394,16 @@ public class ZMTPMessageParserTest {
       this.sizeLimit = sizeLimit;
       this.inputFrames = inputFrames;
       this.expectedMessage = expectedMessage;
+    }
+
+    @Override
+    public String toString() {
+      return "Verification{" +
+             "enveloped=" + enveloped +
+             ", sizeLimit=" + sizeLimit +
+             ", inputFrames=" + inputFrames +
+             ", expectedMessage=" + expectedMessage +
+             '}';
     }
   }
 
