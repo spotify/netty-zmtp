@@ -149,7 +149,7 @@ public class ZMTPMessageParserTest {
   }
 
   private void testParse(final boolean enveloped, final Limit limit, final List<String> input,
-                         final ZMTPParsedMessage expected, int version) throws Exception {
+                         final ZMTPParsedMessage expected, final int version) throws Exception {
     out.println(format("enveloped=%s limit=%s input=%s expected=%s",
                        enveloped, limit, input, expected));
 
@@ -158,7 +158,7 @@ public class ZMTPMessageParserTest {
 
     // Test parsing the whole message
     {
-      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
+      final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, version);
       final ZMTPParsedMessage parsed = parser.parse(serialized);
       serialized.setIndex(0, serializedLength);
       assertEquals("expected: " + expected + ", parsed: " + parsed, expected, parsed);
@@ -179,7 +179,7 @@ public class ZMTPMessageParserTest {
       public void fragments(final int[] limits, final int count) throws Exception {
         serialized.setIndex(0, serializedLength);
         ZMTPParsedMessage parsed = null;
-        final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, 1);
+        final ZMTPMessageParser parser = new ZMTPMessageParser(enveloped, limit.value, version);
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
           serialized.writerIndex(limit);
@@ -376,7 +376,7 @@ public class ZMTPMessageParserTest {
                                         int version) {
     final ChannelBuffer buffer = ChannelBuffers.buffer(ZMTPUtils.messageSize(
         message, enveloped, version));
-    ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
+    ZMTPUtils.writeMessage(message, buffer, enveloped, version);
     return buffer;
   }
 
