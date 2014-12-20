@@ -28,7 +28,7 @@ import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class ZMTPUtilsTests {
 

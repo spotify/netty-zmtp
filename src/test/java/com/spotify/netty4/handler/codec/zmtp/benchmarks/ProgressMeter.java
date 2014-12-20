@@ -14,15 +14,12 @@
  * the License.
  */
 
-package com.spotify.netty4.zmtp;
-
-import org.junit.Ignore;
+package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Ignore
-public class ProgressMeter {
+class ProgressMeter {
 
   static class Delta {
 
