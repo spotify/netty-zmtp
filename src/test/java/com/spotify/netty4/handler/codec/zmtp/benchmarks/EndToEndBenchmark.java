@@ -18,6 +18,7 @@ package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import com.google.common.base.Strings;
 
+import com.spotify.netty4.handler.AutoFlusher;
 import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
@@ -27,7 +28,6 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -37,8 +37,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -114,39 +112,6 @@ public class EndToEndBenchmark {
 
     // Run until client is closed
     client.closeFuture().await();
-  }
-
-  private static class AutoFlusher extends ChannelOutboundHandlerAdapter implements Runnable {
-
-    private final AtomicIntegerFieldUpdater<AutoFlusher> FLUSHED =
-        AtomicIntegerFieldUpdater.newUpdater(AutoFlusher.class, "flushed");
-    @SuppressWarnings("UnusedDeclaration") private volatile int flushed;
-
-    private ChannelHandlerContext ctx;
-
-    @Override
-    public void handlerAdded(final ChannelHandlerContext ctx) throws Exception {
-      super.handlerAdded(ctx);
-      this.ctx = ctx;
-    }
-
-    @Override
-    public void write(final ChannelHandlerContext ctx, final Object msg,
-                      final ChannelPromise promise)
-        throws Exception {
-      super.write(ctx, msg, promise);
-      if (flushed == 0) {
-        if (FLUSHED.compareAndSet(this, 0, 1)) {
-          ctx.channel().eventLoop().execute(this);
-        }
-      }
-    }
-
-    @Override
-    public void run() {
-      flushed = 0;
-      ctx.flush();
-    }
   }
 
   private static class ServerHandler extends ChannelInboundHandlerAdapter {
