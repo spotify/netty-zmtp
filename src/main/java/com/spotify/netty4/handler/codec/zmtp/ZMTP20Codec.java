@@ -21,7 +21,7 @@ public class ZMTP20Codec extends CodecBase {
    * @param interop whether this socket should implement the ZMTP/1.0 interoperability handshake
    */
   public <T> ZMTP20Codec(final ZMTPSession session, final boolean interop,
-                         final ZMTPMessageConsumer<T> consumer) {
+                         final ZMTPMessageDecoder<T> consumer) {
     super(session, consumer);
     if (session.socketType() == null) {
       throw new IllegalArgumentException("ZMTP/2.0 requires a socket type");

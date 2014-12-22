@@ -43,8 +43,8 @@ class TestUtil {
     int actualReadableCount = actual.readableBytes();
     if (expectedReadableCount != actualReadableCount) {
       Assert.fail(String.format("Expected same number of readable bytes in buffers (%s != %s)",
-          printBytes(expected.array(), expectedPos, expectedReadableCount),
-          printBytes(actual.array(), actualPos, actualReadableCount)));
+          printBytes(expected, expectedPos, expectedReadableCount),
+          printBytes(actual, actualPos, actualReadableCount)));
     }
     final int readableBytes = expected.readableBytes();
     for (int i = 0; i < readableBytes; i++) {
@@ -52,8 +52,8 @@ class TestUtil {
       byte rb = actual.readByte();
       if (lb != rb) {
         Assert.fail(String.format("Pos %d: (%s != %s)", i,
-            printBytes(expected.array(), expectedPos, expectedReadableCount),
-            printBytes(actual.array(), actualPos, actualReadableCount)));
+            printBytes(expected, expectedPos, expectedReadableCount),
+            printBytes(actual, actualPos, actualReadableCount)));
       }
     }
   }
@@ -79,6 +79,14 @@ class TestUtil {
     StringBuilder sb = new StringBuilder(length - start);
     for (int i = start; i < start + length; i++) {
       sb.append(String.format("%%%02x", buffer[i]));
+    }
+    return sb.toString();
+  }
+
+  public static String printBytes(ByteBuf buffer, int start, int length) {
+    StringBuilder sb = new StringBuilder(length - start);
+    for (int i = start; i < start + length; i++) {
+      sb.append(String.format("%%%02x", buffer.getByte(i)));
     }
     return sb.toString();
   }

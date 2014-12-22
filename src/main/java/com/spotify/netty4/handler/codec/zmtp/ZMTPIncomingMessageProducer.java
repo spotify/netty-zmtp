@@ -24,7 +24,7 @@ import io.netty.buffer.ByteBuf;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 
-public class ZMTPIncomingMessageProducer implements ZMTPMessageConsumer<ZMTPIncomingMessage> {
+public class ZMTPIncomingMessageProducer implements ZMTPMessageDecoder<ZMTPIncomingMessage> {
 
   private final boolean enveloped;
 
@@ -58,7 +58,7 @@ public class ZMTPIncomingMessageProducer implements ZMTPMessageConsumer<ZMTPInco
   }
 
   @Override
-  public void consumeFrame(final ByteBuf buffer, final int size, final boolean more) {
+  public void readFrame(final ByteBuf buffer, final int size, final boolean more) {
     if (size > 0) {
       this.size += size;
       final ByteBuf data = buffer.readSlice(size);

@@ -34,7 +34,7 @@ public class ZMTPMessageParser<T> {
   private final long sizeLimit;
   private final int version;
 
-  private final ZMTPMessageConsumer<T> consumer;
+  private final ZMTPMessageDecoder<T> decoder;
 
   private boolean hasMore;
   private long size;
@@ -45,10 +45,10 @@ public class ZMTPMessageParser<T> {
   private boolean headerParsed;
 
   public ZMTPMessageParser(final long sizeLimit, final int version,
-                           final ZMTPMessageConsumer<T> consumer) {
+                           final ZMTPMessageDecoder<T> decoder) {
     this.sizeLimit = sizeLimit;
     this.version = version;
-    this.consumer = consumer;
+    this.decoder = decoder;
     reset();
   }
 
@@ -96,7 +96,7 @@ public class ZMTPMessageParser<T> {
 
       size += frameSize;
 
-      consumer.consumeFrame(buffer, frameSize, hasMore);
+      decoder.readFrame(buffer, frameSize, hasMore);
 
       if (!hasMore) {
         return finish(false);
@@ -141,7 +141,7 @@ public class ZMTPMessageParser<T> {
         }
         size += frameSize;
         frameRemaining = frameSize;
-        consumer.discardFrame(frameSize, hasMore);
+        decoder.discardFrame(frameSize, hasMore);
       }
 
       // Discard bytes
@@ -166,11 +166,11 @@ public class ZMTPMessageParser<T> {
   }
 
   /**
-   * Reset the parser and return a result from the consumer.
+   * Reset the parser and return a result from the decoder.
    */
   private T finish(final boolean truncated) {
     reset();
-    return consumer.finish(truncated);
+    return decoder.finish(truncated);
   }
 
   private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPMessageParsingException {
@@ -234,7 +234,7 @@ public class ZMTPMessageParser<T> {
   }
 
   public static <T> ZMTPMessageParser<T> create(final int version, final long sizeLimit,
-                                                final ZMTPMessageConsumer<T> consumer) {
+                                                final ZMTPMessageDecoder<T> consumer) {
     return new ZMTPMessageParser<T>(sizeLimit, version, consumer);
 
   }

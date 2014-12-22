@@ -121,16 +121,21 @@ public class ZMTPUtils {
    */
   public static void writeFrame(final ZMTPFrame frame, final ByteBuf buffer,
                                 final boolean more, final int version) {
-    if (version == 1) {
-      encodeLength(frame.size() + 1, buffer);
-      buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
-    } else { // version == 2
-      encodeZMTP2FrameHeader(frame.size(), more ? MORE_FLAG : FINAL_FLAG, buffer);
-    }
+    writeFrameHeader(buffer, frame.size(), more, version);
     if (frame.hasContent()) {
       final ByteBuf source = frame.content();
       buffer.ensureWritable(source.readableBytes());
       source.getBytes(source.readerIndex(), buffer, source.readableBytes());
+    }
+  }
+
+  public static void writeFrameHeader(final ByteBuf buffer, final int size, final boolean more,
+                                      final int version) {
+    if (version == 1) {
+      encodeLength(size + 1, buffer);
+      buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
+    } else { // version == 2
+      encodeZMTP2FrameHeader(size, more ? MORE_FLAG : FINAL_FLAG, buffer);
     }
   }
 
@@ -176,17 +181,21 @@ public class ZMTPUtils {
    * @return Bytes needed.
    */
   public static int frameSize(final ZMTPFrame frame, int version) {
+    return frameSize(frame.size(), version);
+  }
+
+  public static int frameSize(final int payloadSize, final int version) {
     if (version == 1) {
-      if (frame.size() + 1 < 255) {
-        return 1 + 1 + frame.size();
+      if (payloadSize + 1 < 255) {
+        return 1 + 1 + payloadSize;
       } else {
-        return 1 + 8 + 1 + frame.size();
+        return 1 + 8 + 1 + payloadSize;
       }
     } else { // version 2
-      if (frame.size() < 256) {
-        return 1 + 1 + frame.size();
+      if (payloadSize < 256) {
+        return 1 + 1 + payloadSize;
       } else {
-        return 1 + 8 + frame.size();
+        return 1 + 8 + payloadSize;
       }
     }
   }

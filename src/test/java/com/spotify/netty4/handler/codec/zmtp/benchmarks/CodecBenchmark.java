@@ -20,7 +20,7 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessageProducer;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageConsumer;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParser;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParsingException;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPUtils;
@@ -118,12 +118,12 @@ public class CodecBenchmark {
   }
 
 
-  private class Discarder implements ZMTPMessageConsumer<Integer> {
+  private class Discarder implements ZMTPMessageDecoder<Integer> {
 
     private int size;
 
     @Override
-    public void consumeFrame(final ByteBuf data, final int size, final boolean more) {
+    public void readFrame(final ByteBuf data, final int size, final boolean more) {
       data.skipBytes(size);
       this.size += size;
     }

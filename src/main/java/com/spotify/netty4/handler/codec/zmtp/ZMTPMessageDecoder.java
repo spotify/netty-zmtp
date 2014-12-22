@@ -18,9 +18,9 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import io.netty.buffer.ByteBuf;
 
-public interface ZMTPMessageConsumer<T> {
+public interface ZMTPMessageDecoder<T> {
 
-  void consumeFrame(ByteBuf data, final int size, boolean more);
+  void readFrame(ByteBuf data, final int size, boolean more);
 
   void discardFrame(int size, boolean more);
 

@@ -16,8 +16,7 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 
@@ -321,12 +320,11 @@ public class ZMTPMessageParserTest {
     }
 
     private static List<ZMTPFrame> frames(final List<String> frames) {
-      return Lists.transform(frames, new Function<String, ZMTPFrame>() {
-        @Override
-        public ZMTPFrame apply(final String input) {
-          return ZMTPFrame.from(input);
-        }
-      });
+      final ImmutableList.Builder<ZMTPFrame> zmtpFrames = ImmutableList.builder();
+      for (final String frame : frames) {
+        zmtpFrames.add(ZMTPFrame.from(frame));
+      }
+      return zmtpFrames.build();
     }
 
     public static Output whole(final long byteSize, final List<ZMTPFrame> envelope,

@@ -138,17 +138,17 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   }
 
   /**
-   * Returns a specific content frame
-   *
-   * @param frameId frame to return (0 based)
-   * @return ZMTPFrame identified by frameId
+   * Get a specific envelope frame.
    */
-  public ZMTPFrame contentFrame(final int frameId) {
-    if (frameId < 0 || frameId >= content.size()) {
-      throw new IllegalArgumentException("Invalid frame id " + frameId);
-    }
+  public ZMTPFrame envelope(final int i) {
+    return envelope.get(i);
+  }
 
-    return content.get(frameId);
+  /**
+   * Get a specific content frame.
+   */
+  public ZMTPFrame content(final int i) {
+    return content.get(i);
   }
 
   @Override

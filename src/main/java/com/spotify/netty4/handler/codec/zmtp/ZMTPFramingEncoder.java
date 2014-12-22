@@ -17,38 +17,56 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 
-import java.util.List;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
 
 /**
  * Netty encoder for ZMTP messages.
  */
-class ZMTPFramingEncoder extends MessageToMessageEncoder<ZMTPMessage> {
+class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 
-  private final ZMTPSession session;
-  private final ByteBufAllocator allocator;
+  private static final ZMTPMessageEncoder DEFAULT_ENCODER = new DefaultZMTPMessageEncoder();
+
+  private final ZMTPMessageEncoder encoder;
+  private final ZMTPWriter writer;
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
-    this(session, PooledByteBufAllocator.DEFAULT);
+    this(session, DEFAULT_ENCODER, PooledByteBufAllocator.DEFAULT);
   }
 
-  public ZMTPFramingEncoder(final ZMTPSession session, final ByteBufAllocator allocator) {
-    this.session = session;
-    this.allocator = allocator;
+  public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder) {
+    this(session, encoder, PooledByteBufAllocator.DEFAULT);
+  }
+
+  public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder,
+                            final ByteBufAllocator allocator) {
+    this(encoder, new ZMTPWriter(session, allocator));
+  }
+
+  public ZMTPFramingEncoder(final ZMTPMessageEncoder encoder,
+                            final ZMTPWriter writer) {
+    if (encoder == null) {
+      throw new NullPointerException("encoder");
+    }
+    if (writer == null) {
+      throw new NullPointerException("writer");
+    }
+    this.encoder = encoder;
+    this.writer = writer;
   }
 
   @Override
-  protected void encode(final ChannelHandlerContext ctx, final ZMTPMessage message,
-                        final List<Object> out)
+  public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
       throws Exception {
-    final int size = ZMTPUtils.messageSize(message, session.isEnveloped(), session.actualVersion());
-    final ByteBuf buffer = allocator.buffer(size);
-    ZMTPUtils.writeMessage(message, buffer, session.isEnveloped(), session.actualVersion());
-    out.add(buffer);
+    writer.reset();
+    encoder.encode(msg, writer);
+    final ByteBuf output = writer.finish();
+    ReferenceCountUtil.release(msg);
+    ctx.write(output, promise);
   }
 }

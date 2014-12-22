@@ -17,9 +17,9 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
   protected final ZMTPSession session;
   protected HandshakeListener listener;
 
-  private final ZMTPMessageConsumer<?> consumer;
+  private final ZMTPMessageDecoder<?> consumer;
 
-  CodecBase(final ZMTPSession session, final ZMTPMessageConsumer<?> consumer) {
+  CodecBase(final ZMTPSession session, final ZMTPMessageDecoder<?> consumer) {
     this.session = session;
     this.consumer = consumer;
   }
