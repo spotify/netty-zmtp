@@ -26,7 +26,7 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
 
   public CodecBase(final ZMTPSession session) {
     this.session = session;
-    this.decoder = new ZMTPIncomingMessageProducer(session.isEnveloped());
+    this.decoder = new ZMTPIncomingMessageDecoder(session.isEnveloped());
   }
 
   @Override
@@ -74,8 +74,8 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
 
   private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
-    final ZMTPMessageParser<?> parser =
-        ZMTPMessageParser.create(session.actualVersion(), session.sizeLimit(), decoder);
+    final ZMTPMessageParser<?> parser = ZMTPMessageParser.create(
+        session.actualVersion(), session.sizeLimit(), decoder);
     pipeline.replace(
         this, "zmtp-codec",
         new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(

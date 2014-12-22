@@ -75,7 +75,7 @@ public class ZMTPMessageParserTest {
   public void testZMTP1LongFrameSize() throws ZMTPMessageParsingException {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
-    ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(true);
+    ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(true);
     ZMTPMessageParser<ZMTPIncomingMessage> parser = ZMTPMessageParser.create(1, 1024, consumer);
     ZMTPIncomingMessage msg = parser.parse(buffer);
     assertNull("Message shouldn't be parsed for missing frame size", msg);
@@ -84,7 +84,7 @@ public class ZMTPMessageParserTest {
   @Test
   public void testZMTP1BufferLengthEmpty() throws ZMTPMessageParsingException {
     ByteBuf buffer = Unpooled.buffer();
-    ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(true);
+    ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(true);
     ZMTPMessageParser<ZMTPIncomingMessage> parser = ZMTPMessageParser.create(1, 1024, consumer);
     ZMTPIncomingMessage msg = parser.parse(buffer);
     assertNull("Empty ByteBuf should result in an empty ZMTPIncomingMessage", msg);
@@ -158,7 +158,7 @@ public class ZMTPMessageParserTest {
 
     // Test parsing the whole message
     {
-      final ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(enveloped);
+      final ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(enveloped);
       final ZMTPMessageParser<ZMTPIncomingMessage> parser =
           ZMTPMessageParser.create(version, limit.value, consumer);
       final ZMTPIncomingMessage parsed = parser.parse(serialized);
@@ -181,7 +181,7 @@ public class ZMTPMessageParserTest {
       public void fragments(final int[] limits, final int count) throws Exception {
         serialized.setIndex(0, serializedLength);
         ZMTPIncomingMessage parsed = null;
-        final ZMTPIncomingMessageProducer consumer = new ZMTPIncomingMessageProducer(enveloped);
+        final ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(enveloped);
         final ZMTPMessageParser<ZMTPIncomingMessage> parser =
             ZMTPMessageParser.create(version, limit.value, consumer);
         for (int i = 0; i < count; i++) {
