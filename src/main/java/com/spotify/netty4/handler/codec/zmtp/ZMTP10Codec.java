@@ -21,8 +21,10 @@ public class ZMTP10Codec extends CodecBase {
     super(session);
   }
 
-  public <T> ZMTP10Codec(final ZMTPSession session, final ZMTPMessageDecoder<T> consumer) {
-    super(session, consumer);
+  public ZMTP10Codec(final ZMTPSession session,
+                     final ZMTPMessageEncoder encoder,
+                     final ZMTPMessageDecoder<?> decoder) {
+    super(session, encoder, decoder);
   }
 
   @Override

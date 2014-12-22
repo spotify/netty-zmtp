@@ -22,6 +22,12 @@ import io.netty.buffer.ByteBuf;
 
 public class DefaultZMTPMessageEncoder implements ZMTPMessageEncoder {
 
+  private boolean enveloped;
+
+  public DefaultZMTPMessageEncoder(final boolean enveloped) {
+    this.enveloped = enveloped;
+  }
+
   @Override
   public void encode(final Object msg, final ZMTPWriter writer) {
     final ZMTPMessage message = (ZMTPMessage) msg;
@@ -30,33 +36,37 @@ public class DefaultZMTPMessageEncoder implements ZMTPMessageEncoder {
     final List<ZMTPFrame> content = message.content();
 
     for (final ZMTPFrame frame : envelope) {
-      writer.expectEnvelope(frame.size());
+      writer.expectFrame(frame.size());
+    }
+
+    if (enveloped) {
+      writer.expectFrame(0);
     }
 
     for (final ZMTPFrame frame : content) {
-      writer.expectContent(frame.size());
+      writer.expectFrame(frame.size());
     }
 
-    writer.beginEnvelopes();
+    writer.begin();
 
     for (int i = 0; i < envelope.size(); i++) {
       final ZMTPFrame frame = envelope.get(i);
-      final ByteBuf dst = writer.envelope(frame.size());
+      final ByteBuf dst = writer.frame(frame.size());
       final ByteBuf src = frame.content();
       dst.writeBytes(src, src.readerIndex(), src.readableBytes());
     }
 
-    writer.endEnvelopes();
-
-    writer.beginContents();
+    if (enveloped) {
+      writer.frame(0);
+    }
 
     for (int i = 0; i < content.size(); i++) {
       final ZMTPFrame frame = content.get(i);
-      final ByteBuf dst = writer.content(frame.size());
+      final ByteBuf dst = writer.frame(frame.size());
       final ByteBuf src = frame.content();
       dst.writeBytes(src, src.readerIndex(), src.readableBytes());
     }
 
-    writer.endContents();
+    writer.end();
   }
 }

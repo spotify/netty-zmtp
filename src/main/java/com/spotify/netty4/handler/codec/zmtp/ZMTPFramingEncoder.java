@@ -30,13 +30,12 @@ import io.netty.util.ReferenceCountUtil;
  */
 class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 
-  private static final ZMTPMessageEncoder DEFAULT_ENCODER = new DefaultZMTPMessageEncoder();
-
   private final ZMTPMessageEncoder encoder;
   private final ZMTPWriter writer;
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
-    this(session, DEFAULT_ENCODER, PooledByteBufAllocator.DEFAULT);
+    this(session, new DefaultZMTPMessageEncoder(session.isEnveloped()),
+         PooledByteBufAllocator.DEFAULT);
   }
 
   public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder) {
@@ -45,7 +44,7 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 
   public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder,
                             final ByteBufAllocator allocator) {
-    this(encoder, new ZMTPWriter(session, allocator));
+    this(encoder, new ZMTPWriter(session.actualVersion(), allocator));
   }
 
   public ZMTPFramingEncoder(final ZMTPMessageEncoder encoder,

@@ -41,25 +41,20 @@ public class ZMTPWriter {
   }
 
   private final int version;
-  private final boolean enveloped;
   private final Output output;
 
-  private int expectedEnvelopes;
-  private int expectedContents;
-
-  private int envelope;
-  private int content;
-
-  private int size;
+  private int expectedFrames;
+  private int expectedSize;
   private ByteBuf buf;
 
-  public ZMTPWriter(final ZMTPSession session, final ByteBufAllocator allocator) {
-    this(session, new ByteBufAllocatorOutput(allocator));
+  private int frame;
+
+  public ZMTPWriter(final int version, final ByteBufAllocator allocator) {
+    this(version, new ByteBufAllocatorOutput(allocator));
   }
 
-  public ZMTPWriter(final ZMTPSession session, final Output output) {
-    this.version = session.actualVersion();
-    this.enveloped = session.isEnveloped();
+  public ZMTPWriter(final int version, final Output output) {
+    this.version = version;
     this.output = output;
     if (output == null) {
       throw new NullPointerException("output");
@@ -67,80 +62,44 @@ public class ZMTPWriter {
   }
 
   public void reset() {
-    expectedEnvelopes = 0;
-    expectedContents = 0;
-    envelope = 0;
-    content = 0;
+    expectedFrames = 0;
+    frame = 0;
     buf = null;
-    size = 0;
+    expectedSize = 0;
   }
 
-  public void expectEnvelope(final int size) {
-    expectedEnvelopes++;
-    this.size += ZMTPUtils.frameSize(size, version);
+  public void expectFrame(final int size) {
+    expectedFrames++;
+    expectedSize += ZMTPUtils.frameSize(size, version);
   }
 
-  public void expectContent(final int size) {
-    expectedContents++;
-    this.size += ZMTPUtils.frameSize(size, version);
+  public void expectFrames(final int frames) {
+    this.expectedFrames = frames;
   }
 
-  public void expectEnvelopes(final int envelopes) {
-    this.expectedEnvelopes = envelopes;
+  public void expectSize(final int size) {
+    this.expectedSize = size;
   }
 
-  public void expectContents(final int contents) {
-    this.expectedContents = contents;
+  public void begin() {
+    buf = output.buffer(expectedSize);
   }
 
-  public void expectTotalSize(final int size) {
-    this.size = size;
-  }
-
-  public void beginEnvelopes() {
-    if (enveloped) {
-      size += ZMTPUtils.frameSize(0, version);
-    }
-    buf = output.buffer(size);
-  }
-
-  public void endEnvelopes() {
-  }
-
-  public ByteBuf envelope(final int size) {
-    if (envelope >= expectedEnvelopes) {
+  public ByteBuf frame(final int size) {
+    if (frame >= expectedFrames) {
       throw new IllegalStateException("content");
     }
-    return envelope(size, enveloped);
+    final boolean more = (frame + 1 < expectedFrames);
+    return frame(size, more);
   }
 
-  private ByteBuf envelope(final int size, final boolean more) {
+  private ByteBuf frame(final int size, final boolean more) {
     ZMTPUtils.writeFrameHeader(buf, size, more, version);
-    envelope++;
+    frame++;
     return buf;
   }
 
-  public void beginContents() {
-    if (enveloped) {
-      ZMTPUtils.writeFrameHeader(buf, 0, true, version);
-    }
-  }
-
-  public ByteBuf content(final int size) {
-    if (content >= expectedContents) {
-      throw new IllegalStateException("content");
-    }
-    final boolean more = (content + 1 < expectedContents);
-    return content(size, more);
-  }
-
-  private ByteBuf content(final int size, final boolean more) {
-    ZMTPUtils.writeFrameHeader(buf, size, more, version);
-    content++;
-    return buf;
-  }
-
-  public void endContents() {
+  public void end() {
   }
 
   public ByteBuf finish() {
