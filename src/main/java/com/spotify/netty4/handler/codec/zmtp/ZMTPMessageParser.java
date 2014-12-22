@@ -234,8 +234,8 @@ public class ZMTPMessageParser<T> {
   }
 
   public static <T> ZMTPMessageParser<T> create(final int version, final long sizeLimit,
-                                                final ZMTPMessageDecoder<T> consumer) {
-    return new ZMTPMessageParser<T>(sizeLimit, version, consumer);
+                                                final ZMTPMessageDecoder<T> decoder) {
+    return new ZMTPMessageParser<T>(sizeLimit, version, decoder);
 
   }
 }
