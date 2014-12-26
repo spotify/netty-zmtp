@@ -18,8 +18,6 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -34,21 +32,18 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   private final ZMTPWriter writer;
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
-    this(session, new DefaultZMTPMessageEncoder(session.isEnveloped()),
-         PooledByteBufAllocator.DEFAULT);
+    this(session, new DefaultZMTPMessageEncoder(session.isEnveloped()));
   }
 
   public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder) {
-    this(session, encoder, PooledByteBufAllocator.DEFAULT);
+    this(session, encoder, new ZMTPWriter(session.actualVersion()));
   }
 
   public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder,
-                            final ByteBufAllocator allocator) {
-    this(encoder, new ZMTPWriter(session.actualVersion(), allocator));
-  }
-
-  public ZMTPFramingEncoder(final ZMTPMessageEncoder encoder,
                             final ZMTPWriter writer) {
+    if (session == null) {
+      throw new NullPointerException("session");
+    }
     if (encoder == null) {
       throw new NullPointerException("encoder");
     }
@@ -57,6 +52,11 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
     }
     this.encoder = encoder;
     this.writer = writer;
+  }
+
+  @Override
+  public void handlerAdded(final ChannelHandlerContext ctx) throws Exception {
+    writer.alloc(ctx.alloc());
   }
 
   @Override

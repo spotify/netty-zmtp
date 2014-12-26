@@ -41,7 +41,8 @@ public class ZMTPWriter {
   }
 
   private final int version;
-  private final Output output;
+
+  private ByteBufAllocator alloc = ByteBufAllocator.DEFAULT;
 
   private int expectedFrames;
   private int expectedSize;
@@ -49,16 +50,12 @@ public class ZMTPWriter {
 
   private int frame;
 
-  public ZMTPWriter(final int version, final ByteBufAllocator allocator) {
-    this(version, new ByteBufAllocatorOutput(allocator));
+  public ZMTPWriter(final int version) {
+    this.version = version;
   }
 
-  public ZMTPWriter(final int version, final Output output) {
-    this.version = version;
-    this.output = output;
-    if (output == null) {
-      throw new NullPointerException("output");
-    }
+  public void alloc(final ByteBufAllocator alloc) {
+    this.alloc = alloc;
   }
 
   public void reset() {
@@ -82,7 +79,7 @@ public class ZMTPWriter {
   }
 
   public void begin() {
-    buf = output.buffer(expectedSize);
+    buf = alloc.buffer(expectedSize);
   }
 
   public ByteBuf frame(final int size) {
