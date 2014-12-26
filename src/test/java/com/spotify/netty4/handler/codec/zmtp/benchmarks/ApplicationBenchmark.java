@@ -123,6 +123,8 @@ public class ApplicationBenchmark {
 
   private static class ServerHandler extends ChannelInboundHandlerAdapter {
 
+    public static final ByteBuffer REPLY_PAYLOAD = UTF_8.encode("hello world");
+
     private final Executor executor;
 
     public ServerHandler(final Executor executor) {
@@ -135,7 +137,7 @@ public class ApplicationBenchmark {
       executor.execute(new Runnable() {
         @Override
         public void run() {
-          ctx.write(request.reply(200, UTF_8.encode("hello world")));
+          ctx.write(request.reply(200, REPLY_PAYLOAD));
         }
       });
     }
