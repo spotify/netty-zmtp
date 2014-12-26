@@ -29,6 +29,7 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder<ZMTPIncomi
   private final boolean enveloped;
 
   private boolean delimited;
+  private boolean truncated;
   private long size;
 
   private List<ZMTPFrame> head;
@@ -54,6 +55,7 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder<ZMTPIncomi
       part = tail;
     }
     delimited = false;
+    truncated = false;
     size = 0;
   }
 
@@ -74,11 +76,12 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder<ZMTPIncomi
 
   @Override
   public void discardFrame(final int size, final boolean more) {
+    truncated = true;
     this.size += size;
   }
 
   @Override
-  public ZMTPIncomingMessage finish(final boolean truncated) {
+  public ZMTPIncomingMessage finish() {
     final List<ZMTPFrame> envelope;
     final List<ZMTPFrame> content;
 

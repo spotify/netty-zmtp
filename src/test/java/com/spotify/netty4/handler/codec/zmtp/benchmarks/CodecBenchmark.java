@@ -134,7 +134,7 @@ public class CodecBenchmark {
     }
 
     @Override
-    public Integer finish(final boolean truncated) {
+    public Integer finish() {
       return size;
     }
   }

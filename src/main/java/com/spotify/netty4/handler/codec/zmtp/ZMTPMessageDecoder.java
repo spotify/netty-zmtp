@@ -24,5 +24,5 @@ public interface ZMTPMessageDecoder<T> {
 
   void discardFrame(int size, boolean more);
 
-  T finish(boolean truncated);
+  T finish();
 }

@@ -99,7 +99,7 @@ public class ZMTPMessageParser<T> {
       decoder.readFrame(buffer, frameSize, hasMore);
 
       if (!hasMore) {
-        return finish(false);
+        return finish();
       }
     }
 
@@ -158,7 +158,7 @@ public class ZMTPMessageParser<T> {
       // Check if this message is done discarding
       if (done && !hasMore) {
         // We're done discarding
-        return finish(true);
+        return finish();
       }
     }
 
@@ -168,9 +168,9 @@ public class ZMTPMessageParser<T> {
   /**
    * Reset the parser and return a result from the decoder.
    */
-  private T finish(final boolean truncated) {
+  private T finish() {
     reset();
-    return decoder.finish(truncated);
+    return decoder.finish();
   }
 
   private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPMessageParsingException {

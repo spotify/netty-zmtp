@@ -393,7 +393,7 @@ public class ApplicationBenchmark {
     }
 
     @Override
-    public Request finish(final boolean truncated) {
+    public Request finish() {
       return new Request(uri, method, timestamp, payload);
     }
   }
@@ -464,7 +464,7 @@ public class ApplicationBenchmark {
     }
 
     @Override
-    public Reply finish(final boolean truncated) {
+    public Reply finish() {
       return new Reply(uri, method, statusCode, timestamp, payload);
     }
   }
