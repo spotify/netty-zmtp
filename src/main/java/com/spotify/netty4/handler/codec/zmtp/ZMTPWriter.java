@@ -21,25 +21,6 @@ import io.netty.buffer.ByteBufAllocator;
 
 public class ZMTPWriter {
 
-  public interface Output {
-
-    ByteBuf buffer(int size);
-  }
-
-  public static class ByteBufAllocatorOutput implements Output {
-
-    private final ByteBufAllocator allocator;
-
-    public ByteBufAllocatorOutput(final ByteBufAllocator allocator) {
-      this.allocator = allocator;
-    }
-
-    @Override
-    public ByteBuf buffer(final int size) {
-      return allocator.buffer(size);
-    }
-  }
-
   private final int version;
 
   private ByteBufAllocator alloc = ByteBufAllocator.DEFAULT;
@@ -60,9 +41,9 @@ public class ZMTPWriter {
 
   public void reset() {
     expectedFrames = 0;
-    frame = 0;
-    buf = null;
     expectedSize = 0;
+    buf = null;
+    frame = 0;
   }
 
   public void expectFrame(final int size) {
@@ -100,6 +81,8 @@ public class ZMTPWriter {
   }
 
   public ByteBuf finish() {
-    return buf;
+    final ByteBuf result = this.buf;
+    reset();
+    return result;
   }
 }
