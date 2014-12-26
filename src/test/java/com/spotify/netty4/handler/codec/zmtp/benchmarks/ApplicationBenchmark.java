@@ -336,7 +336,7 @@ public class ApplicationBenchmark {
     return string;
   }
 
-  private static class RequestDecoder implements ZMTPMessageDecoder<Request> {
+  private static class RequestDecoder implements ZMTPMessageDecoder {
 
     enum State {
       URI,
@@ -398,7 +398,7 @@ public class ApplicationBenchmark {
     }
   }
 
-  private static class ReplyDecoder implements ZMTPMessageDecoder<Reply> {
+  private static class ReplyDecoder implements ZMTPMessageDecoder {
 
     enum State {
       URI,

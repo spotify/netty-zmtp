@@ -18,11 +18,11 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
   protected HandshakeListener listener;
 
   private final ZMTPMessageEncoder encoder;
-  private final ZMTPMessageDecoder<?> decoder;
+  private final ZMTPMessageDecoder decoder;
 
   CodecBase(final ZMTPSession session,
             final ZMTPMessageEncoder encoder,
-            final ZMTPMessageDecoder<?> decoder) {
+            final ZMTPMessageDecoder decoder) {
     this.session = session;
     this.encoder = encoder;
     this.decoder = decoder;
@@ -80,7 +80,7 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
 
   private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
-    final ZMTPMessageParser<?> parser = ZMTPMessageParser.create(
+    final ZMTPMessageParser parser = ZMTPMessageParser.create(
         session.actualVersion(), session.sizeLimit(), decoder);
     pipeline.replace(
         this, "zmtp-codec",

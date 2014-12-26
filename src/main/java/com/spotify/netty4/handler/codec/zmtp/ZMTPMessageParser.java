@@ -27,14 +27,14 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
  * Decodes ZMTP messages from a channel buffer, reading and accumulating frame by frame, keeping
  * state and updating buffer reader indices as necessary.
  */
-public class ZMTPMessageParser<T> {
+public class ZMTPMessageParser {
 
   private static final byte LONG_FLAG = 0x02;
 
   private final long sizeLimit;
   private final int version;
 
-  private final ZMTPMessageDecoder<T> decoder;
+  private final ZMTPMessageDecoder decoder;
 
   private boolean hasMore;
   private long size;
@@ -45,7 +45,7 @@ public class ZMTPMessageParser<T> {
   private boolean headerParsed;
 
   public ZMTPMessageParser(final long sizeLimit, final int version,
-                           final ZMTPMessageDecoder<T> decoder) {
+                           final ZMTPMessageDecoder decoder) {
     this.sizeLimit = sizeLimit;
     this.version = version;
     this.decoder = decoder;
@@ -61,9 +61,10 @@ public class ZMTPMessageParser<T> {
    * exceeed the specified size limit.
    *
    * @param buffer Buffer with data
-   * @return A {@link ZMTPMessage} if it was completely parsed, otherwise null.
+   * @return The result from {@link ZMTPMessageDecoder#finish} if the message was completely parsed,
+   * null otherwise.
    */
-  public T parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
+  public Object parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
 
     // If we're in discarding mode, continue discarding data
     if (isOversized(size)) {
@@ -126,7 +127,7 @@ public class ZMTPMessageParser<T> {
    *
    * @return A truncated message if done discarding, null if not yet done.
    */
-  private T discardFrames(final ByteBuf buffer)
+  private Object discardFrames(final ByteBuf buffer)
       throws ZMTPMessageParsingException {
 
     while (buffer.readableBytes() > 0) {
@@ -168,7 +169,7 @@ public class ZMTPMessageParser<T> {
   /**
    * Reset the parser and return a result from the decoder.
    */
-  private T finish() {
+  private Object finish() {
     reset();
     return decoder.finish();
   }
@@ -229,13 +230,13 @@ public class ZMTPMessageParser<T> {
     if (len > Integer.MAX_VALUE) {
       throw new ZMTPMessageParsingException("Received too large frame: " + len);
     }
-    frameSize = (int)len;
+    frameSize = (int) len;
     return true;
   }
 
-  public static <T> ZMTPMessageParser<T> create(final int version, final long sizeLimit,
-                                                final ZMTPMessageDecoder<T> decoder) {
-    return new ZMTPMessageParser<T>(sizeLimit, version, decoder);
+  public static <T> ZMTPMessageParser create(final int version, final long sizeLimit,
+                                             final ZMTPMessageDecoder decoder) {
+    return new ZMTPMessageParser(sizeLimit, version, decoder);
 
   }
 }

@@ -24,7 +24,7 @@ import io.netty.buffer.ByteBuf;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 
-public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder<ZMTPIncomingMessage> {
+public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
 
   private final boolean enveloped;
 

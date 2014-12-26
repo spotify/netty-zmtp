@@ -75,8 +75,8 @@ public class ZMTPMessageParserTest {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(true);
-    ZMTPMessageParser<ZMTPIncomingMessage> parser = ZMTPMessageParser.create(1, 1024, consumer);
-    ZMTPIncomingMessage msg = parser.parse(buffer);
+    ZMTPMessageParser parser = ZMTPMessageParser.create(1, 1024, consumer);
+    Object msg = parser.parse(buffer);
     assertNull("Message shouldn't be parsed for missing frame size", msg);
   }
 
@@ -84,8 +84,8 @@ public class ZMTPMessageParserTest {
   public void testZMTP1BufferLengthEmpty() throws ZMTPMessageParsingException {
     ByteBuf buffer = Unpooled.buffer();
     ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(true);
-    ZMTPMessageParser<ZMTPIncomingMessage> parser = ZMTPMessageParser.create(1, 1024, consumer);
-    ZMTPIncomingMessage msg = parser.parse(buffer);
+    ZMTPMessageParser parser = ZMTPMessageParser.create(1, 1024, consumer);
+    Object msg = parser.parse(buffer);
     assertNull("Empty ByteBuf should result in an empty ZMTPIncomingMessage", msg);
   }
 
@@ -146,7 +146,7 @@ public class ZMTPMessageParserTest {
     // Test parsing the whole message
     {
       final VerifyingDecoder verifier = new VerifyingDecoder(expected);
-      final ZMTPMessageParser<Void> parser = ZMTPMessageParser.create(
+      final ZMTPMessageParser parser = ZMTPMessageParser.create(
           version, limit.value, verifier);
       parser.parse(serialized);
       verifier.assertFinished();
@@ -165,7 +165,7 @@ public class ZMTPMessageParserTest {
 
     // Test parsing fragmented input
     final VerifyingDecoder verifier = new VerifyingDecoder();
-    final ZMTPMessageParser<Void> parser = ZMTPMessageParser.create(version, limit.value, verifier);
+    final ZMTPMessageParser parser = ZMTPMessageParser.create(version, limit.value, verifier);
     new Fragmenter(serialized.readableBytes()).fragment(new Fragmenter.Consumer() {
       @Override
       public void fragments(final int[] limits, final int count) throws Exception {

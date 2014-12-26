@@ -17,7 +17,6 @@
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
@@ -35,6 +34,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 
 import static java.util.Arrays.asList;
 
@@ -49,16 +49,16 @@ public class CodecBenchmark {
              ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
              ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata")));
 
-  private final ZMTPMessageParser<ZMTPIncomingMessage> messageParserV1 =
+  private final ZMTPMessageParser messageParserV1 =
       ZMTPMessageParser.create(1, Integer.MAX_VALUE, new ZMTPIncomingMessageDecoder(true));
 
-  private final ZMTPMessageParser<ZMTPIncomingMessage> messageParserV2 =
+  private final ZMTPMessageParser messageParserV2 =
       ZMTPMessageParser.create(2, Integer.MAX_VALUE, new ZMTPIncomingMessageDecoder(true));
 
-  private final ZMTPMessageParser<?> discardingParserV1 =
+  private final ZMTPMessageParser discardingParserV1 =
       ZMTPMessageParser.create(1, Integer.MAX_VALUE, new Discarder());
 
-  private final ZMTPMessageParser<?> discardingParserV2 =
+  private final ZMTPMessageParser discardingParserV2 =
       ZMTPMessageParser.create(2, Integer.MAX_VALUE, new Discarder());
 
   private final ByteBuf incomingV1;
@@ -74,16 +74,16 @@ public class CodecBenchmark {
   }
 
   @Benchmark
-  public ZMTPIncomingMessage parsingToMessageV1() throws ZMTPMessageParsingException {
-    final ZMTPIncomingMessage parsed = messageParserV1.parse(incomingV1.resetReaderIndex());
-    parsed.release();
+  public Object parsingToMessageV1() throws ZMTPMessageParsingException {
+    final Object parsed = messageParserV1.parse(incomingV1.resetReaderIndex());
+    ReferenceCountUtil.release(parsed);
     return parsed;
   }
 
   @Benchmark
-  public ZMTPIncomingMessage parsingToMessageV2() throws ZMTPMessageParsingException {
-    final ZMTPIncomingMessage parsed = messageParserV2.parse(incomingV2.resetReaderIndex());
-    parsed.release();
+  public Object parsingToMessageV2() throws ZMTPMessageParsingException {
+    final Object parsed = messageParserV2.parse(incomingV2.resetReaderIndex());
+    ReferenceCountUtil.release(parsed);
     return parsed;
   }
 
@@ -118,7 +118,7 @@ public class CodecBenchmark {
   }
 
 
-  private class Discarder implements ZMTPMessageDecoder<Integer> {
+  private class Discarder implements ZMTPMessageDecoder {
 
     private int size;
 
