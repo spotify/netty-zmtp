@@ -17,8 +17,11 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
+
+import com.spotify.netty4.handler.codec.zmtp.VerifyingDecoder.ExpectedOutput;
 
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoints;
@@ -40,21 +43,17 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Limit.limit;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Limit.unlimited;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.enveloped;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.expectation;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.frames;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.input;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.nonEnveloped;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.output;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.test;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.truncated;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParserTest.Parameters.whole;
+import static io.netty.util.CharsetUtil.UTF_8;
 import static java.lang.Math.min;
-import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.util.Arrays.asList;
 import static java.util.Collections.nCopies;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -92,43 +91,32 @@ public class ZMTPMessageParserTest {
 
   @DataPoints
   public static Parameters[] PARAMETERS = {
-      test(input("1"), enveloped(frames(), frames("1"))),
-      test(input("2", ""), enveloped(frames("2"), frames())),
-      test(input("3", "aa"), enveloped(frames(), frames("3", "aa"))),
-      test(input("4", "", "a"), enveloped(frames("4"), frames("a"))),
-      test(input("5", "", "a", "bb"), enveloped(frames("5"), frames("a", "bb"))),
-      test(input("6", "aa", "", "b", "cc"), enveloped(frames("6", "aa"), frames("b", "cc"))),
-
-      test(input("7", "", "a"), nonEnveloped(frames(),
-                                             frames("7", "", "a"))),
-      test(input("8", "", "b", "cc"), nonEnveloped(frames(),
-                                                   frames("8", "", "b", "cc"))),
-      test(input("9", "aa", "", "b", "cc"), nonEnveloped(frames(),
-                                                         frames("9", "aa", "", "b", "cc"))),
+      test(input("1"), output("1")),
+      test(input("2", ""), output("2", "")),
+      test(input("3", "aa"), output("3", "aa")),
+      test(input("4", "", "a"), output("4", "", "a")),
+      test(input("5", "", "a", "bb"), output("5", "", "a", "bb")),
+      test(input("6", "aa", "", "b", "cc"), output("6", "aa", "", "b", "cc")),
+      test(input("7", "", "a"), output("7", "", "a")),
+      test(input("8", "", "b", "cc"), output("8", "", "b", "cc")),
+      test(input("9", "aa", "", "b", "cc"), output("9", "aa", "", "b", "cc")),
 
       test(input("a", "bb", "", "c", "dd", "", "eee"),
-           // Test non-enveloped parsing
-           nonEnveloped(limit(1), truncated(9, frames(), frames("a"))),
-           nonEnveloped(limit(2), truncated(9, frames(), frames("a"))),
-           nonEnveloped(limit(3), truncated(9, frames(), frames("a", "bb", ""))),
-           nonEnveloped(limit(4), truncated(9, frames(), frames("a", "bb", "", "c"))),
-           nonEnveloped(limit(5), truncated(9, frames(), frames("a", "bb", "", "c"))),
-           nonEnveloped(limit(6), truncated(9, frames(), frames("a", "bb", "", "c", "dd", ""))),
-           nonEnveloped(limit(7), truncated(9, frames(), frames("a", "bb", "", "c", "dd", ""))),
-           nonEnveloped(limit(8), truncated(9, frames(), frames("a", "bb", "", "c", "dd", ""))),
-           nonEnveloped(limit(9), whole(9, frames(), frames("a", "bb", "", "c", "dd", "", "eee"))),
-           // Test enveloped parsing
-           enveloped(limit(1), truncated(9, frames("a"), frames())),
-           enveloped(limit(2), truncated(9, frames("a"), frames())),
-           enveloped(limit(3), truncated(9, frames("a", "bb"), frames())),
-           enveloped(limit(4), truncated(9, frames("a", "bb"), frames("c"))),
-           enveloped(limit(5), truncated(9, frames("a", "bb"), frames("c"))),
-           enveloped(limit(6), truncated(9, frames("a", "bb"), frames("c", "dd", ""))),
-           enveloped(limit(7), truncated(9, frames("a", "bb"), frames("c", "dd", ""))),
-           enveloped(limit(8), truncated(9, frames("a", "bb"), frames("c", "dd", ""))),
-           enveloped(limit(9), whole(9, frames("a", "bb"), frames("c", "dd", "", "eee")))
+           expectation(limit(1), output(frames("a"), discard(2, 0, 1, 2, 0, 3))),
+           expectation(limit(2), output(frames("a"), discard(2, 0, 1, 2, 0, 3))),
+           expectation(limit(3), output(frames("a", "bb", ""), discard(1, 2, 0, 3))),
+           expectation(limit(4), output(frames("a", "bb", "", "c"), discard(2, 0, 3))),
+           expectation(limit(5), output(frames("a", "bb", "", "c"), discard(2, 0, 3))),
+           expectation(limit(6), output(frames("a", "bb", "", "c", "dd", ""), discard(3))),
+           expectation(limit(7), output(frames("a", "bb", "", "c", "dd", ""), discard(3))),
+           expectation(limit(8), output(frames("a", "bb", "", "c", "dd", ""), discard(3))),
+           expectation(limit(9), output(frames("a", "bb", "", "c", "dd", "", "eee"), discard()))
       ),
   };
+
+  private static List<Integer> discard(final Integer... sizes) {
+    return asList(sizes);
+  }
 
   @Theory
   public void testParse(final Parameters parameters) throws Exception {
@@ -137,8 +125,8 @@ public class ZMTPMessageParserTest {
       futures.add(EXECUTOR.submit(new Callable<Object>() {
         @Override
         public Object call() throws Exception {
-          testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage, 1);
-          testParse(v.enveloped, v.sizeLimit, v.inputFrames, v.expectedMessage, 2);
+          testParse(v.expectation.sizeLimit, v.input, v.expectation.output, 1);
+          testParse(v.expectation.sizeLimit, v.input, v.expectation.output, 2);
           return null;
         }
       }));
@@ -148,22 +136,21 @@ public class ZMTPMessageParserTest {
     }
   }
 
-  private void testParse(final boolean enveloped, final Limit limit, final List<String> input,
-                         final ZMTPIncomingMessage expected, final int version) throws Exception {
-    out.println(format("enveloped=%s limit=%s input=%s expected=%s",
-                       enveloped, limit, input, expected));
+  private void testParse(final Limit limit, final List<String> input,
+                         final ExpectedOutput expected, final int version) throws Exception {
+    out.printf("version=%d, input=%s, limit=%s, output=%s%n", version, input, limit, expected);
 
     final ByteBuf serialized = serialize(input, version);
     final int serializedLength = serialized.readableBytes();
 
     // Test parsing the whole message
     {
-      final ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(enveloped);
-      final ZMTPMessageParser<ZMTPIncomingMessage> parser =
-          ZMTPMessageParser.create(version, limit.value, consumer);
-      final ZMTPIncomingMessage parsed = parser.parse(serialized);
+      final VerifyingDecoder verifier = new VerifyingDecoder(expected);
+      final ZMTPMessageParser<Void> parser = ZMTPMessageParser.create(
+          version, limit.value, verifier);
+      parser.parse(serialized);
+      verifier.assertFinished();
       serialized.setIndex(0, serializedLength);
-      assertEquals("expected: " + expected + ", parsed: " + parsed, expected, parsed);
     }
 
     // Prepare for trivial message parsing test
@@ -171,43 +158,38 @@ public class ZMTPMessageParserTest {
     final List<String> envelope = asList("e", "");
     final List<String> content = nCopies(contentSize, ".");
     final List<String> frames = newArrayList(concat(envelope, content));
-    final ZMTPMessage trivialMessage = ZMTPMessage.fromStringsUTF8(enveloped, frames);
     final ByteBuf trivialSerialized = serialize(frames, version);
     final int trivialLength = trivialSerialized.readableBytes();
+    final ExpectedOutput trivialExpected = output(frames(
+        Lists.newArrayList(concat(envelope, content))));
 
     // Test parsing fragmented input
+    final VerifyingDecoder verifier = new VerifyingDecoder();
+    final ZMTPMessageParser<Void> parser = ZMTPMessageParser.create(version, limit.value, verifier);
     new Fragmenter(serialized.readableBytes()).fragment(new Fragmenter.Consumer() {
       @Override
       public void fragments(final int[] limits, final int count) throws Exception {
+        verifier.expect(expected);
         serialized.setIndex(0, serializedLength);
-        ZMTPIncomingMessage parsed = null;
-        final ZMTPIncomingMessageDecoder consumer = new ZMTPIncomingMessageDecoder(enveloped);
-        final ZMTPMessageParser<ZMTPIncomingMessage> parser =
-            ZMTPMessageParser.create(version, limit.value, consumer);
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
           serialized.writerIndex(limit);
-          parsed = parser.parse(serialized);
-          // Verify that the parser did not return a message for incomplete input
-          if (limit < serializedLength) {
-            assertNull(parsed);
-          }
+          parser.parse(serialized);
         }
-        assertEquals(expected, parsed);
+        verifier.assertFinished();
 
         // Verify that the parser can be reused to parse the same message
         serialized.setIndex(0, serializedLength);
-        final ZMTPIncomingMessage reparsed = parser.parse(serialized);
-        assertEquals(expected, reparsed);
+        parser.parse(serialized);
+        verifier.assertFinished();
 
         // Verify that the parser can be reused to parse a well-behaved message
+        verifier.expect(trivialExpected);
         trivialSerialized.setIndex(0, trivialLength);
-        final ZMTPIncomingMessage parsedTrivial = parser.parse(trivialSerialized);
-        assertFalse(parsedTrivial.isTruncated());
-        assertEquals(trivialMessage, parsedTrivial.message());
+        parser.parse(trivialSerialized);
+        verifier.assertFinished();
       }
     });
-
   }
 
   static class Parameters {
@@ -221,153 +203,61 @@ public class ZMTPMessageParserTest {
       this.verifications = verifications;
     }
 
+    public static Parameters test(final List<String> input, final ExpectedOutput expected) {
+      return test(input, expectation(expected));
+    }
+
     public static Parameters test(final List<String> input, final Expectation... expectations) {
-      final List<Verification> verifications = newArrayList();
+      final List<Verification> verifications = Lists.newArrayList();
       for (final Expectation expectation : expectations) {
-        verifications.add(verification(input, expectation));
+        verifications.add(new Verification(input, expectation));
       }
       return new Parameters(input, verifications);
-    }
-
-    private static Verification verification(final List<String> input,
-                                             final Expectation e) {
-      final ZMTPIncomingMessage expected;
-      if (e.expected == null) {
-        final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(e.enveloped, input);
-        expected = new ZMTPIncomingMessage(message, false, byteSizeUTF8(input));
-      } else {
-        expected = e.expected;
-      }
-      return new Verification(e.enveloped, e.sizeLimit, input, expected);
-    }
-
-    private static long byteSizeUTF8(final List<String> frames) {
-      long size = 0;
-      for (final String frame : frames) {
-        size += byteSize(ZMTPFrame.from(frame));
-      }
-      return size;
-    }
-
-    private static long byteSize(final List<ZMTPFrame> frames) {
-      long size = 0;
-      for (final ZMTPFrame frame : frames) {
-        size += byteSize(frame);
-      }
-      return size;
-    }
-
-    private static long byteSize(final ZMTPFrame frame) {
-      return frame.size();
-    }
-
-    public static Expectation nonEnveloped() {
-      return nonEnveloped(unlimited());
-    }
-
-    public static Expectation nonEnveloped(final List<ZMTPFrame> envelope,
-                                           final List<ZMTPFrame> content) {
-      return nonEnveloped(unlimited(), envelope, content);
-    }
-
-    public static Expectation nonEnveloped(final Limit sizeLimit) {
-      return expectation(false, sizeLimit);
-    }
-
-    public static Expectation nonEnveloped(final Limit sizeLimit,
-                                           final List<ZMTPFrame> envelope,
-                                           final List<ZMTPFrame> content) {
-      return expectation(false, sizeLimit,
-                         new ZMTPIncomingMessage(new ZMTPMessage(envelope, content), false,
-                                                 byteSize(envelope, content)));
-    }
-
-    public static Expectation nonEnveloped(final Limit sizeLimit, final Output o) {
-      final ZMTPMessage message = new ZMTPMessage(o.envelope, o.content);
-      final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(message, o.truncated, o.byteSize);
-      return expectation(false, sizeLimit, expected);
-    }
-
-    public static Expectation enveloped(final Limit sizeLimit, final Output o) {
-      final ZMTPMessage message = new ZMTPMessage(o.envelope, o.content);
-      final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(message, o.truncated, o.byteSize);
-      return expectation(true, sizeLimit, expected);
-    }
-
-    public static Expectation enveloped(final Limit sizeLimit, final long byteSize,
-                                        final List<ZMTPFrame> envelope,
-                                        final List<ZMTPFrame> content) {
-      final ZMTPIncomingMessage expected = new ZMTPIncomingMessage(
-          new ZMTPMessage(envelope, content), false, byteSize);
-      return expectation(true, sizeLimit, expected);
-    }
-
-    public static Expectation enveloped(final List<ZMTPFrame> envelope,
-                                        final List<ZMTPFrame> content) {
-      return enveloped(unlimited(), byteSize(envelope, content), envelope, content);
-    }
-
-    private static long byteSize(final List<ZMTPFrame> envelope, final List<ZMTPFrame> content) {
-      return byteSize(envelope) + byteSize(content);
     }
 
     public static List<String> input(final String... frames) {
       return asList(frames);
     }
 
-    public static List<ZMTPFrame> frames(final String... frames) {
+    public static List<ByteBuf> frames(final String... frames) {
       return frames(asList(frames));
     }
 
-    private static List<ZMTPFrame> frames(final List<String> frames) {
-      final ImmutableList.Builder<ZMTPFrame> zmtpFrames = ImmutableList.builder();
+    public static List<ByteBuf> frames(final List<String> frames) {
+      final ImmutableList.Builder<ByteBuf> zmtpFrames = ImmutableList.builder();
       for (final String frame : frames) {
-        zmtpFrames.add(ZMTPFrame.from(frame));
+        zmtpFrames.add(Unpooled.copiedBuffer(frame, UTF_8));
       }
       return zmtpFrames.build();
     }
 
-    public static Output whole(final long byteSize, final List<ZMTPFrame> envelope,
-                               final List<ZMTPFrame> content) {
-      return output(false, byteSize, envelope, content);
+    public static ExpectedOutput output(final String... frames) {
+      return new ExpectedOutput(frames(frames));
     }
 
-    public static Output truncated(final long byteSize,
-                                   final List<ZMTPFrame> envelope,
-                                   final List<ZMTPFrame> content) {
-      return output(true, byteSize, envelope, content);
+    public static ExpectedOutput output(final List<ByteBuf> frames) {
+      return new ExpectedOutput(frames);
     }
 
-    public static Output output(final boolean truncated, final long byteSize,
-                                final List<ZMTPFrame> envelope,
-                                final List<ZMTPFrame> content) {
-      return new Output(truncated, byteSize, envelope, content);
+    public static ExpectedOutput output(final List<ByteBuf> frames, final List<Integer> discarded) {
+      return new ExpectedOutput(frames, discarded);
     }
 
-    public static Expectation expectation(final boolean enveloped, final Limit sizeLimit) {
-      return new Expectation(enveloped, sizeLimit);
+    public static Expectation expectation(final ExpectedOutput expected) {
+      return new Expectation(unlimited(), expected);
     }
 
-    public static Expectation expectation(final boolean enveloped, final Limit sizeLimit,
-                                          final ZMTPIncomingMessage expected) {
-      return new Expectation(enveloped, sizeLimit, expected);
+    public static Expectation expectation(final Limit sizeLimit,
+                                          final ExpectedOutput expected) {
+      return new Expectation(sizeLimit, expected);
     }
 
     public List<Verification> verifications() {
       return verifications;
     }
-
-    @Override
-    public String toString() {
-      return "Parameters{" +
-             "inputFrames=" + inputFrames +
-             ", verifications=" + verifications +
-             '}';
-    }
   }
 
-  public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message,
-                                        int version) {
+  public static ByteBuf serialize(final boolean enveloped, final ZMTPMessage message, int version) {
     final ByteBuf buffer = Unpooled.buffer(ZMTPUtils.messageSize(
         message, enveloped, version));
     ZMTPUtils.writeMessage(message, buffer, enveloped, version);
@@ -380,28 +270,13 @@ public class ZMTPMessageParserTest {
 
   static class Verification {
 
-    private final boolean enveloped;
-    private final Limit sizeLimit;
-    private final List<String> inputFrames;
-    private final ZMTPIncomingMessage expectedMessage;
+    final List<String> input;
+    final Expectation expectation;
 
-    public Verification(final boolean enveloped, final Limit sizeLimit,
-                        final List<String> inputFrames, final ZMTPIncomingMessage expectedMessage) {
-
-      this.enveloped = enveloped;
-      this.sizeLimit = sizeLimit;
-      this.inputFrames = inputFrames;
-      this.expectedMessage = expectedMessage;
-    }
-
-    @Override
-    public String toString() {
-      return "Verification{" +
-             "enveloped=" + enveloped +
-             ", sizeLimit=" + sizeLimit +
-             ", inputFrames=" + inputFrames +
-             ", expectedMessage=" + expectedMessage +
-             '}';
+    public Verification(final List<String> input,
+                        final Expectation expectation) {
+      this.input = input;
+      this.expectation = expectation;
     }
   }
 
@@ -427,39 +302,19 @@ public class ZMTPMessageParserTest {
     }
   }
 
-  private static class Output {
-
-    private final boolean truncated;
-    private final long byteSize;
-    private final List<ZMTPFrame> envelope;
-    private final List<ZMTPFrame> content;
-
-    public Output(final boolean truncated, final long byteSize,
-                  final List<ZMTPFrame> envelope,
-                  final List<ZMTPFrame> content) {
-      this.truncated = truncated;
-      this.byteSize = byteSize;
-      this.envelope = envelope;
-      this.content = content;
-    }
-  }
-
   static class Expectation {
 
-    final boolean enveloped;
     final Limit sizeLimit;
-    final ZMTPIncomingMessage expected;
+    final ExpectedOutput output;
 
-    Expectation(final boolean enveloped, final Limit sizeLimit) {
-      this.enveloped = enveloped;
+    Expectation(final Limit sizeLimit) {
       this.sizeLimit = sizeLimit;
-      this.expected = null;
+      this.output = null;
     }
 
-    Expectation(final boolean enveloped, final Limit sizeLimit, final ZMTPIncomingMessage expected) {
-      this.enveloped = enveloped;
+    Expectation(final Limit sizeLimit, final ExpectedOutput output) {
       this.sizeLimit = sizeLimit;
-      this.expected = expected;
+      this.output = output;
     }
   }
 }
