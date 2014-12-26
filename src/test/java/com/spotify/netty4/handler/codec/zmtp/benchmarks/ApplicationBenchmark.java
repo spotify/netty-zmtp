@@ -182,12 +182,12 @@ public class ApplicationBenchmark {
 
   private static class Message {
 
-    private final String uri;
-    private final String method;
+    private final CharSequence uri;
+    private final CharSequence method;
     private final long timestamp;
     private final ByteBuffer payload;
 
-    public Message(final String method, final String uri, final long timestamp,
+    public Message(final CharSequence method, final CharSequence uri, final long timestamp,
                    final ByteBuffer payload) {
       this.method = method;
       this.uri = uri;
@@ -195,11 +195,11 @@ public class ApplicationBenchmark {
       this.payload = payload;
     }
 
-    public String uri() {
+    public CharSequence uri() {
       return uri;
     }
 
-    public String method() {
+    public CharSequence method() {
       return method;
     }
 
@@ -214,7 +214,7 @@ public class ApplicationBenchmark {
 
   private static class Request extends Message {
 
-    public Request(final String uri, final String method, final long timestamp,
+    public Request(final CharSequence uri, final CharSequence method, final long timestamp,
                    final ByteBuffer payload) {
       super(method, uri, timestamp, payload);
     }
@@ -228,7 +228,7 @@ public class ApplicationBenchmark {
 
     private final int code;
 
-    public Reply(final String uri, final String method, final int code,
+    public Reply(final CharSequence uri, final CharSequence method, final int code,
                  final long timestamp,
                  final ByteBuffer payload) {
       super(method, uri, timestamp, payload);
@@ -252,13 +252,13 @@ public class ApplicationBenchmark {
 
       writer.begin();
 
-      final String uri = request.uri();
+      final CharSequence uri = request.uri();
       final ByteBuf uriFrame = writer.frame(uri.length());
       for (int i = 0; i < uri.length(); i++) {
         uriFrame.writeByte(uri.charAt(0));
       }
 
-      final String method = request.method();
+      final CharSequence method = request.method();
       final ByteBuf methodFrame = writer.frame(method.length());
       for (int i = 0; i < method.length(); i++) {
         methodFrame.writeByte(method.charAt(0));
@@ -287,13 +287,13 @@ public class ApplicationBenchmark {
 
       writer.begin();
 
-      final String uri = reply.uri();
+      final CharSequence uri = reply.uri();
       final ByteBuf uriFrame = writer.frame(uri.length());
       for (int i = 0; i < uri.length(); i++) {
         uriFrame.writeByte(uri.charAt(0));
       }
 
-      final String method = reply.method();
+      final CharSequence method = reply.method();
       final ByteBuf methodFrame = writer.frame(method.length());
       for (int i = 0; i < method.length(); i++) {
         methodFrame.writeByte(method.charAt(0));
@@ -333,11 +333,10 @@ public class ApplicationBenchmark {
     return data.readInt();
   }
 
-  private static String readString(final ByteBuf data, final int size) {
-    final ByteBuffer uriBuffer = data.nioBuffer(data.readerIndex(), size);
-    final String string = UTF_8.decode(uriBuffer).toString();
-    data.skipBytes(size);
-    return string;
+  private static CharSequence readString(final ByteBuf data, final int size) {
+    final byte[] chars = new byte[size];
+    data.readBytes(chars);
+    return new AsciiString(chars);
   }
 
   private static class RequestDecoder implements ZMTPMessageDecoder {
@@ -351,8 +350,8 @@ public class ApplicationBenchmark {
 
     private State state = State.URI;
 
-    private String uri;
-    private String method;
+    private CharSequence uri;
+    private CharSequence method;
     private long timestamp;
     private ByteBuffer payload;
 
@@ -414,8 +413,8 @@ public class ApplicationBenchmark {
 
     private State state = State.URI;
 
-    private String uri;
-    private String method;
+    private CharSequence uri;
+    private CharSequence method;
     private int statusCode;
     private long timestamp;
     private ByteBuffer payload;
