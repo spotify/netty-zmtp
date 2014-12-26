@@ -31,10 +31,12 @@ import java.util.concurrent.Executor;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -83,34 +85,36 @@ public class ApplicationBenchmark {
     // Server
     final Executor serverExecutor = new ForkJoinPool(
         1, ForkJoinPool.defaultForkJoinWorkerThreadFactory, UNCAUGHT_EXCEPTION_HANDLER, true);
-    final ServerBootstrap serverBootstrap = new ServerBootstrap();
-    serverBootstrap.group(new NioEventLoopGroup(1), new NioEventLoopGroup());
-    serverBootstrap.channel(NioServerSocketChannel.class);
-    serverBootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
-      @Override
-      protected void initChannel(final NioSocketChannel ch) throws Exception {
-        ch.pipeline().addLast(serverCodec);
-        ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
-        ch.pipeline().addLast(new ServerHandler(serverExecutor));
-      }
-    });
+    final ServerBootstrap serverBootstrap = new ServerBootstrap()
+        .group(new NioEventLoopGroup(1), new NioEventLoopGroup())
+        .channel(NioServerSocketChannel.class)
+        .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+        .childHandler(new ChannelInitializer<NioSocketChannel>() {
+          @Override
+          protected void initChannel(final NioSocketChannel ch) throws Exception {
+            ch.pipeline().addLast(serverCodec);
+            ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
+            ch.pipeline().addLast(new ServerHandler(serverExecutor));
+          }
+        });
     final Channel server = serverBootstrap.bind(ANY_PORT).awaitUninterruptibly().channel();
 
     // Client
     final Executor clientExecutor = new ForkJoinPool(
         1, ForkJoinPool.defaultForkJoinWorkerThreadFactory, UNCAUGHT_EXCEPTION_HANDLER, true);
     final SocketAddress address = server.localAddress();
-    final Bootstrap clientBootstrap = new Bootstrap();
-    clientBootstrap.group(new NioEventLoopGroup());
-    clientBootstrap.channel(NioSocketChannel.class);
-    clientBootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
-      @Override
-      protected void initChannel(final NioSocketChannel ch) throws Exception {
-        ch.pipeline().addLast(clientCodec);
-        ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
-        ch.pipeline().addLast(new ClientHandler(meter, clientExecutor));
-      }
-    });
+    final Bootstrap clientBootstrap = new Bootstrap()
+        .group(new NioEventLoopGroup())
+        .channel(NioSocketChannel.class)
+        .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+        .handler(new ChannelInitializer<NioSocketChannel>() {
+          @Override
+          protected void initChannel(final NioSocketChannel ch) throws Exception {
+            ch.pipeline().addLast(clientCodec);
+            ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
+            ch.pipeline().addLast(new ClientHandler(meter, clientExecutor));
+          }
+        });
     final Channel client = clientBootstrap.connect(address).awaitUninterruptibly().channel();
 
     // Run until client is closed
