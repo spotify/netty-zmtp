@@ -133,10 +133,10 @@ public class ApplicationBenchmark {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      final Request request = (Request) msg;
       executor.execute(new Runnable() {
         @Override
         public void run() {
+          final Request request = (Request) msg;
           ctx.write(request.reply(200, REPLY_PAYLOAD));
         }
       });
@@ -170,12 +170,12 @@ public class ApplicationBenchmark {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      final Reply reply = (Reply) msg;
-      final long latency = System.nanoTime() - reply.timestamp();
-      meter.inc(1, latency);
       executor.execute(new Runnable() {
         @Override
         public void run() {
+          final Reply reply = (Reply) msg;
+          final long latency = System.nanoTime() - reply.timestamp();
+          meter.inc(1, latency);
           ctx.write(req());
         }
       });
