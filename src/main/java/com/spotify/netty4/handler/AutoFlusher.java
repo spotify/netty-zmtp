@@ -27,6 +27,9 @@ import io.netty.channel.ChannelPromise;
  * by scheduling a flush on the channel event loop, multiple writes can queue up before the actual
  * flush, allowing for a gathering write to an underlying {@link java.nio.channels.GatheringByteChannel},
  * collapsing multiple writes into fewer syscalls.
+ *
+ * Note: This handler should not be executed on the event loop executor as it needs to schedule
+ *       flushes. Use e.g. {@link io.netty.util.concurrent.ImmediateEventExecutor#INSTANCE}.
  */
 public class AutoFlusher extends ChannelOutboundHandlerAdapter implements Runnable {
 
