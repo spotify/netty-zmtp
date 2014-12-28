@@ -18,5 +18,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 public interface ZMTPMessageEncoder {
 
+  void estimate(Object message, ZMTPEstimator estimator);
+
   void encode(Object message, ZMTPWriter writer);
 }

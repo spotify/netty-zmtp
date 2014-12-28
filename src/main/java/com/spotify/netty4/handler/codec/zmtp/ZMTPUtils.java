@@ -38,7 +38,6 @@ public class ZMTPUtils {
    * Helper to decode a ZMTP/1.0 length field
    *
    * @return length
-   * @throws IndexOutOfBoundsException if there is not enough octets to be read.
    */
   static public long decodeLength(final ByteBuf in) {
     if (in.readableBytes() < 1) {

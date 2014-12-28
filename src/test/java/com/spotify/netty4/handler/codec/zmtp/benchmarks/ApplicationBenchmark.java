@@ -22,8 +22,9 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 
-import com.spotify.netty4.handler.AutoFlusher;
+import com.spotify.netty4.util.BatchFlusher;
 import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageEncoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
@@ -48,11 +49,11 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
+import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.internal.chmv8.ForkJoinPool;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.Addressed;
@@ -103,12 +104,12 @@ public class ApplicationBenchmark {
         .group(new NioEventLoopGroup(1), new NioEventLoopGroup())
         .channel(NioServerSocketChannel.class)
         .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+        .childOption(ChannelOption.MESSAGE_SIZE_ESTIMATOR, ByteBufSizeEstimator.INSTANCE)
         .childHandler(new ChannelInitializer<NioSocketChannel>() {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
             ch.pipeline().addLast(serverCodec);
             ch.pipeline().addLast(new ServerRequestTracker());
-            ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
             ch.pipeline().addLast(new ServerHandler(serverExecutor));
           }
         });
@@ -122,12 +123,12 @@ public class ApplicationBenchmark {
         .group(new NioEventLoopGroup())
         .channel(NioSocketChannel.class)
         .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+        .option(ChannelOption.MESSAGE_SIZE_ESTIMATOR, ByteBufSizeEstimator.INSTANCE)
         .handler(new ChannelInitializer<NioSocketChannel>() {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
             ch.pipeline().addLast(clientCodec);
             ch.pipeline().addLast(new ClientRequestTracker());
-            ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
             ch.pipeline().addLast(new ClientHandler(meter, clientExecutor));
           }
         });
@@ -143,8 +144,16 @@ public class ApplicationBenchmark {
 
     private final Executor executor;
 
+    private BatchFlusher flusher;
+
     public ServerHandler(final Executor executor) {
       this.executor = executor;
+    }
+
+    @Override
+    public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
+      super.channelRegistered(ctx);
+      this.flusher = new BatchFlusher(ctx.channel());
     }
 
     @Override
@@ -154,6 +163,7 @@ public class ApplicationBenchmark {
         public void run() {
           final Request request = (Request) msg;
           ctx.write(request.reply(200, REPLY_PAYLOAD));
+          flusher.flush();
         }
       });
     }
@@ -166,6 +176,7 @@ public class ApplicationBenchmark {
     private final ProgressMeter meter;
     private final Executor executor;
 
+    private BatchFlusher flusher;
     private ChannelHandlerContext ctx;
 
     public ClientHandler(final ProgressMeter meter, final Executor executor) {
@@ -177,25 +188,27 @@ public class ApplicationBenchmark {
     public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
       super.channelRegistered(ctx);
       this.ctx = ctx;
+      this.flusher = new BatchFlusher(ctx.channel());
     }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
       super.channelActive(ctx);
       for (int i = 0; i < CONCURRENCY; i++) {
-        send();
+        send(ctx);
       }
     }
 
-    private void send() {
-      final RequestPromise promise = new RequestPromise(ctx.channel());
+    private void send(final ChannelHandlerContext ctx) {
+      final RequestPromise promise = new RequestPromise(this.ctx.channel());
       ctx.write(req(), promise);
+      flusher.flush();
       Futures.addCallback(promise.replyFuture(), new FutureCallback<Reply>() {
         @Override
         public void onSuccess(final Reply reply) {
           final long latency = System.nanoTime() - reply.id().timestamp();
           meter.inc(1, latency);
-          send();
+          send(ctx);
         }
 
         @Override
@@ -208,16 +221,6 @@ public class ApplicationBenchmark {
     private Request req() {
       final MessageId id = MessageId.generate();
       return new Request(id, "foo://bar/some/resource", "GET", EMPTY_BUFFER);
-    }
-
-    @Override
-    public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          ctx.write(req());
-        }
-      });
     }
   }
 
@@ -365,51 +368,49 @@ public class ApplicationBenchmark {
   private static class RequestEncoder implements ZMTPMessageEncoder {
 
     @Override
+    public void estimate(final Object message, final ZMTPEstimator estimator) {
+      final Request request = (Request) message;
+      estimator.frame(request.uri().length());
+      estimator.frame(request.method().length());
+      estimator.frame(16);
+      estimator.frame(request.payload().remaining());
+    }
+
+    @Override
     public void encode(final Object message, final ZMTPWriter writer) {
       final Request request = (Request) message;
-
-      writer.expectFrame(request.uri().length());
-      writer.expectFrame(request.method().length());
-      writer.expectFrame(16);
-      writer.expectFrame(request.payload().remaining());
-
-      writer.begin();
-
       writeAscii(writer, request.uri());
       writeAscii(writer, request.method());
       writeId(writer, request.id());
       writePayload(writer, request.payload());
-
-      writer.end();
     }
   }
 
   private static class ReplyEncoder implements ZMTPMessageEncoder {
 
     @Override
+    public void estimate(final Object message, final ZMTPEstimator estimator) {
+      final Reply reply = (Reply) message;
+      estimator.frame(reply.uri().length());
+      estimator.frame(reply.method().length());
+      estimator.frame(16);
+      estimator.frame(4);
+      estimator.frame(reply.payload().remaining());
+    }
+
+    @Override
     public void encode(final Object message, final ZMTPWriter writer) {
       final Reply reply = (Reply) message;
-      writer.expectFrame(reply.uri().length());
-      writer.expectFrame(reply.method().length());
-      writer.expectFrame(16);
-      writer.expectFrame(4);
-      writer.expectFrame(reply.payload().remaining());
-
-      writer.begin();
-
       writeAscii(writer, reply.uri());
       writeAscii(writer, reply.method());
       writeId(writer, reply.id());
-      writer.frame(4).writeInt(reply.statusCode());
+      writer.frame(4, true).writeInt(reply.statusCode());
       writePayload(writer, reply.payload());
-
-      writer.end();
     }
-
   }
 
   private static void writeAscii(final ZMTPWriter writer, final CharSequence s) {
-    final ByteBuf frame = writer.frame(s.length());
+    final ByteBuf frame = writer.frame(s.length(), true);
     if (s instanceof AsciiString) {
       ((AsciiString) s).write(frame);
     } else {
@@ -420,13 +421,13 @@ public class ApplicationBenchmark {
   }
 
   private static void writeId(final ZMTPWriter writer, final MessageId id) {
-    writer.frame(16)
+    writer.frame(16, true)
         .writeLong(id.seq())
         .writeLong(id.timestamp());
   }
 
   private static void writePayload(final ZMTPWriter writer, final ByteBuffer payload) {
-    final ByteBuf buf = writer.frame(payload.remaining());
+    final ByteBuf buf = writer.frame(payload.remaining(), false);
     if (payload.hasArray()) {
       buf.writeBytes(payload.array(), payload.arrayOffset() + payload.position(),
                      payload.remaining());
@@ -440,6 +441,9 @@ public class ApplicationBenchmark {
   }
 
   private static ByteBuffer readPayload(final ByteBuf data, final int size) {
+    if (size == 0) {
+      return EMPTY_BUFFER;
+    }
     final ByteBuffer buffer = ByteBuffer.allocate(size);
     data.readBytes(buffer);
     buffer.flip();
@@ -677,6 +681,25 @@ public class ApplicationBenchmark {
       } else {
         future.set(reply);
       }
+    }
+  }
+
+  private static class ByteBufSizeEstimator implements MessageSizeEstimator,
+                                                       MessageSizeEstimator.Handle {
+
+    public static ByteBufSizeEstimator INSTANCE = new ByteBufSizeEstimator();
+
+    @Override
+    public Handle newHandle() {
+      return this;
+    }
+
+    @Override
+    public int size(final Object msg) {
+      if (msg instanceof ByteBuf) {
+        return ((ByteBuf) msg).readableBytes();
+      }
+      return 0;
     }
   }
 }

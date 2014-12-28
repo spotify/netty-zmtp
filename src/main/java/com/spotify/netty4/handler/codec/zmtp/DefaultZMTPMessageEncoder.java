@@ -29,44 +29,47 @@ public class DefaultZMTPMessageEncoder implements ZMTPMessageEncoder {
   }
 
   @Override
-  public void encode(final Object msg, final ZMTPWriter writer) {
+  public void estimate(final Object msg, final ZMTPEstimator estimator) {
     final ZMTPMessage message = (ZMTPMessage) msg;
 
     final List<ZMTPFrame> envelope = message.envelope();
-    final List<ZMTPFrame> content = message.content();
-
-    for (final ZMTPFrame frame : envelope) {
-      writer.expectFrame(frame.size());
-    }
-
-    if (enveloped) {
-      writer.expectFrame(0);
-    }
-
-    for (final ZMTPFrame frame : content) {
-      writer.expectFrame(frame.size());
-    }
-
-    writer.begin();
-
     for (int i = 0; i < envelope.size(); i++) {
       final ZMTPFrame frame = envelope.get(i);
-      final ByteBuf dst = writer.frame(frame.size());
+      estimator.frame(frame.size());
+    }
+
+    if (enveloped) {
+      estimator.frame(0);
+    }
+
+    final List<ZMTPFrame> content = message.content();
+    for (int i = 0; i < content.size(); i++) {
+      final ZMTPFrame frame = content.get(i);
+      estimator.frame(frame.size());
+    }
+  }
+
+  @Override
+  public void encode(final Object msg, final ZMTPWriter writer) {
+    final ZMTPMessage message = (ZMTPMessage) msg;
+
+    for (int i = 0; i < message.envelope().size(); i++) {
+      final ZMTPFrame frame = message.envelope().get(i);
+      final ByteBuf dst = writer.frame(frame.size(), true);
       final ByteBuf src = frame.content();
       dst.writeBytes(src, src.readerIndex(), src.readableBytes());
     }
 
     if (enveloped) {
-      writer.frame(0);
+      writer.frame(0, true);
     }
 
-    for (int i = 0; i < content.size(); i++) {
-      final ZMTPFrame frame = content.get(i);
-      final ByteBuf dst = writer.frame(frame.size());
+    for (int i = 0; i < message.content().size(); i++) {
+      final ZMTPFrame frame = message.content().get(i);
+      final boolean more = i < message.content().size() - 1;
+      final ByteBuf dst = writer.frame(frame.size(), more);
       final ByteBuf src = frame.content();
       dst.writeBytes(src, src.readerIndex(), src.readableBytes());
     }
-
-    writer.end();
   }
 }

@@ -18,7 +18,7 @@ package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import com.google.common.base.Strings;
 
-import com.spotify.netty4.handler.AutoFlusher;
+import com.spotify.netty4.util.BatchFlusher;
 import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
@@ -27,7 +27,6 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.Executor;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -41,8 +40,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.ImmediateEventExecutor;
-import io.netty.util.internal.chmv8.ForkJoinPool;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.Addressed;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSession.DEFAULT_SIZE_LIMIT;
@@ -79,8 +76,6 @@ public class EndToEndBenchmark {
         Addressed, DEFAULT_SIZE_LIMIT, NO_IDENTITY, DEALER));
 
     // Server
-    final Executor serverExecutor = new ForkJoinPool(
-        1, ForkJoinPool.defaultForkJoinWorkerThreadFactory, UNCAUGHT_EXCEPTION_HANDLER, true);
     final ServerBootstrap serverBootstrap = new ServerBootstrap()
         .group(new NioEventLoopGroup(1), new NioEventLoopGroup())
         .channel(NioServerSocketChannel.class)
@@ -89,15 +84,12 @@ public class EndToEndBenchmark {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
             ch.pipeline().addLast(serverCodec);
-            ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
-            ch.pipeline().addLast(new ServerHandler(serverExecutor));
+            ch.pipeline().addLast(new ServerHandler());
           }
         });
     final Channel server = serverBootstrap.bind(ANY_PORT).awaitUninterruptibly().channel();
 
     // Client
-    final Executor clientExecutor = new ForkJoinPool(
-        1, ForkJoinPool.defaultForkJoinWorkerThreadFactory, UNCAUGHT_EXCEPTION_HANDLER, true);
     final SocketAddress address = server.localAddress();
     final Bootstrap clientBootstrap = new Bootstrap()
         .group(new NioEventLoopGroup())
@@ -107,8 +99,7 @@ public class EndToEndBenchmark {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
             ch.pipeline().addLast(clientCodec);
-            ch.pipeline().addLast(ImmediateEventExecutor.INSTANCE, new AutoFlusher());
-            ch.pipeline().addLast(new ClientHandler(meter, clientExecutor));
+            ch.pipeline().addLast(new ClientHandler(meter));
           }
         });
     final Channel client = clientBootstrap.connect(address).awaitUninterruptibly().channel();
@@ -119,21 +110,19 @@ public class EndToEndBenchmark {
 
   private static class ServerHandler extends ChannelInboundHandlerAdapter {
 
-    private final Executor executor;
+    private BatchFlusher flusher;
 
-    public ServerHandler(final Executor executor) {
-      this.executor = executor;
+    @Override
+    public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
+      super.channelRegistered(ctx);
+      this.flusher = new BatchFlusher(ctx.channel());
     }
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       final ZMTPIncomingMessage message = (ZMTPIncomingMessage) msg;
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          ctx.write(message.message());
-        }
-      });
+      ctx.write(message.message());
+      flusher.flush();
     }
   }
 
@@ -150,19 +139,25 @@ public class EndToEndBenchmark {
         ZMTPFrame.from(Strings.repeat("d", 100))));
 
     private final ProgressMeter meter;
-    private final Executor executor;
 
-    public ClientHandler(final ProgressMeter meter, final Executor executor) {
+    private BatchFlusher flusher;
+
+    public ClientHandler(final ProgressMeter meter) {
       this.meter = meter;
-      this.executor = executor;
     }
 
+    @Override
+    public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
+      super.channelRegistered(ctx);
+      this.flusher = new BatchFlusher(ctx.channel());
+    }
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
       super.channelActive(ctx);
       for (int i = 0; i < CONCURRENCY; i++) {
         ctx.write(req());
       }
+      flusher.flush();
     }
 
     private ZMTPMessage req() {
@@ -180,12 +175,8 @@ public class EndToEndBenchmark {
       final long latency = System.nanoTime() - timestamp;
       meter.inc(1, latency);
       message.release();
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          ctx.write(req());
-        }
-      });
+      ctx.write(req());
+      flusher.flush();
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2012-2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,20 +16,24 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import io.netty.buffer.ByteBuf;
-
-public class ZMTPWriter {
+public class ZMTPEstimator {
 
   private final int version;
-  private final ByteBuf buf;
+  private int size;
 
-  public ZMTPWriter(final int version, final ByteBuf buf) {
+  public ZMTPEstimator(final int version) {
     this.version = version;
-    this.buf = buf;
   }
 
-  public ByteBuf frame(final int size, final boolean more) {
-    ZMTPUtils.writeFrameHeader(buf, size, more, version);
-    return buf;
+  public void reset() {
+    size = 0;
+  }
+
+  public void frame(final int size) {
+    this.size += ZMTPUtils.frameSize(size, version);
+  }
+
+  public int size() {
+    return size;
   }
 }
