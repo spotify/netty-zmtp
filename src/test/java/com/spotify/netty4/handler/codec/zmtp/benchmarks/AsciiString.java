@@ -16,9 +16,22 @@
 
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
+import com.google.common.base.Function;
+
 import java.util.Arrays;
 
+import io.netty.buffer.ByteBuf;
+
 public class AsciiString implements CharSequence {
+
+  public static final Function<String, AsciiString>
+      ASCII_STRING_FROM_STRING =
+      new Function<String, AsciiString>() {
+        @Override
+        public AsciiString apply(final String input) {
+          return from(input);
+        }
+      };
 
   private final byte[] chars;
 
@@ -73,5 +86,17 @@ public class AsciiString implements CharSequence {
       chars[i] = (char) this.chars[i];
     }
     return new String(chars);
+  }
+
+  public static AsciiString from(final String s) {
+    final byte[] chars = new byte[s.length()];
+    for (int i = 0; i < s.length(); i++) {
+      chars[i] = (byte) s.charAt(i);
+    }
+    return new AsciiString(chars);
+  }
+
+  public void write(final ByteBuf buf) {
+    buf.writeBytes(chars);
   }
 }
