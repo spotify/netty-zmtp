@@ -97,7 +97,12 @@ public class ZMTPMessageParser {
 
       size += frameSize;
 
+      final int realWriterIndex = buffer.writerIndex();
+      final int sliceWriterIndex = buffer.readerIndex() + frameSize;
+      buffer.writerIndex(sliceWriterIndex);
       decoder.readFrame(buffer, frameSize, hasMore);
+      buffer.writerIndex(realWriterIndex);
+      buffer.readerIndex(sliceWriterIndex);
 
       if (!hasMore) {
         return finish();

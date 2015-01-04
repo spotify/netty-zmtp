@@ -60,21 +60,13 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
           ", more=" + more + ")");
     }
     final ByteBuf expectedFrame = expected.frames.get(readIndex);
-    final int mark = data.writerIndex();
-    // TODO: set up writer index (slice?) in ZMTPMessageParser?
-    data.writerIndex(data.readerIndex() + size);
-    try {
-      if (!expectedFrame.equals(data)) {
-        throw new IllegalStateException(
-            "read frame did not match expected frame: " +
-            "readIndex=" + readIndex + ", " +
-            "expected frame=" + expectedFrame +
-            "read frame=" + data);
-      }
-    } finally {
-      data.writerIndex(mark);
+    if (!expectedFrame.equals(data)) {
+      throw new IllegalStateException(
+          "read frame did not match expected frame: " +
+          "readIndex=" + readIndex + ", " +
+          "expected frame=" + expectedFrame +
+          "read frame=" + data);
     }
-    data.skipBytes(size);
     readIndex++;
   }
 

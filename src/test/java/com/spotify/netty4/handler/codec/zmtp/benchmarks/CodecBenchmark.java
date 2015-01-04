@@ -125,7 +125,6 @@ public class CodecBenchmark {
 
     @Override
     public void readFrame(final ByteBuf data, final int size, final boolean more) {
-      data.skipBytes(size);
       this.size += size;
     }
 

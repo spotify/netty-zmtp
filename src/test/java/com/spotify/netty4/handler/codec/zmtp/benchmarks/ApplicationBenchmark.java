@@ -471,7 +471,6 @@ public class ApplicationBenchmark {
   private static CharSequence readMethod(final ByteBuf data, final int size) {
     for (final AsciiString method : METHODS) {
       if (asciiEquals(method, data, size)) {
-        data.skipBytes(size);
         return method;
       }
     }
