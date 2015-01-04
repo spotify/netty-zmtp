@@ -111,6 +111,7 @@ public class CodecBenchmark {
 
   public static void main(final String... args) throws RunnerException, InterruptedException {
     Options opt = new OptionsBuilder()
+        .include(".*")
         .forks(1)
         .build();
 
