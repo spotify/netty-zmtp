@@ -9,15 +9,17 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.util.concurrent.EventExecutor;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.fill;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -25,6 +27,7 @@ public class ZMTPFramingEncoderTest {
 
   @Mock ChannelHandlerContext ctx;
   @Mock ChannelPromise promise;
+  @Mock EventExecutor executor;
 
   @Captor ArgumentCaptor<ByteBuf> bufCaptor;
 
@@ -35,7 +38,9 @@ public class ZMTPFramingEncoderTest {
 
   @Before
   public void setUp() {
-    when(ctx.write(bufCaptor.capture(), eq(promise))).thenReturn(promise);
+    when(ctx.write(bufCaptor.capture(), any(ChannelPromise.class))).thenReturn(promise);
+    when(ctx.alloc()).thenReturn(ByteBufAllocator.DEFAULT);
+    when(ctx.executor()).thenReturn(executor);
   }
 
   @Test
@@ -50,6 +55,7 @@ public class ZMTPFramingEncoderTest {
         asList(ZMTPFrame.from("f0")));
 
     enc.write(ctx, message, promise);
+    enc.flush(ctx);
     final ByteBuf buf = bufCaptor.getValue();
     cmp(buf, 4, 1, 0x69, 0x64, 0x30, 4, 1, 0x69, 0x64, 0x31, 1, 1, 3, 0, 0x66, 0x30);
     buf.release();
@@ -67,6 +73,7 @@ public class ZMTPFramingEncoderTest {
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     enc.write(ctx, message, promise);
+    enc.flush(ctx);
     final ByteBuf buf = bufCaptor.getValue();
     cmp(buf, 1, 3, 0x69, 0x64, 0x30, 1, 3, 0x69, 0x64, 0x31, 1, 0, 0, 2, 0x66, 0x30);
     buf.release();
@@ -88,6 +95,7 @@ public class ZMTPFramingEncoderTest {
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     enc.write(ctx, message, promise);
+    enc.flush(ctx);
     final ByteBuf buf2 = bufCaptor.getValue();
 
     cmp(buf, buf2);
