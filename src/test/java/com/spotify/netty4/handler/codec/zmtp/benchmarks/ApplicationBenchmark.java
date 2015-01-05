@@ -22,20 +22,20 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 
-import com.spotify.netty4.util.BatchFlusher;
 import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageEncoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
+import com.spotify.netty4.util.BatchFlusher;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadLocalRandom;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -179,6 +179,8 @@ public class ApplicationBenchmark {
     private BatchFlusher flusher;
     private ChannelHandlerContext ctx;
 
+    private long seq = new SecureRandom().nextLong();
+
     public ClientHandler(final ProgressMeter meter, final Executor executor) {
       this.meter = meter;
       this.executor = executor;
@@ -218,8 +220,16 @@ public class ApplicationBenchmark {
       }, executor);
     }
 
+    public static long rand(long x) {
+      x ^= (x << 21);
+      x ^= (x >>> 35);
+      x ^= (x << 4);
+      return x;
+    }
+
     private Request req() {
-      final MessageId id = MessageId.generate();
+      seq = rand(seq);
+      final MessageId id = new MessageId(seq, System.nanoTime());
       return new Request(id, "foo://bar/some/resource", "GET", EMPTY_BUFFER);
     }
   }
@@ -322,10 +332,6 @@ public class ApplicationBenchmark {
 
     public static MessageId from(final long seq, final long timestamp) {
       return new MessageId(seq, timestamp);
-    }
-
-    public static MessageId generate() {
-      return new MessageId(ThreadLocalRandom.current().nextLong(), System.nanoTime());
     }
 
     @Override
