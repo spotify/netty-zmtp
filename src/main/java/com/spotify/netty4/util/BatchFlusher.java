@@ -34,17 +34,33 @@ public class BatchFlusher {
   private final EventLoop eventLoop;
   private final int maxPending;
 
-  private final AtomicIntegerFieldUpdater<BatchFlusher> SCHEDULED =
-      AtomicIntegerFieldUpdater.newUpdater(BatchFlusher.class, "scheduled");
-  @SuppressWarnings("UnusedDeclaration") private volatile int scheduled;
+  private final AtomicIntegerFieldUpdater<BatchFlusher> WOKEN =
+      AtomicIntegerFieldUpdater.newUpdater(BatchFlusher.class, "woken");
+  @SuppressWarnings("UnusedDeclaration") private volatile int woken;
 
   private int pending;
 
+  /**
+   * Used to flush all outstanding writes in the outbound channel buffer.
+   */
   private final Runnable flush = new Runnable() {
     @Override
     public void run() {
-      scheduled = 0;
+      pending = 0;
       channel.flush();
+    }
+  };
+
+  /**
+   * Used to wake up the event loop and schedule a flush to be performed after all outstanding
+   * write tasks are run. The outstanding write tasks must be allowed to run before performing the
+   * actual flush in order to ensure that their payloads have been written to the outbound buffer.
+   */
+  private Runnable wakeup = new Runnable() {
+    @Override
+    public void run() {
+      woken = 0;
+      eventLoop.execute(flush);
     }
   };
 
@@ -58,6 +74,9 @@ public class BatchFlusher {
     this.eventLoop = channel.eventLoop();
   }
 
+  /**
+   * Schedule an asynchronous opportunistically batching flush.
+   */
   public void flush() {
     if (eventLoop.inEventLoop()) {
       pending++;
@@ -66,8 +85,9 @@ public class BatchFlusher {
         channel.flush();
       }
     }
-    if (scheduled == 0 && SCHEDULED.compareAndSet(this, 0, 1)) {
-      eventLoop.execute(flush);
+    if (woken == 0 && WOKEN.compareAndSet(this, 0, 1)) {
+      woken = 1;
+      eventLoop.execute(wakeup);
     }
   }
 }
