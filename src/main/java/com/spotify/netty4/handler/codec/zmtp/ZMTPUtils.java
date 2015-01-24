@@ -111,7 +111,7 @@ public class ZMTPUtils {
    */
   public static void writeFrame(final ZMTPFrame frame, final ByteBuf buffer,
                                 final boolean more, final int version) {
-    writeFrameHeader(buffer, frame.size(), more, version);
+    writeFrameHeader(buffer, frame.size(), frame.size(), more, version);
     if (frame.hasContent()) {
       final ByteBuf source = frame.content();
       buffer.ensureWritable(source.readableBytes());
@@ -119,13 +119,13 @@ public class ZMTPUtils {
     }
   }
 
-  public static void writeFrameHeader(final ByteBuf buffer, final int size, final boolean more,
-                                      final int version) {
+  public static void writeFrameHeader(final ByteBuf buffer, final int maxSize, final int size,
+                                      final boolean more, final int version) {
     if (version == 1) {
-      encodeLength(size + 1, buffer);
+      encodeLength(maxSize + 1, size + 1, buffer, false);
       buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
     } else { // version == 2
-      encodeZMTP2FrameHeader(size, more ? MORE_FLAG : FINAL_FLAG, buffer);
+      encodeZMTP2FrameHeader(maxSize, size, more ? MORE_FLAG : FINAL_FLAG, buffer);
     }
   }
 

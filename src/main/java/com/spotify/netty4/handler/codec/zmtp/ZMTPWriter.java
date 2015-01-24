@@ -18,18 +18,53 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import io.netty.buffer.ByteBuf;
 
+
+/**
+ * A writer for encoding ZMTP frames onto a {@link ByteBuf}.
+ */
 public class ZMTPWriter {
 
   private final int version;
   private final ByteBuf buf;
+
+  private int headerIndex;
+  private int frameSize;
 
   public ZMTPWriter(final int version, final ByteBuf buf) {
     this.version = version;
     this.buf = buf;
   }
 
+  /**
+   * Start a new ZMTP frame.
+   *
+   * @param size Payload size.
+   * @param more true if more frames will be written, false if this is the last frame.
+   * @return A {@link ByteBuf} for writing the frame payload.
+   */
   public ByteBuf frame(final int size, final boolean more) {
-    ZMTPUtils.writeFrameHeader(buf, size, more, version);
+    frameSize = size;
+    headerIndex = buf.writerIndex();
+    ZMTPUtils.writeFrameHeader(buf, size, size, more, version);
     return buf;
+  }
+
+  /**
+   * Rewrite the ZMTP frame header, optionally writing a different size or changing the MORE flag.
+   * This can be useful when writing a payload where estimating the exact size is expensive but an
+   * upper bound can be cheaply computed. E.g. when writing UTF8.
+   *
+   * @param size New size. This must not be greater than the size provided in the call to {@link
+   *             #frame}.
+   * @param more true if more frames will be written, false if this is the last frame.
+   */
+  public void reframe(final int size, final boolean more) {
+    if (size > frameSize) {
+      throw new IllegalArgumentException("new frame size is greater than original size");
+    }
+    final int mark = buf.writerIndex();
+    buf.writerIndex(headerIndex);
+    ZMTPUtils.writeFrameHeader(buf, frameSize, size, more, version);
+    buf.writerIndex(mark);
   }
 }
