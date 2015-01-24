@@ -33,8 +33,7 @@ public class DefaultZMTPMessageEncoder implements ZMTPMessageEncoder {
     final ZMTPMessage message = (ZMTPMessage) msg;
 
     final List<ZMTPFrame> envelope = message.envelope();
-    for (int i = 0; i < envelope.size(); i++) {
-      final ZMTPFrame frame = envelope.get(i);
+    for (final ZMTPFrame frame : envelope) {
       estimator.frame(frame.size());
     }
 
@@ -43,8 +42,7 @@ public class DefaultZMTPMessageEncoder implements ZMTPMessageEncoder {
     }
 
     final List<ZMTPFrame> content = message.content();
-    for (int i = 0; i < content.size(); i++) {
-      final ZMTPFrame frame = content.get(i);
+    for (final ZMTPFrame frame : content) {
       estimator.frame(frame.size());
     }
   }
