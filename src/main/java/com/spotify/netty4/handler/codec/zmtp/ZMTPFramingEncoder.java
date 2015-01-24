@@ -27,7 +27,6 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.EventExecutor;
 
 /**
  * Netty encoder for ZMTP messages.
@@ -37,8 +36,8 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   private final ZMTPSession session;
   private final ZMTPMessageEncoder encoder;
 
-  private List<Object> messages;
-  private List<ChannelPromise> promises;
+  private final List<Object> messages = new ArrayList<Object>();
+  private final List<ChannelPromise> promises = new ArrayList<ChannelPromise>();
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
     this(session, new DefaultZMTPMessageEncoder(session.isEnveloped()));
@@ -58,10 +57,6 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   @Override
   public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
       throws Exception {
-    if (messages == null) {
-      messages = new ArrayList<Object>();
-      promises = new ArrayList<ChannelPromise>();
-    }
     messages.add(msg);
     promises.add(promise);
   }
@@ -72,41 +67,37 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
       return;
     }
     final ZMTPEstimator estimator = new ZMTPEstimator(session.actualVersion());
-    for (int i = 0; i < messages.size(); i++) {
-      final Object message = messages.get(i);
+    for (final Object message : messages) {
       encoder.estimate(message, estimator);
     }
     final ByteBuf output = ctx.alloc().buffer(estimator.size());
     final ZMTPWriter writer = new ZMTPWriter(session.actualVersion(), output);
-    for (int i = 0; i < messages.size(); i++) {
-      final Object message = messages.get(i);
+    for (final Object message : messages) {
       encoder.encode(message, writer);
       ReferenceCountUtil.release(message);
     }
-    final List<ChannelPromise> promises = this.promises;
-    this.messages = null;
-    this.promises = null;
-    final ChannelPromise aggregate = new AggregatePromise(ctx.channel(), ctx.executor(), promises);
+    final ChannelPromise aggregate = new AggregatePromise(ctx.channel(), promises);
+    messages.clear();
+    promises.clear();
     ctx.write(output, aggregate);
     ctx.flush();
   }
 
   private static class AggregatePromise extends DefaultChannelPromise {
 
-    private final List<ChannelPromise> promises;
+    private final ChannelPromise[] promises;
 
     public AggregatePromise(final Channel channel,
-                            final EventExecutor executor,
                             final List<ChannelPromise> promises) {
-      super(channel, executor);
-      this.promises = promises;
+      super(channel);
+      this.promises = promises.toArray(new ChannelPromise[promises.size()]);
     }
 
     @Override
     public ChannelPromise setSuccess(final Void result) {
       super.setSuccess(result);
-      for (int i = 0; i < promises.size(); i++) {
-        promises.get(i).setSuccess(result);
+      for (final ChannelPromise promise : promises) {
+        promise.setSuccess(result);
       }
       return this;
     }
@@ -114,8 +105,8 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
     @Override
     public boolean trySuccess() {
       final boolean result = super.trySuccess();
-      for (int i = 0; i < promises.size(); i++) {
-        promises.get(i).trySuccess();
+      for (final ChannelPromise promise : promises) {
+        promise.trySuccess();
       }
       return result;
     }
@@ -123,8 +114,8 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
     @Override
     public ChannelPromise setFailure(final Throwable cause) {
       super.setFailure(cause);
-      for (int i = 0; i < promises.size(); i++) {
-        promises.get(i).setFailure(cause);
+      for (final ChannelPromise promise : promises) {
+        promise.setFailure(cause);
       }
       return this;
     }
