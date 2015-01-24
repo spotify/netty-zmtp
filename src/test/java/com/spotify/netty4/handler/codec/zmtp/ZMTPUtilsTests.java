@@ -81,14 +81,14 @@ public class ZMTPUtilsTests {
   @Test
   public void testWriteLongBE() {
     ByteBuf cb = Unpooled.buffer();
-    ZMTPUtils.writeLong(cb, 1);
+    cb.writeLong((long) 1);
     cmp(cb, 0,0,0,0,0,0,0,1);
   }
 
   @Test
   public void testWriteLongLE() {
     ByteBuf cb = Unpooled.buffer();
-    ZMTPUtils.writeLong(cb, 1);
+    cb.writeLong((long) 1);
     cmp(cb, 0,0,0,0,0,0,0,1);
   }
 

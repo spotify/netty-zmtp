@@ -22,16 +22,15 @@ import java.util.UUID;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import static io.netty.buffer.ByteBufUtil.swapLong;
-import static java.nio.ByteOrder.BIG_ENDIAN;
-
 /**
  * Helper utilities for zmtp protocol
  */
 public class ZMTPUtils {
 
-  public static final byte MORE_FLAG = 0x1;
   public static final byte FINAL_FLAG = 0x0;
+  public static final byte LONG_FLAG = 0x02;
+  public static final byte MORE_FLAG = 0x1;
+
   public static final ZMTPFrame DELIMITER = ZMTPFrame.EMPTY_FRAME;
 
   /**
@@ -39,7 +38,7 @@ public class ZMTPUtils {
    *
    * @return length
    */
-  static public long decodeLength(final ByteBuf in) {
+  public static long decodeLength(final ByteBuf in) {
     if (in.readableBytes() < 1) {
       return -1;
     }
@@ -48,48 +47,40 @@ public class ZMTPUtils {
       if (in.readableBytes() < 8) {
         return -1;
       }
-      if (in.order() == BIG_ENDIAN) {
-        size = in.readLong();
-      } else {
-        size = swapLong(in.readLong());
-      }
+      size = in.readLong();
     }
 
     return size;
   }
 
-  static public void encodeLength(final long size, final ByteBuf out) {
-    encodeLength(size, out, false);
+  public static void encodeLength(final long size, final ByteBuf out) {
+    encodeLength(size, size, out, false);
   }
 
+  public static void encodeLength(final long size, final ByteBuf out, final boolean forceLong) {
+    encodeLength(size, size, out, forceLong);
+  }
   /**
    * Helper to encode a zmtp length field
    */
-  static public void encodeLength(final long size, final ByteBuf out, boolean forceLong) {
-    if (size < 255 && !forceLong) {
-      // Encoded as a single byte
+  public static void encodeLength(final long maxSize, final long size, final ByteBuf out,
+                                  final boolean forceLong) {
+    if (maxSize < 255 && !forceLong) {
       out.writeByte((byte) size);
     } else {
       out.writeByte(0xFF);
-      writeLong(out, size);
+      out.writeLong(size);
     }
   }
 
-  static void encodeZMTP2FrameHeader(final long size, final byte flags, final ByteBuf out) {
-    if (size < 256) {
+  static void encodeZMTP2FrameHeader(final long maxSize, final long size, final byte flags,
+                                     final ByteBuf out) {
+    if (maxSize < 256) {
       out.writeByte(flags);
       out.writeByte((byte)size);
     } else {
-      out.writeByte(flags | 0x02);
-      writeLong(out, size);
-    }
-  }
-
-   static void writeLong(final ByteBuf buffer, final long value) {
-    if (buffer.order() == BIG_ENDIAN) {
-      buffer.writeLong(value);
-    } else {
-      buffer.writeLong(swapLong(value));
+      out.writeByte(flags | LONG_FLAG);
+      out.writeLong(size);
     }
   }
 
@@ -283,5 +274,4 @@ public class ZMTPUtils {
     builder.append(']');
     return builder.toString();
   }
-
 }

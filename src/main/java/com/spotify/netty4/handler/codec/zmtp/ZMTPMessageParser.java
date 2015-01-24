@@ -19,9 +19,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 import io.netty.buffer.ByteBuf;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
-import static io.netty.buffer.ByteBufUtil.swapLong;
 import static java.lang.Math.min;
-import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
  * Decodes ZMTP messages from a channel buffer, reading and accumulating frame by frame, keeping
@@ -226,12 +224,7 @@ public class ZMTPMessageParser {
     if (buffer.readableBytes() < 8) {
       return false;
     }
-    long len;
-    if (buffer.order() == BIG_ENDIAN) {
-      len = buffer.readLong();
-    } else {
-      len = swapLong(buffer.readLong());
-    }
+    final long len = buffer.readLong();
     if (len > Integer.MAX_VALUE) {
       throw new ZMTPMessageParsingException("Received too large frame: " + len);
     }
