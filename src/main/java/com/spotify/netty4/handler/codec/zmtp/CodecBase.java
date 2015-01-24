@@ -95,7 +95,7 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
   static byte[] readZMTP1RemoteIdentity(final ByteBuf buffer) throws ZMTPException {
     buffer.markReaderIndex();
 
-    final long len = ZMTPUtils.decodeLength(buffer);
+    final long len = ZMTPUtils.decodeZMTP1Length(buffer);
     if (len > 256) {
       // spec says the ident string can be up to 255 chars
       throw new ZMTPException("Remote identity longer than the allowed 255 octets");

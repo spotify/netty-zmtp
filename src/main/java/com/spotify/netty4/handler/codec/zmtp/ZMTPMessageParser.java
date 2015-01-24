@@ -185,7 +185,7 @@ public class ZMTPMessageParser {
    * Parse a frame header.
    */
   private boolean parseZMTP1Header(final ByteBuf buffer) throws ZMTPMessageParsingException {
-    final long len = ZMTPUtils.decodeLength(buffer);
+    final long len = ZMTPUtils.decodeZMTP1Length(buffer);
 
     if (len > Integer.MAX_VALUE) {
       throw new ZMTPMessageParsingException("Received too large frame: " + len);

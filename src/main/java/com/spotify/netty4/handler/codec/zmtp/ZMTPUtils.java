@@ -23,7 +23,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- * Helper utilities for zmtp protocol
+ * Utilities for working with ZMTP
  */
 public class ZMTPUtils {
 
@@ -34,11 +34,11 @@ public class ZMTPUtils {
   public static final ZMTPFrame DELIMITER = ZMTPFrame.EMPTY_FRAME;
 
   /**
-   * Helper to decode a ZMTP/1.0 length field
+   * Decode a ZMTP/1.0 length field
    *
-   * @return length
+   * @return Decoded length or -1 if there was not enough bytes in the buffer.
    */
-  public static long decodeLength(final ByteBuf in) {
+  public static long decodeZMTP1Length(final ByteBuf in) {
     if (in.readableBytes() < 1) {
       return -1;
     }
@@ -53,34 +53,78 @@ public class ZMTPUtils {
     return size;
   }
 
-  public static void encodeLength(final long size, final ByteBuf out) {
-    encodeLength(size, size, out, false);
+  /**
+   * Encode a ZMTP/1.0 frame length field.
+   *
+   * @param length The length.
+   * @param out    Target buffer.
+   */
+  public static void encodeZMTP1Length(final long length, final ByteBuf out) {
+    encodeZMTP1Length(length, length, out, false);
   }
 
-  public static void encodeLength(final long size, final ByteBuf out, final boolean forceLong) {
-    encodeLength(size, size, out, forceLong);
-  }
   /**
-   * Helper to encode a zmtp length field
+   * Encode a ZMTP/1.0 frame length field.
+   *
+   * @param length    The length.
+   * @param out       Target buffer.
+   * @param forceLong true to force writing length as a 64 bit unsigned integer.
    */
-  public static void encodeLength(final long maxSize, final long size, final ByteBuf out,
-                                  final boolean forceLong) {
-    if (maxSize < 255 && !forceLong) {
-      out.writeByte((byte) size);
+  public static void encodeZMTP1Length(final long length, final ByteBuf out,
+                                       final boolean forceLong) {
+    encodeZMTP1Length(length, length, out, forceLong);
+  }
+
+  /**
+   * Encode a ZMTP/1.0 frame length field.
+   *
+   * @param maxLength The maximum length of the field.
+   * @param length    The length.
+   * @param out       Target buffer.
+   * @param forceLong true to force writing length as a 64 bit unsigned integer.
+   */
+  public static void encodeZMTP1Length(final long maxLength, final long length, final ByteBuf out,
+                                       final boolean forceLong) {
+    if (maxLength < 255 && !forceLong) {
+      out.writeByte((byte) length);
     } else {
       out.writeByte(0xFF);
-      out.writeLong(size);
+      out.writeLong(length);
     }
   }
 
-  static void encodeZMTP2FrameHeader(final long maxSize, final long size, final byte flags,
-                                     final ByteBuf out) {
-    if (maxSize < 256) {
+  /**
+   * Encode a ZMTP/1.0 frame header.
+   *
+   * @param maxLength The maximum length of the field.
+   * @param length    The length.
+   * @param more      true if more frames will follow, false if this is the final frame.
+   * @param out       Target buffer.
+   */
+  private static void encodeZMTP1FrameHeader(final ByteBuf out, final int maxLength,
+                                             final int length, final boolean more) {
+    encodeZMTP1Length(maxLength + 1, length + 1, out, false);
+    out.writeByte(more ? MORE_FLAG : FINAL_FLAG);
+  }
+
+
+  /**
+   * Encode a ZMTP/2.0 frame header.
+   *
+   * @param maxLength The maximum length of the field.
+   * @param length    The length.
+   * @param more      true if more frames will follow, false if this is the final frame.
+   * @param out       Target buffer.
+   */
+  public static void encodeZMTP2FrameHeader(final long maxLength, final long length,
+                                            final boolean more, final ByteBuf out) {
+    final byte flags = more ? MORE_FLAG : FINAL_FLAG;
+    if (maxLength < 256) {
       out.writeByte(flags);
-      out.writeByte((byte)size);
+      out.writeByte((byte) length);
     } else {
       out.writeByte(flags | LONG_FLAG);
-      out.writeLong(size);
+      out.writeLong(length);
     }
   }
 
@@ -103,7 +147,7 @@ public class ZMTPUtils {
   }
 
   /**
-   * Writes a ZMTP frame to a buffer.
+   * Write a ZMTP frame to a buffer.
    *
    * @param frame  The frame to write.
    * @param buffer The target buffer.
@@ -119,13 +163,18 @@ public class ZMTPUtils {
     }
   }
 
-  public static void writeFrameHeader(final ByteBuf buffer, final int maxSize, final int size,
+  /**
+   * Write a ZMTP frame header to a buffer.
+   *
+   * @param buffer The target buffer.
+   * @param more   True to write a more flag, false to write a final flag.
+   */
+  public static void writeFrameHeader(final ByteBuf buffer, final int maxLength, final int size,
                                       final boolean more, final int version) {
     if (version == 1) {
-      encodeLength(maxSize + 1, size + 1, buffer, false);
-      buffer.writeByte(more ? MORE_FLAG : FINAL_FLAG);
+      encodeZMTP1FrameHeader(buffer, maxLength, size, more);
     } else { // version == 2
-      encodeZMTP2FrameHeader(maxSize, size, more ? MORE_FLAG : FINAL_FLAG, buffer);
+      encodeZMTP2FrameHeader(maxLength, size, more, buffer);
     }
   }
 
@@ -139,7 +188,6 @@ public class ZMTPUtils {
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer,
                                   final boolean enveloped, int version) {
-
     // Write envelope
     if (enveloped) {
       // Sanity check
@@ -174,6 +222,13 @@ public class ZMTPUtils {
     return frameSize(frame.size(), version);
   }
 
+  /**
+   * Calculate bytes needed to serialize a ZMTP frame.
+   *
+   * @param payloadSize Size of the frame payload.
+   * @param version     ZMTP version.
+   * @return Bytes needed.
+   */
   public static int frameSize(final int payloadSize, final int version) {
     if (version == 1) {
       if (payloadSize + 1 < 255) {
@@ -195,21 +250,26 @@ public class ZMTPUtils {
    *
    * @param message   The message.
    * @param enveloped Whether an envelope will be written.
+   * @param version   ZMTP version.
    * @return The number of bytes needed.
    */
-  @SuppressWarnings("ForLoopReplaceableByForEach")
   public static int messageSize(final ZMTPMessage message, final boolean enveloped,
                                 final int version) {
     final int contentSize = framesSize(message.content(), version);
     if (!enveloped) {
       return contentSize;
     }
-    final int envelopeSize = framesSize(message.envelope(), version) + frameSize(DELIMITER, version);
+    final int
+        envelopeSize =
+        framesSize(message.envelope(), version) + frameSize(DELIMITER, version);
     return envelopeSize + contentSize;
   }
 
   /**
    * Calculate bytes needed to serialize a list of ZMTP frames.
+   *
+   * @param frames  The ZMTP frames.
+   * @param version ZMTP version.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static int framesSize(final List<ZMTPFrame> frames, final int version) {
@@ -222,10 +282,11 @@ public class ZMTPUtils {
   }
 
   /**
-   * Create a string from binary data, keeping printable ascii and hex encoding everything else.
+   * Create a human readable string representation of binary data, keeping printable ascii and hex
+   * encoding everything else.
    *
    * @param data The data
-   * @return A string representation of the data
+   * @return A human readable string representation of the data.
    */
   public static String toString(final byte[] data) {
     if (data == null) {
@@ -235,10 +296,11 @@ public class ZMTPUtils {
   }
 
   /**
-   * Create a string from binary data, keeping printable ascii and hex encoding everything else.
+   * Create a human readable string representation of binary data, keeping printable ascii and hex
+   * encoding everything else.
    *
    * @param data The data
-   * @return A string representation of the data
+   * @return A human readable string representation of the data.
    */
   public static String toString(final ByteBuf data) {
     if (data == null) {
@@ -260,6 +322,14 @@ public class ZMTPUtils {
     return sb.toString();
   }
 
+  /**
+   * Create a human readable string representation of a list of ZMTP frames, keeping printable
+   * ascii
+   * and hex encoding everything else.
+   *
+   * @param frames The ZMTP frames.
+   * @return A human readable string representation of the frames.
+   */
   public static String toString(final List<ZMTPFrame> frames) {
     final StringBuilder builder = new StringBuilder("[");
     for (int i = 0; i < frames.size(); i++) {

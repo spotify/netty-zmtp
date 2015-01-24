@@ -109,7 +109,7 @@ public class ZMTP20Codec extends CodecBase {
   private ByteBuf makeZMTP2Greeting(boolean includeSignature) {
     ByteBuf out = Unpooled.buffer();
     if (includeSignature) {
-      ZMTPUtils.encodeLength(0, out, true);
+      ZMTPUtils.encodeZMTP1Length(0, out, true);
       // last byte of signature
       out.writeByte(0x7f);
       // protocol revision
@@ -133,7 +133,7 @@ public class ZMTP20Codec extends CodecBase {
    */
   private ByteBuf makeZMTP2CompatSignature() {
     ByteBuf out = Unpooled.buffer();
-    ZMTPUtils.encodeLength(session.localIdentity().length + 1, out, true);
+    ZMTPUtils.encodeZMTP1Length(session.localIdentity().length + 1, out, true);
     out.writeByte(0x7f);
     return out;
   }

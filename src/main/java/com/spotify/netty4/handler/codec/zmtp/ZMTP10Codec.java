@@ -49,7 +49,7 @@ public class ZMTP10Codec extends CodecBase {
    */
   private static ByteBuf makeZMTP1Greeting(byte[] localIdentity) {
     ByteBuf out = Unpooled.buffer();
-    ZMTPUtils.encodeLength(localIdentity.length + 1, out);
+    ZMTPUtils.encodeZMTP1Length(localIdentity.length + 1, out);
     out.writeByte(0x00);
     out.writeBytes(localIdentity);
     return out;

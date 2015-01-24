@@ -22,7 +22,7 @@ public class CodecTest {
     byte[] overlyLong = new byte[256];
     Arrays.fill(overlyLong, (byte) 'a');
     ByteBuf buffer = Unpooled.buffer();
-    ZMTPUtils.encodeLength(overlyLong.length + 1, buffer);
+    ZMTPUtils.encodeZMTP1Length(overlyLong.length + 1, buffer);
     buffer.writeByte(0);
     buffer.writeBytes(overlyLong);
 
@@ -34,7 +34,7 @@ public class CodecTest {
   public void testLongZMTP1FrameLengthMissingLong() {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
-    long size = ZMTPUtils.decodeLength(buffer);
+    long size = ZMTPUtils.decodeZMTP1Length(buffer);
     Assert.assertEquals("Length shouldn't have been determined",
                         -1, size);
   }
@@ -44,7 +44,7 @@ public class CodecTest {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     buffer.writeLong(4);
-    long size = ZMTPUtils.decodeLength(buffer);
+    long size = ZMTPUtils.decodeZMTP1Length(buffer);
     Assert.assertEquals("Frame length should be after the first byte",
                         4, size);
   }
@@ -52,7 +52,7 @@ public class CodecTest {
   @Test
   public void testZMTP1LenghtEmptyBuffer() {
     ByteBuf buffer = Unpooled.buffer();
-    long size = ZMTPUtils.decodeLength(buffer);
+    long size = ZMTPUtils.decodeZMTP1Length(buffer);
     Assert.assertEquals("Empty buffer should return -1 frame length",
                         -1, size);
   }
