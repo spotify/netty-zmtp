@@ -101,11 +101,6 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
       throw new ZMTPException("Remote identity longer than the allowed 255 octets");
     }
 
-    // Bail out if there's not enough data
-    if (len == -1 || buffer.readableBytes() < len) {
-      buffer.resetReaderIndex();
-      throw new IndexOutOfBoundsException("not enough data");
-    }
     // skip the flags byte
     buffer.skipBytes(1);
 
