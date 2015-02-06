@@ -130,6 +130,45 @@ public class PipelineTests {
   }
 
   @Test
+  public void testZMTP1PipelineFragmentedHandshake() {
+    doTestZMTP1PipelineFragmentedHandshake(buf(4), buf(0, 0x62, 0x61, 0x72));
+    doTestZMTP1PipelineFragmentedHandshake(buf(4, 0), buf(0x62, 0x61, 0x72));
+    doTestZMTP1PipelineFragmentedHandshake(buf(4, 0, 0x62), buf(0x61, 0x72));
+    doTestZMTP1PipelineFragmentedHandshake(buf(4, 0, 0x62, 0x61), buf(0x72));
+  }
+
+  private void doTestZMTP1PipelineFragmentedHandshake(ByteBuf first, ByteBuf second) {
+    ZMTPSession s = new ZMTPSession(
+        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+
+    PipelineTester pt = new PipelineTester(new ZMTP10Codec(s));
+    cmp(buf(0x04, 0, 0x66, 0x6f, 0x6f), pt.readClient());
+
+    // write both fragments of client handshake
+    pt.writeClient(first);
+    pt.writeClient(second);
+
+    ByteBuf cb = Unpooled.buffer();
+    // two octet envelope delimiter
+    cb.writeBytes(bytes(0x01, 0x01));
+    // content frame size + flag octet
+    cb.writeBytes(bytes(0x0ff, 0, 0, 0, 0, 0, 0, 0x01, 0x05, 0));
+    // payload
+    cb.writeBytes(LONG_MSG);
+
+    pt.writeClient(cb);
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+
+    List<ZMTPFrame> envelope = m.message().envelope();
+    assertEquals(0, envelope.size());
+
+    List<ZMTPFrame> body = m.message().content();
+    assertEquals(1, body.size());
+    cmp(buf(LONG_MSG), body.get(0).content());
+  }
+
+
+  @Test
   // tests the case when the message to be parsed is fragmented inside the long long size field
   public void testZMTP1PipelineLongMessageFragmentedLong() {
     ZMTPSession s = new ZMTPSession(
