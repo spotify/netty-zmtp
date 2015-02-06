@@ -24,7 +24,7 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder2;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageEncoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
@@ -477,6 +477,7 @@ public class ApplicationBenchmark {
   private static CharSequence readMethod(final ByteBuf data, final int size) {
     for (final AsciiString method : METHODS) {
       if (asciiEquals(method, data, size)) {
+        data.skipBytes(size);
         return method;
       }
     }
@@ -506,7 +507,7 @@ public class ApplicationBenchmark {
     return MessageId.from(seq, timestamp);
   }
 
-  private static class RequestDecoder implements ZMTPMessageDecoder {
+  private static class RequestDecoder implements ZMTPMessageDecoder2 {
 
     enum State {
       URI,
@@ -522,41 +523,33 @@ public class ApplicationBenchmark {
     private MessageId id;
     private ByteBuffer payload;
 
+    private int frameLength;
+
     @Override
-    public void readFrame(final ByteBuf data, final int size, final boolean more) {
-      switch (state) {
-        case URI:
-          uri = readAscii(data, size);
-          state = State.METHOD;
-          break;
-        case METHOD:
-          method = readMethod(data, size);
-          state = State.ID;
-          break;
-        case ID:
-          id = readId(data, size);
-          state = State.PAYLOAD;
-          break;
-        case PAYLOAD:
-          payload = readPayload(data, size);
-          state = State.URI;
-          break;
-      }
+    public void frame(final int length, final boolean more) {
+      frameLength = length;
     }
 
     @Override
-    public void discardFrame(final int size, final boolean more) {
+    public void content(final ByteBuf data) {
+      if (data.readableBytes() < frameLength) {
+        return;
+      }
       switch (state) {
         case URI:
+          uri = readAscii(data, frameLength);
           state = State.METHOD;
           break;
         case METHOD:
+          method = readMethod(data, frameLength);
           state = State.ID;
           break;
         case ID:
+          id = readId(data, frameLength);
           state = State.PAYLOAD;
           break;
         case PAYLOAD:
+          payload = readPayload(data, frameLength);
           state = State.URI;
           break;
       }
@@ -568,7 +561,7 @@ public class ApplicationBenchmark {
     }
   }
 
-  private static class ReplyDecoder implements ZMTPMessageDecoder {
+  private static class ReplyDecoder implements ZMTPMessageDecoder2 {
 
     enum State {
       URI,
@@ -579,6 +572,7 @@ public class ApplicationBenchmark {
     }
 
     private State state = State.URI;
+    private int frameLength;
 
     private CharSequence uri;
     private CharSequence method;
@@ -587,47 +581,34 @@ public class ApplicationBenchmark {
     private ByteBuffer payload;
 
     @Override
-    public void readFrame(final ByteBuf data, final int size, final boolean more) {
-      switch (state) {
-        case URI:
-          uri = readAscii(data, size);
-          state = State.METHOD;
-          break;
-        case METHOD:
-          method = readMethod(data, size);
-          state = State.ID;
-          break;
-        case ID:
-          id = readId(data, size);
-          state = State.STATUSCODE;
-          break;
-        case STATUSCODE:
-          statusCode = readStatusCode(data, size);
-          state = State.PAYLOAD;
-          break;
-        case PAYLOAD:
-          payload = readPayload(data, size);
-          state = State.URI;
-          break;
-      }
+    public void frame(final int length, final boolean more) {
+      frameLength = length;
     }
 
     @Override
-    public void discardFrame(final int size, final boolean more) {
+    public void content(final ByteBuf data) {
+      if (data.readableBytes() < frameLength) {
+        return;
+      }
       switch (state) {
         case URI:
+          uri = readAscii(data, frameLength);
           state = State.METHOD;
           break;
         case METHOD:
-          state = State.STATUSCODE;
-          break;
-        case STATUSCODE:
+          method = readMethod(data, frameLength);
           state = State.ID;
           break;
         case ID:
+          id = readId(data, frameLength);
+          state = State.STATUSCODE;
+          break;
+        case STATUSCODE:
+          statusCode = readStatusCode(data, frameLength);
           state = State.PAYLOAD;
           break;
         case PAYLOAD:
+          payload = readPayload(data, frameLength);
           state = State.URI;
           break;
       }
