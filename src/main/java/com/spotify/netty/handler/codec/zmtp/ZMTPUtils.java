@@ -35,10 +35,9 @@ public class ZMTPUtils {
   public static final ZMTPFrame DELIMITER = ZMTPFrame.create();
 
   /**
-   * Helper to decode a ZMTP/1.0 length field
+   * Helper to decode a ZMTP/1.0 frame length field
    *
-   * @return length
-   * @throws IndexOutOfBoundsException if there is not enough octets to be read.
+   * @return frame length, -1 if there is not enough octets in the buffer to decode the length.
    */
   static public long decodeLength(final ChannelBuffer in) {
     if (in.readableBytes() < 1) {
