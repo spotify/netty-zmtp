@@ -79,8 +79,6 @@ abstract class CodecBase extends ReplayingDecoder<VoidEnum>  {
    * Parse and return the remote identity octets from a ZMTP/1.0 greeting.
    */
   static byte[] readZMTP1RemoteIdentity(final ChannelBuffer buffer) throws ZMTPException {
-    buffer.markReaderIndex();
-
     final long len = ZMTPUtils.decodeLength(buffer);
     if (len > 256) {
       // spec says the ident string can be up to 255 chars
