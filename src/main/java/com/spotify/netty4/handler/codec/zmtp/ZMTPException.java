@@ -17,7 +17,7 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 /**
- * Exception base for all netty ZMTP classes
+ * Base for all checked Netty ZMTP exceptions.
  */
 public class ZMTPException extends Exception {
 
