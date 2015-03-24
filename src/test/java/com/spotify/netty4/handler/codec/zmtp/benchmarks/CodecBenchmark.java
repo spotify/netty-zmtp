@@ -16,7 +16,6 @@
 
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
-import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
@@ -36,18 +35,18 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 
-import static java.util.Arrays.asList;
-
 @State(Scope.Benchmark)
 public class CodecBenchmark {
 
-  private final ZMTPMessage message = new ZMTPMessage(
-      asList(ZMTPFrame.from("first identity frame"),
-             ZMTPFrame.from("second identity frame")),
-      asList(ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
-             ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
-             ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata"),
-             ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata")));
+  private final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(
+      true,
+      "first identity frame",
+      "second identity frame",
+      "",
+      "datadatadatadatadatadatadatadatadatadata",
+      "datadatadatadatadatadatadatadatadatadata",
+      "datadatadatadatadatadatadatadatadatadata",
+      "datadatadatadatadatadatadatadatadatadata");
 
   private final ZMTPMessageParser messageParserV1 =
       ZMTPMessageParser.create(1, new ZMTPIncomingMessageDecoder(true, Integer.MAX_VALUE));
