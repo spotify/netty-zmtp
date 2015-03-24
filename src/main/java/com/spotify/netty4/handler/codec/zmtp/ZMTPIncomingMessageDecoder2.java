@@ -80,7 +80,7 @@ public class ZMTPIncomingMessageDecoder2 implements ZMTPMessageDecoder2 {
     if (frameLength > 0) {
       final ByteBuf frame = data.readSlice(frameLength);
       frame.retain();
-      part.add(new ZMTPFrame(data));
+      part.add(new ZMTPFrame(frame));
     } else if (part == tail) {
       part.add(EMPTY_FRAME);
     } else {
