@@ -45,7 +45,7 @@ public class VerifyingDecoder2 implements ZMTPMessageDecoder2 {
   }
 
   @Override
-  public void frame(final int length, final boolean more) {
+  public void header(final int length, final boolean more) {
     if (finished) {
       throw new IllegalStateException("already finished");
     }

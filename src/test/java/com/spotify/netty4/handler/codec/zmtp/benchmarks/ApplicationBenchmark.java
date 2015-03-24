@@ -526,7 +526,7 @@ public class ApplicationBenchmark {
     private int frameLength;
 
     @Override
-    public void frame(final int length, final boolean more) {
+    public void header(final int length, final boolean more) {
       frameLength = length;
     }
 
@@ -581,7 +581,7 @@ public class ApplicationBenchmark {
     private ByteBuffer payload;
 
     @Override
-    public void frame(final int length, final boolean more) {
+    public void header(final int length, final boolean more) {
       frameLength = length;
     }
 

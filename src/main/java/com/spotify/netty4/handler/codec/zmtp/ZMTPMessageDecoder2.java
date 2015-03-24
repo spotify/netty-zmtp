@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 
 public interface ZMTPMessageDecoder2 {
 
-  void frame(final int length, boolean more);
+  void header(final int length, boolean more);
 
   void content(ByteBuf data);
 

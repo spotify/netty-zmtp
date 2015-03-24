@@ -63,7 +63,7 @@ public class ZMTPMessageParser2 {
           buffer.readerIndex(mark);
           return null;
         }
-        decoder.frame(length, hasMore);
+        decoder.header(length, hasMore);
         remaining = length;
       }
 

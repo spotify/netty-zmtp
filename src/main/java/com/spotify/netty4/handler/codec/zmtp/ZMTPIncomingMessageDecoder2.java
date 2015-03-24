@@ -64,7 +64,7 @@ public class ZMTPIncomingMessageDecoder2 implements ZMTPMessageDecoder2 {
   }
 
   @Override
-  public void frame(final int length, final boolean more) {
+  public void header(final int length, final boolean more) {
     frameLength = length;
     messageSize += length;
     if (messageSize > limit) {
