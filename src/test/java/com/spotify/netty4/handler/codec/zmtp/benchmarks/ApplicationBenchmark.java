@@ -24,7 +24,7 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder2;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageEncoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
@@ -507,7 +507,7 @@ public class ApplicationBenchmark {
     return MessageId.from(seq, timestamp);
   }
 
-  private static class RequestDecoder implements ZMTPMessageDecoder2 {
+  private static class RequestDecoder implements ZMTPMessageDecoder {
 
     enum State {
       URI,
@@ -561,7 +561,7 @@ public class ApplicationBenchmark {
     }
   }
 
-  private static class ReplyDecoder implements ZMTPMessageDecoder2 {
+  private static class ReplyDecoder implements ZMTPMessageDecoder {
 
     enum State {
       URI,

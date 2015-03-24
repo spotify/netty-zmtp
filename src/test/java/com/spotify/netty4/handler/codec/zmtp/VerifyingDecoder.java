@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2012-2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -19,7 +19,6 @@ package com.spotify.netty4.handler.codec.zmtp;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
-import java.util.Collections;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
@@ -30,9 +29,9 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
 
   private ExpectedOutput expected;
 
-  private int discardIndex;
   private int readIndex;
   private boolean finished;
+  private int frameSize;
 
   public VerifyingDecoder(final ExpectedOutput expected) {
     this.expected = expected;
@@ -46,7 +45,7 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public void readFrame(final ByteBuf data, final int size, final boolean more) {
+  public void header(final int length, final boolean more) {
     if (finished) {
       throw new IllegalStateException("already finished");
     }
@@ -55,36 +54,27 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
           "more frames than expected: " +
           "readIndex=" + readIndex + ", " +
           "expected=" + expected +
-          ", readFrame(data=" + data +
-          ", size=" + size +
+          ", frame(size=" + length +
           ", more=" + more + ")");
     }
+    frameSize = length;
+  }
+
+  @Override
+  public void content(final ByteBuf data) {
+    if (data.readableBytes() < frameSize) {
+      return;
+    }
     final ByteBuf expectedFrame = expected.frames.get(readIndex);
-    if (!expectedFrame.equals(data)) {
+    final ByteBuf frame = data.readBytes(frameSize);
+    if (!expectedFrame.equals(frame)) {
       throw new IllegalStateException(
           "read frame did not match expected frame: " +
           "readIndex=" + readIndex + ", " +
           "expected frame=" + expectedFrame +
-          "read frame=" + data);
+          "read frame=" + frame);
     }
     readIndex++;
-  }
-
-  @Override
-  public void discardFrame(final int size, final boolean more) {
-    if (finished) {
-      throw new IllegalStateException("already finished");
-    }
-    if (discardIndex >= expected.discarded.size()) {
-      throw new IllegalStateException(
-          "more than expected discarded frames: " +
-          "readIndex=" + readIndex + ", " +
-          "discardIndex=" + discardIndex + ", " +
-          "expected=" + expected +
-          ", discardFrame(size=" + size +
-          ", more=" + more + ")");
-    }
-    discardIndex++;
   }
 
   @Override
@@ -96,18 +86,9 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
       throw new IllegalStateException(
           "less than expected frames read: " +
           "readIndex=" + readIndex + ", " +
-          "discardIndex=" + discardIndex + ", " +
-          "expected=" + expected);
-    }
-    if (discardIndex != expected.discarded.size()) {
-      throw new IllegalStateException(
-          "less than expected frames discarded: " +
-          "readIndex=" + readIndex + ", " +
-          "discardIndex=" + discardIndex + ", " +
           "expected=" + expected);
     }
     readIndex = 0;
-    discardIndex = 0;
     finished = true;
     return null;
   }
@@ -122,23 +103,14 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
   static class ExpectedOutput {
 
     private final List<ByteBuf> frames;
-    private final List<Integer> discarded;
-
-    public ExpectedOutput(final List<ByteBuf> frames, final List<Integer> discarded) {
-      this.frames = frames;
-      this.discarded = discarded;
-    }
 
     public ExpectedOutput(final List<ByteBuf> frames) {
-      this(frames, Collections.<Integer>emptyList());
+      this.frames = frames;
     }
 
     @Override
     public String toString() {
-      return "{" +
-             "frames=" + toString(frames) +
-             ", discarded=" + discarded +
-             '}';
+      return '[' + toString(frames) + ']';
     }
 
     private String toString(final List<ByteBuf> frames) {

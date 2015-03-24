@@ -50,16 +50,16 @@ public class CodecBenchmark {
              ZMTPFrame.from("datadatadatadatadatadatadatadatadatadata")));
 
   private final ZMTPMessageParser messageParserV1 =
-      ZMTPMessageParser.create(1, Integer.MAX_VALUE, new ZMTPIncomingMessageDecoder(true));
+      ZMTPMessageParser.create(1, new ZMTPIncomingMessageDecoder(true, Integer.MAX_VALUE));
 
   private final ZMTPMessageParser messageParserV2 =
-      ZMTPMessageParser.create(2, Integer.MAX_VALUE, new ZMTPIncomingMessageDecoder(true));
+      ZMTPMessageParser.create(2, new ZMTPIncomingMessageDecoder(true, Integer.MAX_VALUE));
 
   private final ZMTPMessageParser discardingParserV1 =
-      ZMTPMessageParser.create(1, Integer.MAX_VALUE, new Discarder());
+      ZMTPMessageParser.create(1, new Discarder());
 
   private final ZMTPMessageParser discardingParserV2 =
-      ZMTPMessageParser.create(2, Integer.MAX_VALUE, new Discarder());
+      ZMTPMessageParser.create(2, new Discarder());
 
   private final ByteBuf incomingV1;
   private final ByteBuf incomingV2;
@@ -123,14 +123,15 @@ public class CodecBenchmark {
 
     private int size;
 
+
     @Override
-    public void readFrame(final ByteBuf data, final int size, final boolean more) {
+    public void header(final int length, final boolean more) {
       this.size += size;
     }
 
     @Override
-    public void discardFrame(final int size, final boolean more) {
-      this.size += size;
+    public void content(final ByteBuf data) {
+      data.skipBytes(data.readableBytes());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2012-2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -27,17 +27,20 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
 
   private final boolean enveloped;
+  private final long limit;
 
   private boolean delimited;
   private boolean truncated;
-  private long size;
+  private long messageSize;
+  private int frameLength;
 
   private List<ZMTPFrame> head;
   private List<ZMTPFrame> tail;
   private List<ZMTPFrame> part;
 
-  public ZMTPIncomingMessageDecoder(final boolean enveloped) {
+  public ZMTPIncomingMessageDecoder(final boolean enveloped, final long limit) {
     this.enveloped = enveloped;
+    this.limit = limit;
     reset();
   }
 
@@ -56,28 +59,34 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
     }
     delimited = false;
     truncated = false;
-    size = 0;
+    messageSize = 0;
+    frameLength = 0;
   }
 
   @Override
-  public void readFrame(final ByteBuf buffer, final int size, final boolean more) {
-    if (size > 0) {
-      this.size += size;
-      final ByteBuf data = buffer.readSlice(size);
-      data.retain();
-      part.add(new ZMTPFrame(data));
+  public void header(final int length, final boolean more) {
+    frameLength = length;
+    messageSize += length;
+    if (messageSize > limit) {
+      truncated = true;
+    }
+  }
+
+  @Override
+  public void content(final ByteBuf data) {
+    if (data.readableBytes() < frameLength) {
+      return;
+    }
+    if (frameLength > 0) {
+      final ByteBuf frame = data.readSlice(frameLength);
+      frame.retain();
+      part.add(new ZMTPFrame(frame));
     } else if (part == tail) {
       part.add(EMPTY_FRAME);
     } else {
       delimited = true;
       part = tail;
     }
-  }
-
-  @Override
-  public void discardFrame(final int size, final boolean more) {
-    truncated = true;
-    this.size += size;
   }
 
   @Override
@@ -98,7 +107,8 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
     }
 
     final ZMTPMessage message = new ZMTPMessage(envelope, content);
-    final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(message, truncated, size);
+    final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(
+        message, truncated, messageSize);
 
     reset();
 

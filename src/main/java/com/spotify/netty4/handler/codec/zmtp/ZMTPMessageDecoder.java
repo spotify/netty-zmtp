@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2012-2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -20,9 +20,9 @@ import io.netty.buffer.ByteBuf;
 
 public interface ZMTPMessageDecoder {
 
-  void readFrame(ByteBuf data, final int size, boolean more);
+  void header(final int length, boolean more);
 
-  void discardFrame(int size, boolean more);
+  void content(ByteBuf data);
 
   Object finish();
 }
