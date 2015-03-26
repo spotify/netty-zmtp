@@ -177,11 +177,11 @@ public class HandshakeTest {
 
   @Test
   public void testReadZMTP1RemoteIdentity() throws Exception {
-    byte[] bs = ZMTP10Codec.readZMTP1RemoteIdentity(buf(0x04, 0x00, 0x62, 0x61, 0x72));
+    byte[] bs = ZMTPUtils.readZMTP1RemoteIdentity(buf(0x04, 0x00, 0x62, 0x61, 0x72));
     assertArrayEquals(BAR, bs);
 
     // anonymous handshake
-    bs = ZMTP10Codec.readZMTP1RemoteIdentity(buf(0x01, 0x00));
+    bs = ZMTPUtils.readZMTP1RemoteIdentity(buf(0x01, 0x00));
     assertNull(bs);
   }
 

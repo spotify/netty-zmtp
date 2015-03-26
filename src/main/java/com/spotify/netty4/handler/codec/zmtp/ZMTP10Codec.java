@@ -34,7 +34,7 @@ public class ZMTP10Codec extends CodecBase {
 
   @Override
   boolean inputOutput(final ByteBuf buffer, final ChannelHandlerContext ctx) throws ZMTPException {
-    byte[] remoteIdentity = readZMTP1RemoteIdentity(buffer);
+    byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(buffer);
     if (listener != null) {
       listener.handshakeDone(1, remoteIdentity);
     }

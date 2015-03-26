@@ -88,25 +88,4 @@ abstract class CodecBase extends ReplayingDecoder<Void> {
             new ZMTPFramingDecoder(parser),
             new ZMTPFramingEncoder(session, encoder)));
   }
-
-  /**
-   * Parse and return the remote identity octets from a ZMTP/1.0 greeting.
-   */
-  static byte[] readZMTP1RemoteIdentity(final ByteBuf buffer) throws ZMTPException {
-    final long len = ZMTPUtils.decodeZMTP1Length(buffer);
-    if (len > 256) {
-      // spec says the ident string can be up to 255 chars
-      throw new ZMTPException("Remote identity longer than the allowed 255 octets");
-    }
-
-    // skip the flags byte
-    buffer.skipBytes(1);
-
-    if (len == 1) {
-      return null;
-    }
-    final byte[] identity = new byte[(int) len - 1];
-    buffer.readBytes(identity);
-    return identity;
-  }
 }

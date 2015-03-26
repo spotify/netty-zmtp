@@ -60,7 +60,7 @@ public class ZMTP20Codec extends CodecBase {
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
         ctx.writeAndFlush(Unpooled.wrappedBuffer(session.localIdentity()));
-        done(version, ZMTP10Codec.readZMTP1RemoteIdentity(buffer));
+        done(version, ZMTPUtils.readZMTP1RemoteIdentity(buffer));
         return true;
       } else {
         splitHandshake = true;
