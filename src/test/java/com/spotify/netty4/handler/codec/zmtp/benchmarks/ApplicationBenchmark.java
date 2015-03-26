@@ -34,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -526,12 +527,12 @@ public class ApplicationBenchmark {
     private int frameLength;
 
     @Override
-    public void header(final int length, final boolean more) {
+    public void header(final int length, final boolean more, final List<Object> out) {
       frameLength = length;
     }
 
     @Override
-    public void content(final ByteBuf data) {
+    public void content(final ByteBuf data, final List<Object> out) {
       if (data.readableBytes() < frameLength) {
         return;
       }
@@ -556,8 +557,8 @@ public class ApplicationBenchmark {
     }
 
     @Override
-    public Request finish() {
-      return new Request(id, uri, method, payload);
+    public void finish(final List<Object> out) {
+      out.add(new Request(id, uri, method, payload));
     }
   }
 
@@ -581,12 +582,12 @@ public class ApplicationBenchmark {
     private ByteBuffer payload;
 
     @Override
-    public void header(final int length, final boolean more) {
+    public void header(final int length, final boolean more, final List<Object> out) {
       frameLength = length;
     }
 
     @Override
-    public void content(final ByteBuf data) {
+    public void content(final ByteBuf data, final List<Object> out) {
       if (data.readableBytes() < frameLength) {
         return;
       }
@@ -615,8 +616,8 @@ public class ApplicationBenchmark {
     }
 
     @Override
-    public Reply finish() {
-      return new Reply(id, uri, method, statusCode, payload);
+    public void finish(final List<Object> out) {
+      out.add(new Reply(id, uri, method, statusCode, payload));
     }
   }
 

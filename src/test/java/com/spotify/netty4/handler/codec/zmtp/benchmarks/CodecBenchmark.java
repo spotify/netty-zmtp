@@ -16,6 +16,8 @@
 
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
+import com.google.common.collect.Lists;
+
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
@@ -26,10 +28,13 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPUtils;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import java.util.List;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -37,6 +42,8 @@ import io.netty.util.ReferenceCountUtil;
 
 @State(Scope.Benchmark)
 public class CodecBenchmark {
+
+  private final List<Object> out = Lists.newArrayList();
 
   private final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(
       true,
@@ -72,28 +79,37 @@ public class CodecBenchmark {
     ZMTPUtils.writeMessage(message, incomingV2, true, 2);
   }
 
-  @Benchmark
-  public Object parsingToMessageV1() throws ZMTPMessageParsingException {
-    final Object parsed = messageParserV1.parse(incomingV1.resetReaderIndex());
-    ReferenceCountUtil.release(parsed);
-    return parsed;
+  private void consumeAndRelease(final Blackhole bh, final List<Object> out) {
+    for (int i = 0; i < out.size(); i++) {
+      final Object o = out.get(i);
+      bh.consume(o);
+      ReferenceCountUtil.release(o);
+    }
+    out.clear();
   }
 
   @Benchmark
-  public Object parsingToMessageV2() throws ZMTPMessageParsingException {
-    final Object parsed = messageParserV2.parse(incomingV2.resetReaderIndex());
-    ReferenceCountUtil.release(parsed);
-    return parsed;
+  public void parsingToMessageV1(final Blackhole bh) throws ZMTPMessageParsingException {
+    messageParserV1.parse(incomingV1.resetReaderIndex(), out);
+    consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public Object discardingV1() throws ZMTPMessageParsingException {
-    return discardingParserV1.parse(incomingV1.resetReaderIndex());
+  public void parsingToMessageV2(final Blackhole bh) throws ZMTPMessageParsingException {
+    messageParserV2.parse(incomingV2.resetReaderIndex(), out);
+    consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public Object discardingV2() throws ZMTPMessageParsingException {
-    return discardingParserV2.parse(incomingV2.resetReaderIndex());
+  public void discardingV1(final Blackhole bh) throws ZMTPMessageParsingException {
+    discardingParserV1.parse(incomingV1.resetReaderIndex(), out);
+    consumeAndRelease(bh, out);
+  }
+
+  @Benchmark
+  public void discardingV2(final Blackhole bh) throws ZMTPMessageParsingException {
+    discardingParserV2.parse(incomingV2.resetReaderIndex(), out);
+    consumeAndRelease(bh, out);
   }
 
   @Benchmark
@@ -124,18 +140,17 @@ public class CodecBenchmark {
 
 
     @Override
-    public void header(final int length, final boolean more) {
+    public void header(final int length, final boolean more, final List<Object> out) {
       this.size += size;
     }
 
     @Override
-    public void content(final ByteBuf data) {
+    public void content(final ByteBuf data, final List<Object> out) {
       data.skipBytes(data.readableBytes());
     }
 
     @Override
-    public Integer finish() {
-      return size;
+    public void finish(final List<Object> out) {
     }
   }
 }

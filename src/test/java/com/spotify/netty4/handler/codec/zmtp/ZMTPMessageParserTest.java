@@ -34,7 +34,6 @@ import io.netty.buffer.Unpooled;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
 import static io.netty.util.CharsetUtil.UTF_8;
-import static java.lang.System.out;
 import static java.util.Arrays.asList;
 
 /**
@@ -69,7 +68,7 @@ public class ZMTPMessageParserTest {
 
   private void testParse(final List<String> input, final int version)
       throws Exception {
-    out.printf("version=%d, input=%s%n", version, input);
+    System.out.printf("version=%d, input=%s%n", version, input);
 
     final ExpectedOutput expected = new ExpectedOutput(frames(input));
 
@@ -80,7 +79,7 @@ public class ZMTPMessageParserTest {
     {
       final VerifyingDecoder verifier = new VerifyingDecoder(expected);
       final ZMTPMessageParser parser = ZMTPMessageParser.create(version, verifier);
-      parser.parse(serialized);
+      parser.parse(serialized, null);
       verifier.assertFinished();
       serialized.setIndex(0, serializedLength);
     }
@@ -105,19 +104,19 @@ public class ZMTPMessageParserTest {
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
           serialized.writerIndex(limit);
-          parser.parse(serialized);
+          parser.parse(serialized, null);
         }
         verifier.assertFinished();
 
         // Verify that the parser can be reused to parse the same message
         serialized.setIndex(0, serializedLength);
-        parser.parse(serialized);
+        parser.parse(serialized, null);
         verifier.assertFinished();
 
         // Verify that the parser can be reused to parse a well-behaved message
         verifier.expect(trivialExpected);
         trivialSerialized.setIndex(0, trivialLength);
-        parser.parse(trivialSerialized);
+        parser.parse(trivialSerialized, null);
         verifier.assertFinished();
       }
     });

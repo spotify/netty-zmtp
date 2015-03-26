@@ -64,7 +64,7 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public void header(final int length, final boolean more) {
+  public void header(final int length, final boolean more, final List<Object> out) {
     frameLength = length;
     messageSize += length;
     if (messageSize > limit) {
@@ -73,7 +73,7 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public void content(final ByteBuf data) {
+  public void content(final ByteBuf data, final List<Object> out) {
     if (data.readableBytes() < frameLength) {
       return;
     }
@@ -90,7 +90,7 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public ZMTPIncomingMessage finish() {
+  public void finish(final List<Object> out) {
     final List<ZMTPFrame> envelope;
     final List<ZMTPFrame> content;
 
@@ -112,6 +112,6 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
 
     reset();
 
-    return incomingMessage;
+    out.add(incomingMessage);
   }
 }

@@ -16,6 +16,8 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.util.List;
+
 import io.netty.buffer.ByteBuf;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
@@ -48,12 +50,10 @@ public class ZMTPMessageParser {
    * If the message was completed, it returns the frames of the message. Otherwise it returns null
    * to indicate that more data is needed.
    *
-   * @param buffer Buffer with data
-   * @return The result from {@link ZMTPMessageDecoder#finish} if the message was completely
-   * parsed,
-   * null otherwise.
+   * @param buffer {@link ByteBuf} with data to decode
+   * @param out {@link List} to which decoded messages should be added
    */
-  public Object parse(final ByteBuf buffer) throws ZMTPMessageParsingException {
+  public void parse(final ByteBuf buffer, final List<Object> out) throws ZMTPMessageParsingException {
     while (buffer.isReadable()) {
       if (!headerParsed) {
         final int mark = buffer.readerIndex();
@@ -61,9 +61,9 @@ public class ZMTPMessageParser {
         if (!headerParsed) {
           // Wait for more data
           buffer.readerIndex(mark);
-          return null;
+          return;
         }
-        decoder.header(length, hasMore);
+        decoder.header(length, hasMore, out);
         remaining = length;
       }
 
@@ -71,20 +71,19 @@ public class ZMTPMessageParser {
       final int size = Math.min(remaining, buffer.readableBytes());
       final int readerMark = buffer.readerIndex();
       buffer.writerIndex(readerMark + size);
-      decoder.content(buffer);
+      decoder.content(buffer, out);
       buffer.writerIndex(writerMark);
       final int read = buffer.readerIndex() - readerMark;
       remaining -= read;
       if (remaining > 0) {
         // Wait for more data
-        return null;
+        return;
+      }
+      if (!hasMore) {
+        decoder.finish(out);
       }
       headerParsed = false;
-      if (!hasMore) {
-        return decoder.finish();
-      }
     }
-    return null;
   }
 
   /**

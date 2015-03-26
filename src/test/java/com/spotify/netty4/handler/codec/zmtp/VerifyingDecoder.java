@@ -45,7 +45,7 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public void header(final int length, final boolean more) {
+  public void header(final int length, final boolean more, final List<Object> out) {
     if (finished) {
       throw new IllegalStateException("already finished");
     }
@@ -61,7 +61,7 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public void content(final ByteBuf data) {
+  public void content(final ByteBuf data, final List<Object> out) {
     if (data.readableBytes() < frameSize) {
       return;
     }
@@ -78,7 +78,7 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
   }
 
   @Override
-  public Void finish() {
+  public void finish(final List<Object> out) {
     if (finished) {
       throw new IllegalStateException("already finished");
     }
@@ -90,7 +90,6 @@ public class VerifyingDecoder implements ZMTPMessageDecoder {
     }
     readIndex = 0;
     finished = true;
-    return null;
   }
 
   public void assertFinished() {

@@ -42,9 +42,6 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
-    final Object msg = parser.parse(in);
-    if (msg != null) {
-      out.add(msg);
-    }
+    parser.parse(in, out);
   }
 }
