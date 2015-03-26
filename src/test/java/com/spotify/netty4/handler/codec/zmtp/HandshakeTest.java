@@ -1,10 +1,10 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,17 +25,14 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 /**
  * Tests the handshake protocol
  */
+@RunWith(MockitoJUnitRunner.class)
 public class HandshakeTest {
-  byte[] FOO = "foo".getBytes();
-  byte[] BAR = "bar".getBytes();
+
+  private static final byte[] FOO = "foo".getBytes();
+  private static final byte[] BAR = "bar".getBytes();
 
   @Mock HandshakeListener handshakeListener;
   @Mock ChannelHandlerContext ctx;
-
-  @Before
-  public void setup() {
-    MockitoAnnotations.initMocks(this);
-  }
 
   @Test
   public void testIsDone() {
