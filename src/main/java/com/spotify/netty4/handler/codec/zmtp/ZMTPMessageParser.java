@@ -32,7 +32,7 @@ public class ZMTPMessageParser {
 
   private final int version;
 
-  private final ZMTPMessageDecoder decoder;
+  private final ZMTPDecoder decoder;
 
   private boolean hasMore;
   private int length;
@@ -40,7 +40,7 @@ public class ZMTPMessageParser {
   private boolean headerParsed;
 
 
-  public ZMTPMessageParser(final int version, final ZMTPMessageDecoder decoder) {
+  public ZMTPMessageParser(final int version, final ZMTPDecoder decoder) {
     this.version = version;
     this.decoder = decoder;
   }
@@ -147,7 +147,7 @@ public class ZMTPMessageParser {
     return true;
   }
 
-  public static ZMTPMessageParser create(final int version, final ZMTPMessageDecoder decoder) {
+  public static ZMTPMessageParser create(final int version, final ZMTPDecoder decoder) {
     return new ZMTPMessageParser(version, decoder);
   }
 }

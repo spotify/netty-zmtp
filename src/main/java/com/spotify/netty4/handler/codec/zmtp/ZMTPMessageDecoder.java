@@ -16,38 +16,108 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
 
-/**
- * A streaming decoder that takes parsed ZMTP frame headers and raw content and (optionally) produces some output.
- */
-public interface ZMTPMessageDecoder {
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
+
+public class ZMTPMessageDecoder implements ZMTPDecoder {
+
+  private static final long DEFAULT_SIZE_LIMIT = 4 * 1024 * 1024;
+
+  private final boolean enveloped;
+  private final long limit;
+
+  private boolean delimited;
+  private boolean truncated;
+  private long messageSize;
+  private int frameLength;
+
+  private List<ZMTPFrame> head;
+  private List<ZMTPFrame> tail;
+  private List<ZMTPFrame> part;
+
+  public ZMTPMessageDecoder(final boolean enveloped) {
+    this(enveloped, DEFAULT_SIZE_LIMIT);
+  }
+
+  public ZMTPMessageDecoder(final boolean enveloped, final long limit) {
+    this.enveloped = enveloped;
+    this.limit = limit;
+    reset();
+  }
 
   /**
-   * Start a new ZMTP frame.
-   *
-   * @param length The total length in bytes of the frame content.
-   * @param more   {@code true} if there are additional frames following this one in the current ZMTP message, {@code
-   *               false otherwise.}
-   * @param out    {@link List} to which decoded messages should be added.
+   * Reset parser in preparation for the next message.
    */
-  void header(final int length, boolean more, final List<Object> out);
+  private void reset() {
+    if (enveloped) {
+      head = new ArrayList<ZMTPFrame>(3);
+      tail = new ArrayList<ZMTPFrame>(3);
+      part = head;
+    } else {
+      head = Collections.emptyList();
+      tail = new ArrayList<ZMTPFrame>(3);
+      part = tail;
+    }
+    delimited = false;
+    truncated = false;
+    messageSize = 0;
+    frameLength = 0;
+  }
 
-  /**
-   * Read ZMTP frame content. Called repeatedly, at least once, per frame until all of the frame content data has been
-   * read.
-   *
-   * @param data The raw ZMTP frame content.
-   * @param out  {@link List} to which decoded messages should be added.
-   */
-  void content(ByteBuf data, final List<Object> out);
+  @Override
+  public void header(final int length, final boolean more, final List<Object> out) {
+    frameLength = length;
+    messageSize += length;
+    if (messageSize > limit) {
+      truncated = true;
+    }
+  }
 
-  /**
-   * End the ZMTP message. Called once after {@link #header} has been called with {@code more == false}.
-   *
-   * @param out {@link List} to which decoded messages should be added.
-   */
-  void finish(final List<Object> out);
+  @Override
+  public void content(final ByteBuf data, final List<Object> out) {
+    if (data.readableBytes() < frameLength) {
+      return;
+    }
+    if (frameLength > 0) {
+      final ByteBuf frame = data.readSlice(frameLength);
+      frame.retain();
+      part.add(new ZMTPFrame(frame));
+    } else if (part == tail) {
+      part.add(EMPTY_FRAME);
+    } else {
+      delimited = true;
+      part = tail;
+    }
+  }
+
+  @Override
+  public void finish(final List<Object> out) {
+    final List<ZMTPFrame> envelope;
+    final List<ZMTPFrame> content;
+
+    // If we're expecting enveloped messages but didn't get a delimiter, then we treat that as a
+    // message without an envelope and assign the received frames to the content part of the
+    // message instead of the envelope. This is to allow the parser to deal with situations where
+    // we're not really sure if we're going to get enveloped messages or not.
+    if (enveloped && !delimited && !truncated) {
+      envelope = Collections.emptyList();
+      content = head;
+    } else {
+      envelope = head;
+      content = tail;
+    }
+
+    final ZMTPMessage message = new ZMTPMessage(envelope, content);
+    final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(
+        message, truncated, messageSize);
+
+    reset();
+
+    out.add(incomingMessage);
+  }
 }

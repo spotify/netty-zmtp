@@ -34,16 +34,16 @@ import io.netty.util.ReferenceCountUtil;
 class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 
   private final ZMTPSession session;
-  private final ZMTPMessageEncoder encoder;
+  private final ZMTPEncoder encoder;
 
   private final List<Object> messages = new ArrayList<Object>();
   private final List<ChannelPromise> promises = new ArrayList<ChannelPromise>();
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
-    this(session, new DefaultZMTPMessageEncoder(session.isEnveloped()));
+    this(session, new ZMTPMessageEncoder(session.isEnveloped()));
   }
 
-  public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPMessageEncoder encoder) {
+  public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPEncoder encoder) {
     if (session == null) {
       throw new NullPointerException("session");
     }

@@ -16,23 +16,58 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-/**
- * An encoder that takes implementation defined messages and writes a stream of ZMTP frames.
- */
-public interface ZMTPMessageEncoder {
+import java.util.List;
 
-  /**
-   * Estimate ZMTP output for the {@code message} using a {@link ZMTPEstimator}. Called before {@link #encode}.
-   *
-   * @param message   The message to be estimated.
-   * @param estimator The {@link ZMTPEstimator} to use.
-   */
-  void estimate(Object message, ZMTPEstimator estimator);
+import io.netty.buffer.ByteBuf;
 
-  /**
-   * Write ZMTP output for the {@code message} using the {@link ZMTPWriter}. Called after {@link #estimate}.
-   * @param message The message to write.
-   * @param writer The {@link ZMTPWriter} to use.
-   */
-  void encode(Object message, ZMTPWriter writer);
+public class ZMTPMessageEncoder implements ZMTPEncoder {
+
+  private boolean enveloped;
+
+  public ZMTPMessageEncoder(final boolean enveloped) {
+    this.enveloped = enveloped;
+  }
+
+  @Override
+  public void estimate(final Object msg, final ZMTPEstimator estimator) {
+    final ZMTPMessage message = (ZMTPMessage) msg;
+
+    final List<ZMTPFrame> envelope = message.envelope();
+    for (final ZMTPFrame frame : envelope) {
+      estimator.frame(frame.size());
+    }
+
+    if (enveloped) {
+      estimator.frame(0);
+    }
+
+    final List<ZMTPFrame> content = message.content();
+    for (final ZMTPFrame frame : content) {
+      estimator.frame(frame.size());
+    }
+  }
+
+  @Override
+  public void encode(final Object msg, final ZMTPWriter writer) {
+    final ZMTPMessage message = (ZMTPMessage) msg;
+
+    for (int i = 0; i < message.envelope().size(); i++) {
+      final ZMTPFrame frame = message.envelope().get(i);
+      final ByteBuf dst = writer.frame(frame.size(), true);
+      final ByteBuf src = frame.content();
+      dst.writeBytes(src, src.readerIndex(), src.readableBytes());
+    }
+
+    if (enveloped) {
+      writer.frame(0, true);
+    }
+
+    for (int i = 0; i < message.content().size(); i++) {
+      final ZMTPFrame frame = message.content().get(i);
+      final boolean more = i < message.content().size() - 1;
+      final ByteBuf dst = writer.frame(frame.size(), more);
+      final ByteBuf src = frame.content();
+      dst.writeBytes(src, src.readerIndex(), src.readableBytes());
+    }
+  }
 }

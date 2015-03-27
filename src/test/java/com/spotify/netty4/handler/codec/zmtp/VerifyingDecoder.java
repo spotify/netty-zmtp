@@ -25,7 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.CharsetUtil;
 import joptsimple.internal.Strings;
 
-public class VerifyingDecoder implements ZMTPMessageDecoder {
+public class VerifyingDecoder implements ZMTPDecoder {
 
   private ExpectedOutput expected;
 

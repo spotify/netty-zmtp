@@ -24,8 +24,8 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageEncoder;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPEncoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
 import com.spotify.netty4.util.BatchFlusher;
 
@@ -377,7 +377,7 @@ public class ApplicationBenchmark {
     }
   }
 
-  private static class RequestEncoder implements ZMTPMessageEncoder {
+  private static class RequestEncoder implements ZMTPEncoder {
 
     @Override
     public void estimate(final Object message, final ZMTPEstimator estimator) {
@@ -398,7 +398,7 @@ public class ApplicationBenchmark {
     }
   }
 
-  private static class ReplyEncoder implements ZMTPMessageEncoder {
+  private static class ReplyEncoder implements ZMTPEncoder {
 
     @Override
     public void estimate(final Object message, final ZMTPEstimator estimator) {
@@ -513,7 +513,7 @@ public class ApplicationBenchmark {
     return MessageId.from(seq, timestamp);
   }
 
-  private static class RequestDecoder implements ZMTPMessageDecoder {
+  private static class RequestDecoder implements ZMTPDecoder {
 
     enum State {
       URI,
@@ -567,7 +567,7 @@ public class ApplicationBenchmark {
     }
   }
 
-  private static class ReplyDecoder implements ZMTPMessageDecoder {
+  private static class ReplyDecoder implements ZMTPDecoder {
 
     enum State {
       URI,

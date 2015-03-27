@@ -38,8 +38,8 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   private final ZMTPHandshaker handshaker;
   private final ZMTPSession session;
 
-  private final ZMTPMessageEncoder encoder;
-  private final ZMTPMessageDecoder decoder;
+  private final ZMTPEncoder encoder;
+  private final ZMTPDecoder decoder;
 
   public ZMTPCodec(final Builder builder) {
     this.session = ZMTPSession.builder()
@@ -48,8 +48,8 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
         .type(builder.connectionType)
         .build();
     this.handshaker = checkNotNull(builder.protocol, "protocol").handshaker(session);
-    this.encoder = (builder.encoder == null) ? new DefaultZMTPMessageEncoder(session.isEnveloped()) : builder.encoder;
-    this.decoder = (builder.decoder == null) ? new ZMTPIncomingMessageDecoder(session.isEnveloped()) : builder.decoder;
+    this.encoder = (builder.encoder == null) ? new ZMTPMessageEncoder(session.isEnveloped()) : builder.encoder;
+    this.decoder = (builder.decoder == null) ? new ZMTPMessageDecoder(session.isEnveloped()) : builder.decoder;
   }
 
   @Override
@@ -100,8 +100,8 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     private ZMTPConnectionType connectionType;
     private ZMTPSocketType socketType;
     private ByteBuffer localIdentity;
-    private ZMTPMessageEncoder encoder;
-    private ZMTPMessageDecoder decoder;
+    private ZMTPEncoder encoder;
+    private ZMTPDecoder decoder;
 
     private Builder() {
     }
@@ -134,12 +134,12 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
       return this;
     }
 
-    public Builder encoder(final ZMTPMessageEncoder encoder) {
+    public Builder encoder(final ZMTPEncoder encoder) {
       this.encoder = encoder;
       return this;
     }
 
-    public Builder decoder(final ZMTPMessageDecoder decoder) {
+    public Builder decoder(final ZMTPDecoder decoder) {
       this.decoder = decoder;
       return this;
     }
