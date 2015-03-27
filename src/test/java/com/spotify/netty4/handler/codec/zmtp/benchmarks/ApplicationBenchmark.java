@@ -26,6 +26,7 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEncoder;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
 import com.spotify.netty4.util.BatchFlusher;
 
@@ -67,11 +68,6 @@ import static java.util.Arrays.asList;
 public class ApplicationBenchmark {
 
   private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
-
-  private static final byte[] NO_IDENTITY = null;
-
-  private static final boolean INTEROP_ON = true;
-  private static final boolean INTEROP_OFF = false;
 
   private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
   public static final Thread.UncaughtExceptionHandler
@@ -194,16 +190,17 @@ public class ApplicationBenchmark {
 
     @Override
     public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
-      super.channelRegistered(ctx);
       this.ctx = ctx;
       this.flusher = new BatchFlusher(ctx.channel());
     }
 
     @Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-      super.channelActive(ctx);
-      for (int i = 0; i < CONCURRENCY; i++) {
-        send(ctx);
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
+        throws Exception {
+      if (evt instanceof ZMTPSession) {
+        for (int i = 0; i < CONCURRENCY; i++) {
+          send(ctx);
+        }
       }
     }
 
