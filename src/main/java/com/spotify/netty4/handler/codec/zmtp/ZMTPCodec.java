@@ -31,7 +31,7 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static io.netty.util.CharsetUtil.UTF_8;
 
 /**
- * An abstract base class for common functionality to the ZMTP codecs.
+ * A ZMTP codec for Netty.
  */
 public class ZMTPCodec extends ReplayingDecoder<Void> {
 
