@@ -21,8 +21,6 @@ package com.spotify.netty4.handler.codec.zmtp;
  */
 public class ZMTPException extends Exception {
 
-  private static final long serialVersionUID = -7283717734572821817L;
-
   public ZMTPException() {
   }
 

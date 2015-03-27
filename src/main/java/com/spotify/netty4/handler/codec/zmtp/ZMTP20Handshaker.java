@@ -68,28 +68,28 @@ public class ZMTP20Handshaker implements ZMTPHandshaker {
   }
 
   @Override
-  public ZMTPHandshake inputOutput(final ByteBuf buffer, final ChannelHandlerContext ctx)
+  public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
       throws ZMTPException {
     if (splitHandshake) {
-      return new ZMTPHandshake(2, ByteBuffer.wrap(parseZMTP2Greeting(buffer, false)));
+      return new ZMTPHandshake(2, ByteBuffer.wrap(parseZMTP2Greeting(in, false)));
     }
 
     if (interop) {
-      buffer.markReaderIndex();
-      int version = detectProtocolVersion(buffer);
+      in.markReaderIndex();
+      int version = detectProtocolVersion(in);
       if (version == 1) {
-        buffer.resetReaderIndex();
+        in.resetReaderIndex();
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
         ctx.writeAndFlush(Unpooled.wrappedBuffer(localIdentity));
-        return ZMTPHandshake.of(version, ByteBuffer.wrap(readZMTP1RemoteIdentity(buffer)));
+        return ZMTPHandshake.of(version, ByteBuffer.wrap(readZMTP1RemoteIdentity(in)));
       } else {
         splitHandshake = true;
         ctx.writeAndFlush(makeZMTP2Greeting(false));
         return null;
       }
     } else {
-      return new ZMTPHandshake(2, ByteBuffer.wrap(parseZMTP2Greeting(buffer, true)));
+      return new ZMTPHandshake(2, ByteBuffer.wrap(parseZMTP2Greeting(in, true)));
     }
   }
 

@@ -25,7 +25,7 @@ public enum ZMTPConnectionType {
    */
   ADDRESSED,
   /**
-   * BROADCAST and NEUTRAL doesn't contain any identity frames
+   * BROADCAST and NEUTRAL do not contain any identity frames
    */
   BROADCAST,
   NEUTRAL

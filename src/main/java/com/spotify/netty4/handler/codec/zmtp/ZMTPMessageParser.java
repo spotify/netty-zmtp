@@ -54,7 +54,7 @@ public class ZMTPMessageParser {
    * @param out    {@link List} to which decoded messages should be added
    */
   public void parse(final ByteBuf buffer, final List<Object> out)
-      throws ZMTPMessageParsingException {
+      throws ZMTPParsingException {
     while (buffer.isReadable()) {
       if (!headerParsed) {
         final int mark = buffer.readerIndex();
@@ -90,18 +90,18 @@ public class ZMTPMessageParser {
   /**
    * Parse a ZMTP frame header.
    */
-  private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPMessageParsingException {
+  private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPParsingException {
     return version == 1 ? parseZMTP1Header(buffer) : parseZMTP2Header(buffer);
   }
 
   /**
    * Parse a ZMTP/1.0 frame header.
    */
-  private boolean parseZMTP1Header(final ByteBuf buffer) throws ZMTPMessageParsingException {
+  private boolean parseZMTP1Header(final ByteBuf buffer) throws ZMTPParsingException {
     final long len = ZMTPUtils.decodeZMTP1Length(buffer);
 
     if (len > Integer.MAX_VALUE) {
-      throw new ZMTPMessageParsingException("Received too large frame: " + len);
+      throw new ZMTPParsingException("Received too large frame: " + len);
     }
 
     if (len == -1) {
@@ -109,7 +109,7 @@ public class ZMTPMessageParser {
     }
 
     if (len == 0) {
-      throw new ZMTPMessageParsingException("Received frame with zero length");
+      throw new ZMTPParsingException("Received frame with zero length");
     }
 
     // Read if we have more frames from flag byte
@@ -127,7 +127,7 @@ public class ZMTPMessageParser {
   /**
    * Parse a ZMTP/2.0 frame header.
    */
-  private boolean parseZMTP2Header(ByteBuf buffer) throws ZMTPMessageParsingException {
+  private boolean parseZMTP2Header(ByteBuf buffer) throws ZMTPParsingException {
     if (buffer.readableBytes() < 2) {
       return false;
     }
@@ -142,7 +142,7 @@ public class ZMTPMessageParser {
     }
     final long len = buffer.readLong();
     if (len > Integer.MAX_VALUE) {
-      throw new ZMTPMessageParsingException("Received too large frame: " + len);
+      throw new ZMTPParsingException("Received too large frame: " + len);
     }
     length = (int) len;
     return true;

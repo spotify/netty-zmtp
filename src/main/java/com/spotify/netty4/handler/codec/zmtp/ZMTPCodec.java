@@ -66,7 +66,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
 
-    final ZMTPHandshake handshake = handshaker.inputOutput(in, ctx);
+    final ZMTPHandshake handshake = handshaker.handshake(in, ctx);
     if (handshake == null) {
       return;
     }

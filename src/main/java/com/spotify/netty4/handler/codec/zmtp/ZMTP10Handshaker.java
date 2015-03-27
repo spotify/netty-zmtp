@@ -39,9 +39,9 @@ public class ZMTP10Handshaker implements ZMTPHandshaker {
   }
 
   @Override
-  public ZMTPHandshake inputOutput(final ByteBuf buffer, final ChannelHandlerContext channel)
+  public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
       throws ZMTPException {
-    final byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(buffer);
+    final byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(in);
     return new ZMTPHandshake(1, ByteBuffer.wrap(remoteIdentity));
   }
 
@@ -52,7 +52,7 @@ public class ZMTP10Handshaker implements ZMTPHandshaker {
    * @return a ByteBuf with a greeting
    */
   private ByteBuf makeZMTP1Greeting() {
-    ByteBuf out = Unpooled.buffer();
+    final ByteBuf out = Unpooled.buffer();
     encodeZMTP1Length(localIdentity.remaining() + 1, out);
     out.writeByte(0x00);
     out.writeBytes(localIdentity.duplicate());

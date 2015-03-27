@@ -22,7 +22,7 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParser;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParsingException;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPParsingException;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPUtils;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -89,37 +89,37 @@ public class CodecBenchmark {
   }
 
   @Benchmark
-  public void parsingToMessageV1(final Blackhole bh) throws ZMTPMessageParsingException {
+  public void parsingToMessageV1(final Blackhole bh) throws ZMTPParsingException {
     messageParserV1.parse(incomingV1.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public void parsingToMessageV2(final Blackhole bh) throws ZMTPMessageParsingException {
+  public void parsingToMessageV2(final Blackhole bh) throws ZMTPParsingException {
     messageParserV2.parse(incomingV2.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public void discardingV1(final Blackhole bh) throws ZMTPMessageParsingException {
+  public void discardingV1(final Blackhole bh) throws ZMTPParsingException {
     discardingParserV1.parse(incomingV1.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public void discardingV2(final Blackhole bh) throws ZMTPMessageParsingException {
+  public void discardingV2(final Blackhole bh) throws ZMTPParsingException {
     discardingParserV2.parse(incomingV2.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public Object encodingV1() throws ZMTPMessageParsingException {
+  public Object encodingV1() throws ZMTPParsingException {
     ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), true, 1);
     return tmp;
   }
 
   @Benchmark
-  public Object encodingV2() throws ZMTPMessageParsingException {
+  public Object encodingV2() throws ZMTPParsingException {
     ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), true, 2);
     return tmp;
   }

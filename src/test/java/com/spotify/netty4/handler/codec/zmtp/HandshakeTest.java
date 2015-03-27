@@ -58,7 +58,7 @@ public class HandshakeTest {
   public void test1to1Handshake() throws Exception {
     ZMTP10Handshaker h = new ZMTP10Handshaker(FOO);
     cmp(h.greeting(), 0x04, 0x00, 0x66, 0x6f, 0x6f);
-    ZMTPHandshake handshake = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
+    ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     verifyZeroInteractions(ctx);
     assertEquals(ZMTPHandshake.of(1, BAR), handshake);
@@ -68,7 +68,7 @@ public class HandshakeTest {
   public void test2InteropTo1Handshake() throws Exception {
     ZMTP20Handshaker h = new ZMTP20Handshaker(ROUTER, true, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
-    ZMTPHandshake handshake = h.inputOutput(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
+    ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     verify(ctx).writeAndFlush(buf(0x66, 0x6f, 0x6f));
     assertEquals(ZMTPHandshake.of(1, BAR), handshake);
@@ -79,10 +79,10 @@ public class HandshakeTest {
     ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, true, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ZMTPHandshake handshake;
-    handshake = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), ctx);
+    handshake = h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), ctx);
     assertNull(handshake);
     verify(ctx).writeAndFlush(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
-    handshake = h.inputOutput(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), ctx);
+    handshake = h.handshake(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     verifyNoMoreInteractions(ctx);
     assertEquals(ZMTPHandshake.of(2, BAR), handshake);
@@ -95,10 +95,10 @@ public class HandshakeTest {
     ByteBuf cb = buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72);
     ZMTPHandshake handshake;
-    handshake = h.inputOutput(cb, ctx);
+    handshake = h.handshake(cb, ctx);
     assertNull(handshake);
     verify(ctx).writeAndFlush(buf(0x01, 0x02, 0x00, 0x03, 0x66, 0x6f, 0x6f));
-    handshake = h.inputOutput(cb, ctx);
+    handshake = h.handshake(cb, ctx);
     assertNotNull(handshake);
     verifyNoMoreInteractions(ctx);
     assertEquals(ZMTPHandshake.of(2, BAR), handshake);
@@ -110,12 +110,12 @@ public class HandshakeTest {
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
 
     try {
-      h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f), ctx);
+      h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f), ctx);
       fail("not enough data in greeting (because compat mode) shuld have thrown exception");
     } catch (IndexOutOfBoundsException e) {
       // expected
     }
-    ZMTPHandshake handshake = h.inputOutput(
+    ZMTPHandshake handshake = h.handshake(
         buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     assertEquals(ZMTPHandshake.of(2, BAR), handshake);
@@ -125,7 +125,7 @@ public class HandshakeTest {
   public void test2To2Handshake() throws Exception {
     ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, false, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
-    ZMTPHandshake handshake = h.inputOutput(buf(
+    ZMTPHandshake handshake = h.handshake(buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     assertEquals(ZMTPHandshake.of(2, BAR), handshake);
@@ -137,7 +137,7 @@ public class HandshakeTest {
     ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, false, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     try {
-      assertNull(h.inputOutput(buf(0x04, 0, 0x62, 0x61, 0x72), ctx));
+      assertNull(h.handshake(buf(0x04, 0, 0x62, 0x61, 0x72), ctx));
       fail("An ZMTP/1 greeting is invalid in plain ZMTP/2. Should have thrown exception");
     } catch (ZMTPException e) {
       // pass
@@ -148,7 +148,7 @@ public class HandshakeTest {
   public void test2To2CompatTruncated() throws Exception {
     ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, true, UTF_8.encode("identity"));
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 9, 0x7f);
-    ZMTPHandshake handshake = h.inputOutput(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), ctx);
+    ZMTPHandshake handshake = h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), ctx);
     assertNull(handshake);
     verify(ctx).writeAndFlush(buf(1, 2, 0, 8, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79));
   }
@@ -191,9 +191,7 @@ public class HandshakeTest {
 
     assertEquals(1, ZMTP20Handshaker.detectProtocolVersion(buf(0x07)));
     assertEquals(1, ZMTP20Handshaker.detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0)));
-
     assertEquals(2, ZMTP20Handshaker.detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 1)));
-
   }
 
   @Test

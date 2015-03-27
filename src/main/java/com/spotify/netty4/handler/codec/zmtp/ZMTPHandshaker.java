@@ -21,7 +21,19 @@ import io.netty.channel.ChannelHandlerContext;
 
 public interface ZMTPHandshaker {
 
+  /**
+   * Get a greeting to send immediately when a connection is established.
+   */
   ByteBuf greeting();
 
-  ZMTPHandshake inputOutput(ByteBuf buffer, ChannelHandlerContext channel) throws ZMTPException;
+  /**
+   * Continue handshake in response to receiving data from the remote peer. This method is called
+   * repeatedly until it returns a non-null {@link ZMTPHandshake} result.
+   *
+   * @param in  Data from the remote peer.
+   * @param ctx The channel handler context.
+   * @return A {@link ZMTPHandshake} if the handshake is complete, null otherwise.
+   * @throws ZMTPException for protocol errors.
+   */
+  ZMTPHandshake handshake(ByteBuf in, ChannelHandlerContext ctx) throws ZMTPException;
 }
