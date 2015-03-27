@@ -59,20 +59,18 @@ public class ZMTPUtilsTests {
         asList(ZMTPFrame.from("foo"), ZMTPFrame.from("bar")),
         manyFrameSizes);
 
-    for (boolean enveloped : asList(TRUE, FALSE)) {
-      for (List<ZMTPFrame> envelope : frameSets) {
-        for (List<ZMTPFrame> payload : frameSets) {
-          if (payload.isEmpty()) {
-            continue;
-          }
-
-          final ZMTPMessage message = new ZMTPMessage(envelope, payload);
-          int estimatedSize = ZMTPUtils.messageSize(message, enveloped, 1);
-          final ByteBuf buffer = Unpooled.buffer();
-          ZMTPUtils.writeMessage(message, buffer, enveloped, 1);
-          int writtenSize = buffer.readableBytes();
-          assertEquals(writtenSize, estimatedSize);
+    for (int version : asList(1, 2)) {
+      for (List<ZMTPFrame> frames : frameSets) {
+        if (frames.isEmpty()) {
+          continue;
         }
+
+        final ZMTPMessage message = new ZMTPMessage(frames);
+        int estimatedSize = ZMTPUtils.messageSize(message, version);
+        final ByteBuf buffer = Unpooled.buffer();
+        ZMTPUtils.writeMessage(message, buffer, version);
+        int writtenSize = buffer.readableBytes();
+        assertEquals(writtenSize, estimatedSize);
       }
     }
 

@@ -46,7 +46,6 @@ public class CodecBenchmark {
   private final List<Object> out = Lists.newArrayList();
 
   private final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(
-      true,
       "first identity frame",
       "second identity frame",
       "",
@@ -56,10 +55,10 @@ public class CodecBenchmark {
       "datadatadatadatadatadatadatadatadatadata");
 
   private final ZMTPMessageParser messageParserV1 =
-      ZMTPMessageParser.create(1, new ZMTPMessageDecoder(true, Integer.MAX_VALUE));
+      ZMTPMessageParser.create(1, new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
   private final ZMTPMessageParser messageParserV2 =
-      ZMTPMessageParser.create(2, new ZMTPMessageDecoder(true, Integer.MAX_VALUE));
+      ZMTPMessageParser.create(2, new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
   private final ZMTPMessageParser discardingParserV1 =
       ZMTPMessageParser.create(1, new Discarder());
@@ -73,10 +72,10 @@ public class CodecBenchmark {
   private final ByteBuf tmp = PooledByteBufAllocator.DEFAULT.buffer(4096);
 
   {
-    incomingV1 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, true, 1));
-    incomingV2 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, true, 2));
-    ZMTPUtils.writeMessage(message, incomingV1, true, 1);
-    ZMTPUtils.writeMessage(message, incomingV2, true, 2);
+    incomingV1 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, 1));
+    incomingV2 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, 2));
+    ZMTPUtils.writeMessage(message, incomingV1, 1);
+    ZMTPUtils.writeMessage(message, incomingV2, 2);
   }
 
   private void consumeAndRelease(final Blackhole bh, final List<Object> out) {
@@ -114,13 +113,13 @@ public class CodecBenchmark {
 
   @Benchmark
   public Object encodingV1() throws ZMTPParsingException {
-    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), true, 1);
+    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), 1);
     return tmp;
   }
 
   @Benchmark
   public Object encodingV2() throws ZMTPParsingException {
-    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), true, 2);
+    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), 2);
     return tmp;
   }
 

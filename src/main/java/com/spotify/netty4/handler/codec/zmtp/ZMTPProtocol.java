@@ -18,8 +18,6 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 public interface ZMTPProtocol {
 
-  boolean isEnveloped();
-
   ZMTPHandshaker handshaker(ZMTPSession session);
 
   ZMTPVersion version();

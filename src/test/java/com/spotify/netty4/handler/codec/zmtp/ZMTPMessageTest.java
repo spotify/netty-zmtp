@@ -31,27 +31,15 @@ public class ZMTPMessageTest {
 
   @Test
   public void testFromStringsUTF8() {
-    assertEquals(fromStringsUTF8(true, ""), message(frames(), frames()));
-    assertEquals(fromStringsUTF8(true, "e", ""), message(frames("e"), frames()));
-    assertEquals(fromStringsUTF8(true, "e", "", "c"), message(frames("e"), frames("c")));
-    assertEquals(fromStringsUTF8(true, "e", "", "c1", "c2"), message(frames("e"), frames("c1", "c2")));
-    assertEquals(fromStringsUTF8(true, "c"), message(frames(), frames("c")));
-    assertEquals(fromStringsUTF8(true, "c1", "c2"), message(frames(), frames("c1", "c2")));
-
-    assertEquals(fromStringsUTF8(false, ""), message(frames(), frames("")));
-    assertEquals(fromStringsUTF8(false, "e", ""), message(frames(), frames("e", "")));
-    assertEquals(fromStringsUTF8(false, "e", "", "c"), message(frames(), frames("e", "", "c")));
-    assertEquals(fromStringsUTF8(false, "e", "", "c1", "c2"), message(frames(), frames("e", "", "c1", "c2")));
-    assertEquals(fromStringsUTF8(false, "c"), message(frames(), frames("c")));
-    assertEquals(fromStringsUTF8(false, "c1", "c2"), message(frames(), frames("c1", "c2")));
+    assertEquals(fromStringsUTF8(""), message(""));
+    assertEquals(fromStringsUTF8("a"), message("a"));
+    assertEquals(fromStringsUTF8("aa"), message("aa"));
+    assertEquals(fromStringsUTF8("aa", "bb"), message("aa", "bb"));
+    assertEquals(fromStringsUTF8("aa", "", "bb"), message("aa", "", "bb"));
   }
 
-  private ZMTPMessage message(final List<ZMTPFrame> envelope, final List<ZMTPFrame> content) {
-    return new ZMTPMessage(envelope, content);
-  }
-
-  public static List<ZMTPFrame> frames(final String... frames) {
-    return frames(asList(frames));
+  private ZMTPMessage message(final String... frames) {
+    return new ZMTPMessage(frames(asList(frames)));
   }
 
   private static List<ZMTPFrame> frames(final List<String> frames) {

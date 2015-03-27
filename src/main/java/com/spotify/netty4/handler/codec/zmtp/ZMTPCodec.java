@@ -35,7 +35,6 @@ import static io.netty.util.CharsetUtil.UTF_8;
  */
 public class ZMTPCodec extends ReplayingDecoder<Void> {
 
-  private final ZMTPProtocol protocol;
   private final ZMTPSession session;
   private final ZMTPHandshaker handshaker;
 
@@ -43,14 +42,14 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   private final ZMTPDecoder decoder;
 
   public ZMTPCodec(final Builder builder) {
-    this.protocol = checkNotNull(builder.protocol, "protocol");
+    final ZMTPProtocol protocol = checkNotNull(builder.protocol, "protocol");
     this.session = new ZMTPSession(protocol, builder.localIdentity);
     this.handshaker = protocol.handshaker(session);
     this.encoder = (builder.encoder == null)
-                   ? new ZMTPMessageEncoder(protocol.isEnveloped())
+                   ? new ZMTPMessageEncoder()
                    : builder.encoder;
     this.decoder = (builder.decoder == null)
-                   ? new ZMTPMessageDecoder(protocol.isEnveloped())
+                   ? new ZMTPMessageDecoder()
                    : builder.decoder;
   }
 

@@ -183,28 +183,10 @@ public class ZMTPUtils {
    *
    * @param message   The message to write.
    * @param buffer    The target buffer.
-   * @param enveloped Whether the envelope and delimiter should be written.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer,
-                                  final boolean enveloped, int version) {
-    // Write envelope
-    if (enveloped) {
-      // Sanity check
-      if (message.content().isEmpty()) {
-        throw new IllegalArgumentException("Cannot write enveloped message with no content");
-      }
-
-      final List<ZMTPFrame> envelope = message.envelope();
-      for (int i = 0; i < envelope.size(); i++) {
-        writeFrame(envelope.get(i), buffer, true, version);
-      }
-
-      // Write the delimiter
-      writeFrame(DELIMITER, buffer, true, version);
-    }
-
-    final List<ZMTPFrame> content = message.content();
+  public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer, int version) {
+    final List<ZMTPFrame> content = message.frames();
     final int n = content.size();
     final int lastFrame = n - 1;
     for (int i = 0; i < n; i++) {
@@ -249,20 +231,11 @@ public class ZMTPUtils {
    * Calculate bytes needed to serialize a ZMTP message.
    *
    * @param message   The message.
-   * @param enveloped Whether an envelope will be written.
    * @param version   ZMTP version.
    * @return The number of bytes needed.
    */
-  public static int messageSize(final ZMTPMessage message, final boolean enveloped,
-                                final int version) {
-    final int contentSize = framesSize(message.content(), version);
-    if (!enveloped) {
-      return contentSize;
-    }
-    final int
-        envelopeSize =
-        framesSize(message.envelope(), version) + frameSize(DELIMITER, version);
-    return envelopeSize + contentSize;
+  public static int messageSize(final ZMTPMessage message, final int version) {
+    return framesSize(message.frames(), version);
   }
 
   /**

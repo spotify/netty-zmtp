@@ -44,8 +44,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
-import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
-import static java.util.Arrays.asList;
 
 public class EndToEndBenchmark {
 
@@ -112,13 +110,13 @@ public class EndToEndBenchmark {
 
     private static final int CONCURRENCY = 1000;
 
-    private static final ZMTPMessage REQUEST_TEMPLATE = ZMTPMessage.from(true, asList(
-        ZMTPFrame.from("envelope1"), ZMTPFrame.from("envelope2"),
-        ZMTPFrame.from(""),
-        ZMTPFrame.from(EMPTY_BUFFER), // timestamp placeholder
-        ZMTPFrame.from(Strings.repeat("d", 20)),
-        ZMTPFrame.from(Strings.repeat("d", 40)),
-        ZMTPFrame.from(Strings.repeat("d", 100))));
+    private static final ZMTPMessage REQUEST_TEMPLATE = ZMTPMessage.fromStringsUTF8(
+        "envelope1", "envelope2",
+        "",
+        "", // timestamp placeholder
+        Strings.repeat("d", 20),
+        Strings.repeat("d", 40),
+        Strings.repeat("d", 100));
 
     private final ProgressMeter meter;
 
@@ -148,14 +146,14 @@ public class EndToEndBenchmark {
       REQUEST_TEMPLATE.retain();
       final ByteBuf timestamp = PooledByteBufAllocator.DEFAULT.buffer(8);
       timestamp.writeLong(System.nanoTime());
-      REQUEST_TEMPLATE.content().set(0, ZMTPFrame.from(timestamp));
+      REQUEST_TEMPLATE.frames().set(3, ZMTPFrame.from(timestamp));
       return REQUEST_TEMPLATE;
     }
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       final ZMTPIncomingMessage message = (ZMTPIncomingMessage) msg;
-      final long timestamp = message.message().content(0).content().readLong();
+      final long timestamp = message.message().frame(3).content().readLong();
       final long latency = System.nanoTime() - timestamp;
       meter.inc(1, latency);
       message.release();

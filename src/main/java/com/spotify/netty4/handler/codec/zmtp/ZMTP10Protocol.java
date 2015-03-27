@@ -45,11 +45,6 @@ public class ZMTP10Protocol implements ZMTPProtocol {
     return new Builder();
   }
 
-  @Override
-  public boolean isEnveloped() {
-    return connectionType.isEnveloped();
-  }
-
   public static class Builder {
 
     private Builder() {

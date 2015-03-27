@@ -18,60 +18,47 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.charset.Charset;
 import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import io.netty.util.AbstractReferenceCounted;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
 public class ZMTPMessage extends AbstractReferenceCounted {
 
-  private List<ZMTPFrame> envelope;
-  private List<ZMTPFrame> content;
+  private final List<ZMTPFrame> frames;
 
-  /**
-   * Create a new message from envelope and content frames.
-   *
-   * @param envelope The envelope frames. Must not be modified again.
-   * @param content  The content frames. Must not be modified again.
-   */
-  public ZMTPMessage(final List<ZMTPFrame> envelope, final List<ZMTPFrame> content) {
-    this.envelope = envelope;
-    this.content = content;
+  public ZMTPMessage(final List<ZMTPFrame> frames) {
+    this.frames = frames;
   }
 
   /**
    * Create a new message from a string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromStringsUTF8(final boolean enveloped, final String... frames) {
-    return fromStrings(enveloped, UTF_8, frames);
+  public static ZMTPMessage fromStringsUTF8(final String... frames) {
+    return fromStrings(UTF_8, frames);
   }
 
   /**
    * Create a new message from a list of string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromStringsUTF8(final boolean enveloped, final List<String> frames) {
-    return fromStrings(enveloped, UTF_8, frames);
+  public static ZMTPMessage fromStringsUTF8(final List<String> frames) {
+    return fromStrings(UTF_8, frames);
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage fromStrings(final boolean enveloped, final Charset charset,
-                                        final String... frames) {
-    return fromStrings(enveloped, charset, asList(frames));
+  public static ZMTPMessage fromStrings(final Charset charset, final String... frames) {
+    return fromStrings(charset, asList(frames));
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage fromStrings(final boolean enveloped, final Charset charset,
-                                        final List<String> frames) {
-    return from(enveloped, new AbstractList<ZMTPFrame>() {
+  public static ZMTPMessage fromStrings(final Charset charset, final List<String> frames) {
+    return from(new AbstractList<ZMTPFrame>() {
       @Override
       public ZMTPFrame get(final int index) {
         return ZMTPFrame.from(frames.get(index), charset);
@@ -87,110 +74,54 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   /**
    * Create a new message from a list of frames.
    */
-  public static ZMTPMessage from(final boolean enveloped, final List<ZMTPFrame> frames) {
-    final List<ZMTPFrame> head;
-    final List<ZMTPFrame> tail = new ArrayList<ZMTPFrame>();
-    boolean delimited = false;
-    int i = 0;
-    if (enveloped) {
-      head = new ArrayList<ZMTPFrame>();
-      for (; i < frames.size(); i++) {
-        final ZMTPFrame frame = frames.get(i);
-        if (frame == EMPTY_FRAME) {
-          delimited = true;
-          i++;
-          break;
-        }
-        head.add(frame);
-      }
-    } else {
-      head = Collections.emptyList();
-    }
-
-    for (; i < frames.size(); i++) {
-      tail.add(frames.get(i));
-    }
-
-    final List<ZMTPFrame> envelope;
-    final List<ZMTPFrame> content;
-    if (enveloped && !delimited) {
-      envelope = Collections.emptyList();
-      content = head;
-    } else {
-      envelope = head;
-      content = tail;
-    }
-    return new ZMTPMessage(envelope, content);
+  public static ZMTPMessage from(final List<ZMTPFrame> frames) {
+    return new ZMTPMessage(frames);
   }
 
-  /**
-   * Return the envelope
-   */
-  public List<ZMTPFrame> envelope() {
-    return envelope;
+  public int size() {
+    return frames.size();
   }
 
   /**
    * @return Current list of content in the message
    */
-  public List<ZMTPFrame> content() {
-    return content;
+  public List<ZMTPFrame> frames() {
+    return frames;
   }
 
   /**
-   * Get a specific envelope frame.
+   * Get a specific frame.
    */
-  public ZMTPFrame envelope(final int i) {
-    return envelope.get(i);
-  }
-
-  /**
-   * Get a specific content frame.
-   */
-  public ZMTPFrame content(final int i) {
-    return content.get(i);
+  public ZMTPFrame frame(final int i) {
+    return frames.get(i);
   }
 
   @Override
   protected void deallocate() {
-    for (final ZMTPFrame frame : envelope) {
+    for (final ZMTPFrame frame : frames) {
       frame.release();
     }
-    for (final ZMTPFrame frame : content) {
-      frame.release();
-    }
-  }
-
-  @Override
-  public String toString() {
-    return "ZMTPMessage{" + ZMTPUtils.toString(envelope) + "," + ZMTPUtils.toString(content) + '}';
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) { return true; }
+    if (o == null || getClass() != o.getClass()) { return false; }
 
     final ZMTPMessage that = (ZMTPMessage) o;
 
-    if (content != null ? !content.equals(that.content) : that.content != null) {
-      return false;
-    }
-    if (envelope != null ? !envelope.equals(that.envelope) : that.envelope != null) {
-      return false;
-    }
+    if (frames != null ? !frames.equals(that.frames) : that.frames != null) { return false; }
 
     return true;
   }
 
   @Override
   public int hashCode() {
-    int result = content != null ? content.hashCode() : 0;
-    result = 31 * result + (envelope != null ? envelope.hashCode() : 0);
-    return result;
+    return frames != null ? frames.hashCode() : 0;
+  }
+
+  @Override
+  public String toString() {
+    return "ZMTPMessage{" + ZMTPUtils.toString(frames) + '}';
   }
 }

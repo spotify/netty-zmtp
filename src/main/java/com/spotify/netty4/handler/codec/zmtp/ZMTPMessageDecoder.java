@@ -17,18 +17,14 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 
 public class ZMTPMessageDecoder implements ZMTPDecoder {
 
   private static final long DEFAULT_SIZE_LIMIT = 4 * 1024 * 1024;
 
-  private final boolean enveloped;
   private final long limit;
 
   private boolean delimited;
@@ -36,16 +32,13 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
   private long messageSize;
   private int frameLength;
 
-  private List<ZMTPFrame> head;
-  private List<ZMTPFrame> tail;
-  private List<ZMTPFrame> part;
+  private List<ZMTPFrame> frames;
 
-  public ZMTPMessageDecoder(final boolean enveloped) {
-    this(enveloped, DEFAULT_SIZE_LIMIT);
+  public ZMTPMessageDecoder() {
+    this(DEFAULT_SIZE_LIMIT);
   }
 
-  public ZMTPMessageDecoder(final boolean enveloped, final long limit) {
-    this.enveloped = enveloped;
+  public ZMTPMessageDecoder(final long limit) {
     this.limit = limit;
     reset();
   }
@@ -54,15 +47,7 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
    * Reset parser in preparation for the next message.
    */
   private void reset() {
-    if (enveloped) {
-      head = new ArrayList<ZMTPFrame>(3);
-      tail = new ArrayList<ZMTPFrame>(3);
-      part = head;
-    } else {
-      head = Collections.emptyList();
-      tail = new ArrayList<ZMTPFrame>(3);
-      part = tail;
-    }
+    frames = new ArrayList<ZMTPFrame>();
     delimited = false;
     truncated = false;
     messageSize = 0;
@@ -83,41 +68,17 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
     if (data.readableBytes() < frameLength) {
       return;
     }
-    if (frameLength > 0) {
-      final ByteBuf frame = data.readSlice(frameLength);
-      frame.retain();
-      part.add(new ZMTPFrame(frame));
-    } else if (part == tail) {
-      part.add(EMPTY_FRAME);
-    } else {
-      delimited = true;
-      part = tail;
-    }
+    final ByteBuf frame = data.readSlice(frameLength);
+    frame.retain();
+    frames.add(new ZMTPFrame(frame));
   }
 
   @Override
   public void finish(final List<Object> out) {
-    final List<ZMTPFrame> envelope;
-    final List<ZMTPFrame> content;
-
-    // If we're expecting enveloped messages but didn't get a delimiter, then we treat that as a
-    // message without an envelope and assign the received frames to the content part of the
-    // message instead of the envelope. This is to allow the parser to deal with situations where
-    // we're not really sure if we're going to get enveloped messages or not.
-    if (enveloped && !delimited && !truncated) {
-      envelope = Collections.emptyList();
-      content = head;
-    } else {
-      envelope = head;
-      content = tail;
-    }
-
-    final ZMTPMessage message = new ZMTPMessage(envelope, content);
+    final ZMTPMessage message = new ZMTPMessage(frames);
     final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(
         message, truncated, messageSize);
-
     reset();
-
     out.add(incomingMessage);
   }
 }

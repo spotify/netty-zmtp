@@ -50,11 +50,6 @@ public class ZMTP20Protocol implements ZMTPProtocol {
     return new Builder();
   }
 
-  @Override
-  public boolean isEnveloped() {
-    return socketType.isEnveloped();
-  }
-
   public static class Builder {
 
     private Builder() {

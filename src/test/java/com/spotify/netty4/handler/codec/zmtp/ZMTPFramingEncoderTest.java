@@ -17,13 +17,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.concurrent.EventExecutor;
+import joptsimple.internal.Strings;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
-import static java.util.Arrays.asList;
-import static java.util.Arrays.fill;
+import static io.netty.util.CharsetUtil.UTF_8;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -36,10 +36,7 @@ public class ZMTPFramingEncoderTest {
 
   @Captor ArgumentCaptor<ByteBuf> bufCaptor;
 
-  private static final byte[] LARGE_FILL = new byte[500];
-  static {
-    fill(LARGE_FILL, (byte)0x61);
-  }
+  private static final String LARGE_FILL = Strings.repeat('a', 500);
 
   @Before
   public void setUp() {
@@ -57,9 +54,7 @@ public class ZMTPFramingEncoderTest {
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
-    ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.from("id0"), ZMTPFrame.from("id1")),
-        asList(ZMTPFrame.from("f0")));
+    ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "id1", "", "f0");
 
     enc.write(ctx, message, promise);
     enc.flush(ctx);
@@ -71,9 +66,7 @@ public class ZMTPFramingEncoderTest {
   @Test
   public void testEncodeZMTP2() throws Exception {
 
-    ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.from("id0"), ZMTPFrame.from("id1")),
-        asList(ZMTPFrame.from("f0")));
+    ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "id1", "", "f0");
 
     ZMTPProtocol protocol = ZMTP20.withSocketType(REQ);
     ZMTPSession session = new ZMTPSession(protocol);
@@ -90,14 +83,12 @@ public class ZMTPFramingEncoderTest {
 
   @Test
   public void testEncodeZMTP2Long() throws Exception {
-    ZMTPMessage message = new ZMTPMessage(
-        asList(ZMTPFrame.from("id0")),
-        asList(ZMTPFrame.from(LARGE_FILL)));
+    ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "", LARGE_FILL);
     ByteBuf buf = Unpooled.buffer();
     buf.writeBytes(bytes(1, 3, 0x69, 0x64, 0x30,
                          1, 0,
                          2, 0, 0, 0, 0, 0, 0, 0x01, 0xf4));
-    buf.writeBytes(LARGE_FILL);
+    buf.writeBytes(LARGE_FILL.getBytes(UTF_8));
 
     ZMTPProtocol protocol = ZMTP20.withSocketType(REQ);
     ZMTPSession session = new ZMTPSession(protocol);

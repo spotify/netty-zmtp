@@ -55,12 +55,10 @@ public class ZMTPFrameIntegrationTest {
 
       @Override
       public boolean onMessage(final ZMTPIncomingMessage msg) {
-        System.err.println(msg);
-
         // Verify that frames received is correct
-        assertEquals(1, msg.message().content().size());
-        assertEquals(0, msg.message().envelope().size());
-        assertEquals(Unpooled.wrappedBuffer(f.getData()), msg.message().content(0).content());
+        assertEquals(2, msg.message().frames().size());
+        assertEquals(Unpooled.EMPTY_BUFFER, msg.message().frame(0).content());
+        assertEquals(Unpooled.wrappedBuffer(f.getData()), msg.message().frame(1).content());
 
         f.destroy();
 
@@ -103,16 +101,15 @@ public class ZMTPFrameIntegrationTest {
 
       @Override
       public boolean onMessage(final ZMTPIncomingMessage msg) {
-        int framePos = 0;
 
         // Verify that frames received is correct
-        assertEquals(m.size(), msg.message().content().size());
-        assertEquals(0, msg.message().envelope().size());
+        assertEquals(m.size() + 1, msg.message().size());
 
+        int i = 1;
         for (final ZFrame f : m) {
           assertEquals(Unpooled.wrappedBuffer(f.getData()),
-                       msg.message().content(framePos).content());
-          framePos++;
+                       msg.message().frame(i).content());
+          i++;
         }
 
         return true;
