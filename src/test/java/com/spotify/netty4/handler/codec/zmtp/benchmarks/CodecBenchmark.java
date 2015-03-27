@@ -45,7 +45,7 @@ public class CodecBenchmark {
 
   private final List<Object> out = Lists.newArrayList();
 
-  private final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(
+  private final ZMTPMessage message = ZMTPMessage.fromUTF8(
       "first identity frame",
       "second identity frame",
       "",

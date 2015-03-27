@@ -135,7 +135,7 @@ public class ZMTPMessageParserTest {
   }
 
   private ByteBuf serialize(final List<String> frames, int version) {
-    final ZMTPMessage message = ZMTPMessage.fromStringsUTF8(frames);
+    final ZMTPMessage message = ZMTPMessage.fromUTF8(frames);
     final int messageSize = ZMTPUtils.messageSize(message, version);
     final ByteBuf buffer = Unpooled.buffer(messageSize);
     ZMTPUtils.writeMessage(message, buffer, version);

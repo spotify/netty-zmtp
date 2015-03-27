@@ -54,7 +54,7 @@ public class ZMTPFramingEncoderTest {
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
-    ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "id1", "", "f0");
+    ZMTPMessage message = ZMTPMessage.fromUTF8("id0", "id1", "", "f0");
 
     enc.write(ctx, message, promise);
     enc.flush(ctx);
@@ -66,7 +66,7 @@ public class ZMTPFramingEncoderTest {
   @Test
   public void testEncodeZMTP2() throws Exception {
 
-    ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "id1", "", "f0");
+    ZMTPMessage message = ZMTPMessage.fromUTF8("id0", "id1", "", "f0");
 
     ZMTPProtocol protocol = ZMTP20.withSocketType(REQ);
     ZMTPSession session = new ZMTPSession(protocol);
@@ -83,7 +83,7 @@ public class ZMTPFramingEncoderTest {
 
   @Test
   public void testEncodeZMTP2Long() throws Exception {
-    ZMTPMessage message = ZMTPMessage.fromStringsUTF8("id0", "", LARGE_FILL);
+    ZMTPMessage message = ZMTPMessage.fromUTF8("id0", "", LARGE_FILL);
     ByteBuf buf = Unpooled.buffer();
     buf.writeBytes(bytes(1, 3, 0x69, 0x64, 0x30,
                          1, 0,

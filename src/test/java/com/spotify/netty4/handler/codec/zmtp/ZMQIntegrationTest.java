@@ -120,7 +120,7 @@ public class ZMQIntegrationTest {
       throws InterruptedException, TimeoutException {
 
     // Send request
-    final ZMTPMessage request = ZMTPMessage.fromStringsUTF8("envelope", "", "hello", "world");
+    final ZMTPMessage request = ZMTPMessage.fromUTF8("envelope", "", "hello", "world");
     ReferenceCountUtil.releaseLater(request.retain());
     req.send(request);
 

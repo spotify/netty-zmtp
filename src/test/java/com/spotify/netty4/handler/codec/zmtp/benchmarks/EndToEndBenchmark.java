@@ -110,7 +110,7 @@ public class EndToEndBenchmark {
 
     private static final int CONCURRENCY = 1000;
 
-    private static final ZMTPMessage REQUEST_TEMPLATE = ZMTPMessage.fromStringsUTF8(
+    private static final ZMTPMessage REQUEST_TEMPLATE = ZMTPMessage.fromUTF8(
         "envelope1", "envelope2",
         "",
         "", // timestamp placeholder
@@ -153,7 +153,7 @@ public class EndToEndBenchmark {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       final ZMTPIncomingMessage message = (ZMTPIncomingMessage) msg;
-      final long timestamp = message.message().frame(3).content().readLong();
+      final long timestamp = message.message().frame(3).data().readLong();
       final long latency = System.nanoTime() - timestamp;
       meter.inc(1, latency);
       message.release();

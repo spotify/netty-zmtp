@@ -71,9 +71,9 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(3, m.message().size());
-    cmp(buf(0x65), m.message().frame(0).content());
-    cmp(buf(), m.message().frame(1).content());
-    cmp(buf(0x62), m.message().frame(2).content());
+    cmp(buf(0x65), m.message().frame(0).data());
+    cmp(buf(), m.message().frame(1).data());
+    cmp(buf(0x62), m.message().frame(2).data());
   }
 
   @Test
@@ -92,9 +92,9 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(3, m.message().size());
-    cmp(buf(0x65), m.message().frame(0).content());
-    cmp(buf(), m.message().frame(1).content());
-    cmp(buf(0x62), m.message().frame(2).content());
+    cmp(buf(0x65), m.message().frame(0).data());
+    cmp(buf(), m.message().frame(1).data());
+    cmp(buf(0x62), m.message().frame(2).data());
   }
 
   @Test
@@ -121,8 +121,8 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0).content());
-    cmp(buf(LONG_MSG), m.message().frame(1).content());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
   @Test
@@ -158,8 +158,8 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0).content());
-    cmp(buf(LONG_MSG), m.message().frame(1).content());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
 
@@ -195,8 +195,8 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0).content());
-    cmp(buf(LONG_MSG), m.message().frame(1).content());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
   @Test
@@ -231,8 +231,8 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0).content());
-    cmp(buf(LONG_MSG), m.message().frame(1).content());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
 
@@ -264,8 +264,8 @@ public class PipelineTests {
     ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0).content());
-    cmp(buf(LONG_MSG), m.message().frame(1).content());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
 
     // send the rest of the second message
     cb = Unpooled.buffer();
@@ -278,8 +278,8 @@ public class PipelineTests {
     m = (ZMTPIncomingMessage) pt.readServer();
 
     assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0).content());
-    cmp(buf(LONG_MSG), m.message().frame(1).content());
+    cmp(buf(), m.message().frame(0).data());
+    cmp(buf(LONG_MSG), m.message().frame(1).data());
   }
 
 }

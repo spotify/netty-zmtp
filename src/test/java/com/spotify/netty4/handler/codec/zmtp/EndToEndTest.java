@@ -165,11 +165,11 @@ public class EndToEndTest {
   }
 
   private ZMTPMessage helloWorldMessage() {
-    return ZMTPMessage.fromStringsUTF8("", "hello", "world");
+    return ZMTPMessage.fromUTF8("", "hello", "world");
   }
 
   private ZMTPMessage fooBarMessage() {
-    return ZMTPMessage.fromStringsUTF8("", "foo", "bar");
+    return ZMTPMessage.fromUTF8("", "foo", "bar");
   }
 
   private static class Handler extends ChannelInboundHandlerAdapter {

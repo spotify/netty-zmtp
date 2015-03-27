@@ -36,28 +36,28 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   /**
    * Create a new message from a string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromStringsUTF8(final String... frames) {
-    return fromStrings(UTF_8, frames);
+  public static ZMTPMessage fromUTF8(final String... frames) {
+    return from(UTF_8, frames);
   }
 
   /**
    * Create a new message from a list of string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromStringsUTF8(final List<String> frames) {
-    return fromStrings(UTF_8, frames);
+  public static ZMTPMessage fromUTF8(final List<String> frames) {
+    return from(UTF_8, frames);
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage fromStrings(final Charset charset, final String... frames) {
-    return fromStrings(charset, asList(frames));
+  public static ZMTPMessage from(final Charset charset, final String... frames) {
+    return from(charset, asList(frames));
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage fromStrings(final Charset charset, final List<String> frames) {
+  public static ZMTPMessage from(final Charset charset, final List<String> frames) {
     return from(new AbstractList<ZMTPFrame>() {
       @Override
       public ZMTPFrame get(final int index) {

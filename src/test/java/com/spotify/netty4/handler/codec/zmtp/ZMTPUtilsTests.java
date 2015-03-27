@@ -55,8 +55,8 @@ public class ZMTPUtilsTests {
     }
     @SuppressWarnings("unchecked") final List<List<ZMTPFrame>> frameSets = asList(
         EMPTY,
-        asList(ZMTPFrame.from("foo")),
-        asList(ZMTPFrame.from("foo"), ZMTPFrame.from("bar")),
+        asList(ZMTPFrame.fromUTF8("foo")),
+        asList(ZMTPFrame.fromUTF8("foo"), ZMTPFrame.fromUTF8("bar")),
         manyFrameSizes);
 
     for (int version : asList(1, 2)) {

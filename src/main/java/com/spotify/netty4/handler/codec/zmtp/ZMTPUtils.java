@@ -156,8 +156,8 @@ public class ZMTPUtils {
   public static void writeFrame(final ZMTPFrame frame, final ByteBuf buffer,
                                 final boolean more, final int version) {
     writeFrameHeader(buffer, frame.size(), frame.size(), more, version);
-    if (frame.hasContent()) {
-      final ByteBuf source = frame.content();
+    if (frame.hasData()) {
+      final ByteBuf source = frame.data();
       buffer.ensureWritable(source.readableBytes());
       source.getBytes(source.readerIndex(), buffer, source.readableBytes());
     }
@@ -307,7 +307,7 @@ public class ZMTPUtils {
     for (int i = 0; i < frames.size(); i++) {
       final ZMTPFrame frame = frames.get(i);
       builder.append('"');
-      builder.append(toString(frame.content()));
+      builder.append(toString(frame.data()));
       builder.append('"');
       if (i < frames.size() - 1) {
         builder.append(',');

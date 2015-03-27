@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessage.fromStringsUTF8;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -31,11 +30,11 @@ public class ZMTPMessageTest {
 
   @Test
   public void testFromStringsUTF8() {
-    assertEquals(fromStringsUTF8(""), message(""));
-    assertEquals(fromStringsUTF8("a"), message("a"));
-    assertEquals(fromStringsUTF8("aa"), message("aa"));
-    assertEquals(fromStringsUTF8("aa", "bb"), message("aa", "bb"));
-    assertEquals(fromStringsUTF8("aa", "", "bb"), message("aa", "", "bb"));
+    assertEquals(ZMTPMessage.fromUTF8(""), message(""));
+    assertEquals(ZMTPMessage.fromUTF8("a"), message("a"));
+    assertEquals(ZMTPMessage.fromUTF8("aa"), message("aa"));
+    assertEquals(ZMTPMessage.fromUTF8("aa", "bb"), message("aa", "bb"));
+    assertEquals(ZMTPMessage.fromUTF8("aa", "", "bb"), message("aa", "", "bb"));
   }
 
   private ZMTPMessage message(final String... frames) {
@@ -46,7 +45,7 @@ public class ZMTPMessageTest {
     return Lists.transform(frames, new Function<String, ZMTPFrame>() {
       @Override
       public ZMTPFrame apply(final String input) {
-        return ZMTPFrame.from(input);
+        return ZMTPFrame.fromUTF8(input);
       }
     });
   }

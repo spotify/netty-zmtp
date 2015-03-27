@@ -29,52 +29,52 @@ public class ZMTPFrame implements ReferenceCounted {
 
   public static final ZMTPFrame EMPTY_FRAME = new ZMTPFrame(Unpooled.EMPTY_BUFFER);
 
-  private final ByteBuf content;
+  private final ByteBuf data;
 
-  ZMTPFrame(final ByteBuf content) {
-    this.content = content;
+  ZMTPFrame(final ByteBuf data) {
+    this.data = data;
   }
 
   /**
    * @return Is the current frame empty
    */
-  public boolean hasContent() {
-    return content.isReadable();
+  public boolean hasData() {
+    return data.isReadable();
   }
 
   /**
    * Get the frame contents.
    */
-  public ByteBuf content() {
-    return content;
+  public ByteBuf data() {
+    return data;
   }
 
   /**
    * Returns the length of the data
    */
   public int size() {
-    return content.readableBytes();
+    return data.readableBytes();
   }
 
   /**
-   * Create a frame from a string, UTF-8 encoded.
+   * Create a frame by UTF-8 encoding a {@link CharSequence}.
    */
-  public static ZMTPFrame from(final String data) {
+  public static ZMTPFrame fromUTF8(final CharSequence data) {
     return from(data, UTF_8);
   }
 
   /**
-   * Create a new frame from a string
+   * Create a frame by encoding a {@link CharSequence}.
    *
-   * @param data    String
-   * @param charset Used to get the bytes
-   * @return a ZMTP frame containing the byte encoded string
+   * @param data    The {@link CharSequence} to encode.
+   * @param charset The {@link Charset} to encode as.
+   * @return a ZMTP frame containing the encoded {@link CharSequence}.
    */
-  public static ZMTPFrame from(final String data, final Charset charset) {
+  public static ZMTPFrame from(final CharSequence data, final Charset charset) {
     if (data.length() == 0) {
       return EMPTY_FRAME;
     } else {
-      return from(Unpooled.wrappedBuffer(charset.encode(data)));
+      return from(Unpooled.copiedBuffer(data, charset));
     }
   }
 
@@ -82,47 +82,39 @@ public class ZMTPFrame implements ReferenceCounted {
    * Create a new frame from a byte array.
    */
   public static ZMTPFrame from(final byte[] data) {
-    if (data == null || data.length == 0) {
-      return EMPTY_FRAME;
-    } else {
-      return new ZMTPFrame(Unpooled.wrappedBuffer(data));
-    }
+    return new ZMTPFrame(Unpooled.wrappedBuffer(data));
   }
 
   /**
-   * Create a new frame from a buffer. Claims ownership of the buffer.
+   * Create a new frame from a {@link ByteBuf}. Claims ownership of the buffer.
    */
   public static ZMTPFrame from(final ByteBuf buf) {
-    if (!buf.isReadable()) {
-      return EMPTY_FRAME;
-    } else {
-      return new ZMTPFrame(buf);
-    }
+    return new ZMTPFrame(buf);
   }
 
   @Override
   public int refCnt() {
-    return content.refCnt();
+    return data.refCnt();
   }
 
   @Override
   public ReferenceCounted retain() {
-    return content.retain();
+    return data.retain();
   }
 
   @Override
   public ReferenceCounted retain(final int increment) {
-    return content.retain(increment);
+    return data.retain(increment);
   }
 
   @Override
   public boolean release() {
-    return content.release();
+    return data.release();
   }
 
   @Override
   public boolean release(final int decrement) {
-    return content.release(decrement);
+    return data.release(decrement);
   }
 
   @Override
@@ -132,7 +124,7 @@ public class ZMTPFrame implements ReferenceCounted {
 
     final ZMTPFrame zmtpFrame = (ZMTPFrame) o;
 
-    if (content != null ? !content.equals(zmtpFrame.content) : zmtpFrame.content != null) {
+    if (data != null ? !data.equals(zmtpFrame.data) : zmtpFrame.data != null) {
       return false;
     }
 
@@ -141,13 +133,13 @@ public class ZMTPFrame implements ReferenceCounted {
 
   @Override
   public int hashCode() {
-    return content != null ? content.hashCode() : 0;
+    return data != null ? data.hashCode() : 0;
   }
 
   @Override
   public String toString() {
     return "ZMTPFrame{\"" +
-           ZMTPUtils.toString(content) +
+           ZMTPUtils.toString(data) +
            "\"}";
   }
 }

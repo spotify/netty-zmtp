@@ -36,7 +36,7 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
       final ZMTPFrame frame = message.frame(i);
       final boolean more = i < message.frames().size() - 1;
       final ByteBuf dst = writer.frame(frame.size(), more);
-      final ByteBuf src = frame.content();
+      final ByteBuf src = frame.data();
       dst.writeBytes(src, src.readerIndex(), src.readableBytes());
     }
   }
