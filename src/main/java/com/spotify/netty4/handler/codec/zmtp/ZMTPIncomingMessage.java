@@ -66,12 +66,14 @@ public class ZMTPIncomingMessage implements ReferenceCounted {
 
   @Override
   public ReferenceCounted retain() {
-    return message.retain();
+    message.retain();
+    return this;
   }
 
   @Override
   public ReferenceCounted retain(final int increment) {
-    return message.retain(increment);
+    message.retain(increment);
+    return this;
   }
 
   @Override

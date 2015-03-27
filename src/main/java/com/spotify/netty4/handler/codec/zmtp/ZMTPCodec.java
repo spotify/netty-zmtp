@@ -48,10 +48,12 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
         .type(builder.connectionType)
         .build();
     this.handshaker = checkNotNull(builder.protocol, "protocol").handshaker(session);
-    this.encoder =
-        (builder.encoder == null) ? new ZMTPMessageEncoder(session.isEnveloped()) : builder.encoder;
-    this.decoder =
-        (builder.decoder == null) ? new ZMTPMessageDecoder(session.isEnveloped()) : builder.decoder;
+    this.encoder = (builder.encoder == null)
+                   ? new ZMTPMessageEncoder(session.isEnveloped())
+                   : builder.encoder;
+    this.decoder = (builder.decoder == null)
+                   ? new ZMTPMessageDecoder(session.isEnveloped())
+                   : builder.decoder;
   }
 
   @Override
