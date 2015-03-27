@@ -22,7 +22,8 @@ package com.spotify.netty4.handler.codec.zmtp;
 public interface ZMTPEncoder {
 
   /**
-   * Estimate ZMTP output for the {@code message} using a {@link ZMTPEstimator}. Called before {@link #encode}.
+   * Estimate ZMTP output for the {@code message} using a {@link ZMTPEstimator}. Called before
+   * {@link #encode}.
    *
    * @param message   The message to be estimated.
    * @param estimator The {@link ZMTPEstimator} to use.
@@ -30,9 +31,11 @@ public interface ZMTPEncoder {
   void estimate(Object message, ZMTPEstimator estimator);
 
   /**
-   * Write ZMTP output for the {@code message} using the {@link ZMTPWriter}. Called after {@link #estimate}.
+   * Write ZMTP output for the {@code message} using the {@link ZMTPWriter}. Called after {@link
+   * #estimate}.
+   *
    * @param message The message to write.
-   * @param writer The {@link ZMTPWriter} to use.
+   * @param writer  The {@link ZMTPWriter} to use.
    */
   void encode(Object message, ZMTPWriter writer);
 }

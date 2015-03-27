@@ -24,6 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.encodeZMTP1Length;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.readZMTP1RemoteIdentity;
 
 public class ZMTP20Handshaker implements ZMTPHandshaker {
 
@@ -34,8 +35,10 @@ public class ZMTP20Handshaker implements ZMTPHandshaker {
   private boolean splitHandshake;
 
   /**
-   * Construct a ZMTP20Codec with the specified session and optional interoperability behavior.
-   *  @param socketType    The ZMTP/2.0 socket type.
+   * Construct a ZMTP20Handshaker with the specified session and optional interoperability
+   * behavior.
+   *
+   * @param socketType    The ZMTP/2.0 socket type.
    * @param interop       whether this socket should implement the ZMTP/1.0 interoperability
    *                      handshake
    * @param localIdentity Local identity. An identity will be generated if null.
@@ -56,7 +59,7 @@ public class ZMTP20Handshaker implements ZMTPHandshaker {
   }
 
   @Override
-  public ByteBuf onConnect() {
+  public ByteBuf greeting() {
     if (interop) {
       return makeZMTP2CompatSignature();
     } else {
@@ -79,7 +82,7 @@ public class ZMTP20Handshaker implements ZMTPHandshaker {
         // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
         // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
         ctx.writeAndFlush(Unpooled.wrappedBuffer(localIdentity));
-        return new ZMTPHandshake(version, ByteBuffer.wrap(ZMTPUtils.readZMTP1RemoteIdentity(buffer)));
+        return ZMTPHandshake.of(version, ByteBuffer.wrap(readZMTP1RemoteIdentity(buffer)));
       } else {
         splitHandshake = true;
         ctx.writeAndFlush(makeZMTP2Greeting(false));

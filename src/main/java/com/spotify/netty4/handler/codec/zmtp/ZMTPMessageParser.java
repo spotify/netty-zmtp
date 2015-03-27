@@ -51,9 +51,10 @@ public class ZMTPMessageParser {
    * to indicate that more data is needed.
    *
    * @param buffer {@link ByteBuf} with data to decode
-   * @param out {@link List} to which decoded messages should be added
+   * @param out    {@link List} to which decoded messages should be added
    */
-  public void parse(final ByteBuf buffer, final List<Object> out) throws ZMTPMessageParsingException {
+  public void parse(final ByteBuf buffer, final List<Object> out)
+      throws ZMTPMessageParsingException {
     while (buffer.isReadable()) {
       if (!headerParsed) {
         final int mark = buffer.readerIndex();

@@ -21,7 +21,8 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 
 /**
- * A streaming decoder that takes parsed ZMTP frame headers and raw content and (optionally) produces some output.
+ * A streaming decoder that takes parsed ZMTP frame headers and raw content and (optionally)
+ * produces some output.
  */
 public interface ZMTPDecoder {
 
@@ -29,15 +30,15 @@ public interface ZMTPDecoder {
    * Start a new ZMTP frame.
    *
    * @param length The total length in bytes of the frame content.
-   * @param more   {@code true} if there are additional frames following this one in the current ZMTP message, {@code
-   *               false otherwise.}
+   * @param more   {@code true} if there are additional frames following this one in the current
+   *               ZMTP message, {@code false otherwise.}
    * @param out    {@link List} to which decoded messages should be added.
    */
   void header(final int length, boolean more, final List<Object> out);
 
   /**
-   * Read ZMTP frame content. Called repeatedly, at least once, per frame until all of the frame content data has been
-   * read.
+   * Read ZMTP frame content. Called repeatedly, at least once, per frame until all of the frame
+   * content data has been read.
    *
    * @param data The raw ZMTP frame content.
    * @param out  {@link List} to which decoded messages should be added.
@@ -45,7 +46,8 @@ public interface ZMTPDecoder {
   void content(ByteBuf data, final List<Object> out);
 
   /**
-   * End the ZMTP message. Called once after {@link #header} has been called with {@code more == false}.
+   * End the ZMTP message. Called once after {@link #header} has been called with {@code more ==
+   * false}.
    *
    * @param out {@link List} to which decoded messages should be added.
    */

@@ -48,14 +48,16 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
         .type(builder.connectionType)
         .build();
     this.handshaker = checkNotNull(builder.protocol, "protocol").handshaker(session);
-    this.encoder = (builder.encoder == null) ? new ZMTPMessageEncoder(session.isEnveloped()) : builder.encoder;
-    this.decoder = (builder.decoder == null) ? new ZMTPMessageDecoder(session.isEnveloped()) : builder.decoder;
+    this.encoder =
+        (builder.encoder == null) ? new ZMTPMessageEncoder(session.isEnveloped()) : builder.encoder;
+    this.decoder =
+        (builder.decoder == null) ? new ZMTPMessageDecoder(session.isEnveloped()) : builder.decoder;
   }
 
   @Override
   public void channelActive(final ChannelHandlerContext ctx) throws Exception {
     super.channelActive(ctx);
-    ctx.writeAndFlush(handshaker.onConnect());
+    ctx.writeAndFlush(handshaker.greeting());
   }
 
   @Override
@@ -83,9 +85,10 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   private void updatePipeline(ChannelPipeline pipeline,
                               ZMTPSession session) {
     final ZMTPMessageParser parser = ZMTPMessageParser.create(session.actualVersion(), decoder);
-    final ChannelHandler handler = new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
-        new ZMTPFramingDecoder(parser),
-        new ZMTPFramingEncoder(session, encoder));
+    final ChannelHandler handler =
+        new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
+            new ZMTPFramingDecoder(parser),
+            new ZMTPFramingEncoder(session, encoder));
     pipeline.replace(this, "zmtp-codec", handler);
   }
 

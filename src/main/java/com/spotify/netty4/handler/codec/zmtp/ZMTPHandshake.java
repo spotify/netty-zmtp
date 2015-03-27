@@ -44,7 +44,8 @@ public class ZMTPHandshake {
     final ZMTPHandshake that = (ZMTPHandshake) o;
 
     if (version != that.version) { return false; }
-    if (remoteIdentity != null ? !remoteIdentity.equals(that.remoteIdentity) : that.remoteIdentity != null) {
+    if (remoteIdentity != null ? !remoteIdentity.equals(that.remoteIdentity)
+                               : that.remoteIdentity != null) {
       return false;
     }
 

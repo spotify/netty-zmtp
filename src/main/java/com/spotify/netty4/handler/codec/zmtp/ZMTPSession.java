@@ -89,7 +89,6 @@ public class ZMTPSession {
 
   /**
    * Set the
-   * @param handshake
    */
   void handshakeDone(final ZMTPHandshake handshake) {
     if (!this.handshake.compareAndSet(null, handshake)) {

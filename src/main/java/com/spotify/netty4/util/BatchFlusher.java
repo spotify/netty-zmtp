@@ -23,8 +23,8 @@ import io.netty.channel.EventLoop;
 
 /**
  * A helper for doing opportunistic batching of netty channel flushes, allowing for a gathering
- * write to an underlying {@link java.nio.channels.GatheringByteChannel},
- * collapsing multiple writes into fewer syscalls.
+ * write to an underlying {@link java.nio.channels.GatheringByteChannel}, collapsing multiple writes
+ * into fewer syscalls.
  */
 public class BatchFlusher {
 
@@ -52,9 +52,9 @@ public class BatchFlusher {
   };
 
   /**
-   * Used to wake up the event loop and schedule a flush to be performed after all outstanding
-   * write tasks are run. The outstanding write tasks must be allowed to run before performing the
-   * actual flush in order to ensure that their payloads have been written to the outbound buffer.
+   * Used to wake up the event loop and schedule a flush to be performed after all outstanding write
+   * tasks are run. The outstanding write tasks must be allowed to run before performing the actual
+   * flush in order to ensure that their payloads have been written to the outbound buffer.
    */
   private Runnable wakeup = new Runnable() {
     @Override

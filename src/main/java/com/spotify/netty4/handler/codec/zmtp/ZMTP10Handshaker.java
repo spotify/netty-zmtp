@@ -34,12 +34,13 @@ public class ZMTP10Handshaker implements ZMTPHandshaker {
   }
 
   @Override
-  public ByteBuf onConnect() {
+  public ByteBuf greeting() {
     return makeZMTP1Greeting();
   }
 
   @Override
-  public ZMTPHandshake inputOutput(final ByteBuf buffer, final ChannelHandlerContext channel) throws ZMTPException {
+  public ZMTPHandshake inputOutput(final ByteBuf buffer, final ChannelHandlerContext channel)
+      throws ZMTPException {
     final byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(buffer);
     return new ZMTPHandshake(1, ByteBuffer.wrap(remoteIdentity));
   }

@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 
 public interface ZMTPHandshaker {
 
-  ByteBuf onConnect();
+  ByteBuf greeting();
 
   ZMTPHandshake inputOutput(ByteBuf buffer, ChannelHandlerContext channel) throws ZMTPException;
 }

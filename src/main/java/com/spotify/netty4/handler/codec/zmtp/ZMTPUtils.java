@@ -323,8 +323,7 @@ public class ZMTPUtils {
   }
 
   /**
-   * Create a human readable string representation of a list of ZMTP frames, keeping printable
-   * ascii
+   * Create a human readable string representation of a list of ZMTP frames, keeping printable ascii
    * and hex encoding everything else.
    *
    * @param frames The ZMTP frames.
@@ -367,8 +366,7 @@ public class ZMTPUtils {
   }
 
   static <T> T checkNotNull(T obj, String message) {
-    if (obj == null)
-      throw new NullPointerException(message);
+    if (obj == null) { throw new NullPointerException(message); }
     return obj;
   }
 }

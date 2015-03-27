@@ -132,7 +132,9 @@ public class ZMTPFrame implements ReferenceCounted {
 
     final ZMTPFrame zmtpFrame = (ZMTPFrame) o;
 
-    if (content != null ? !content.equals(zmtpFrame.content) : zmtpFrame.content != null) { return false; }
+    if (content != null ? !content.equals(zmtpFrame.content) : zmtpFrame.content != null) {
+      return false;
+    }
 
     return true;
   }
