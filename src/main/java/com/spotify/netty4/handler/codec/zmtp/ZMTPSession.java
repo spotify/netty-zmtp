@@ -18,54 +18,32 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Represents an ongoing zmtp session
  */
 public class ZMTPSession {
 
-  public static final int DEFAULT_SIZE_LIMIT = Integer.MAX_VALUE;
-
-  private final boolean useLocalIdentity;
-  private final byte[] localIdent;
-  private final long sizeLimit;
+  private final ByteBuffer localIdentity;
   private final ZMTPSocketType socketType;
   private final ZMTPConnectionType type;
 
-  private volatile byte[] remoteIdent;
-  private volatile int actualVersion;
+  private final boolean useLocalIdentity;
 
-  public ZMTPSession(final ZMTPConnectionType type) {
-    this(type, Integer.MAX_VALUE);
-  }
+  private AtomicReference<ZMTPHandshake> handshake = new AtomicReference<ZMTPHandshake>();
 
-  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit) {
-    this(type, sizeLimit, null, null);
-  }
-
-  public ZMTPSession(final ZMTPConnectionType type, @Nullable final byte[] localIdent) {
-    this(type, DEFAULT_SIZE_LIMIT, localIdent, null);
-  }
-
-  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
-                     @Nullable final ZMTPSocketType socketType) {
-    this(type, sizeLimit, null, socketType);
-  }
-
-  public ZMTPSession(final ZMTPConnectionType type, final long sizeLimit,
-                     @Nullable final byte[] localIdent,
-                     @Nullable final ZMTPSocketType socketType) {
-    this.type = type;
-    this.sizeLimit = sizeLimit;
-    this.useLocalIdentity = (localIdent != null);
-    if (localIdent == null) {
-      this.localIdent = ZMTPUtils.encodeUUID(UUID.randomUUID());
+  private ZMTPSession(final Builder builder) {
+    this.type = builder.type;
+    this.useLocalIdentity = (builder.localIdentity != null);
+    if (builder.localIdentity == null) {
+      this.localIdentity = ByteBuffer.wrap(ZMTPUtils.encodeUUID(UUID.randomUUID()));
     } else {
-      this.localIdent = localIdent;
+      this.localIdentity = builder.localIdentity;
     }
-    this.socketType = socketType;
+    this.socketType = builder.socketType;
   }
 
   /**
@@ -81,21 +59,25 @@ public class ZMTPSession {
    * Helper to determine if messages in this session are enveloped
    */
   public boolean isEnveloped() {
-    return (type == ZMTPConnectionType.Addressed);
+    return (type == ZMTPConnectionType.ADDRESSED);
   }
 
   /**
    * Get the remote session id (can be used for persistent queuing)
    */
-  public byte[] remoteIdentity() {
-    return remoteIdent;
+  public ByteBuffer remoteIdentity() {
+    final ZMTPHandshake handshake = this.handshake.get();
+    if (handshake == null) {
+      throw new IllegalStateException("handshake not complete");
+    }
+    return handshake.remoteIdentity();
   }
 
   /**
    * Return the local identity
    */
-  public byte[] localIdentity() {
-    return localIdent;
+  public ByteBuffer localIdentity() {
+    return localIdentity.asReadOnlyBuffer();
   }
 
   /**
@@ -106,24 +88,13 @@ public class ZMTPSession {
   }
 
   /**
-   * Set the remote identity
-   *
-   * @param remoteIdent Remote identity, if null an identity will be created
+   * Set the
+   * @param handshake
    */
-  public void remoteIdentity(@Nullable final byte[] remoteIdent) {
-    if (this.remoteIdent != null) {
-      throw new IllegalStateException("Remote identity already set");
+  void handshakeDone(final ZMTPHandshake handshake) {
+    if (!this.handshake.compareAndSet(null, handshake)) {
+      throw new IllegalStateException("handshake result already set");
     }
-
-    this.remoteIdent = remoteIdent;
-    if (this.remoteIdent == null) {
-      // Create a new remote identity
-      this.remoteIdent = ZMTPUtils.encodeUUID(UUID.randomUUID());
-    }
-  }
-
-  public long sizeLimit() {
-    return sizeLimit;
   }
 
   /**
@@ -135,14 +106,11 @@ public class ZMTPSession {
    * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
    */
   public int actualVersion() {
-    if (actualVersion == 0) {
-      throw new IllegalStateException("actual version not yet set");
+    final ZMTPHandshake handshake = this.handshake.get();
+    if (handshake == null) {
+      throw new IllegalStateException("handshake not complete");
     }
-    return actualVersion;
-  }
-
-  public void actualVersion(int actualVersion) {
-    this.actualVersion = actualVersion;
+    return handshake.protocolVersion();
   }
 
   @Nullable
@@ -153,13 +121,48 @@ public class ZMTPSession {
   @Override
   public String toString() {
     return "ZMTPSession{" +
-           "useLocalIdentity=" + useLocalIdentity +
-           ", localIdent=" + Arrays.toString(localIdent) +
-           ", sizeLimit=" + sizeLimit +
+           "localIdentity=" + localIdentity +
            ", socketType=" + socketType +
            ", type=" + type +
-           ", remoteIdent=" + Arrays.toString(remoteIdent) +
-           ", actualVersion=" + actualVersion +
+           ", useLocalIdentity=" + useLocalIdentity +
+           ", handshake=" + handshake +
            '}';
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+
+    private Builder() {
+    }
+
+    private ByteBuffer localIdentity;
+    private ZMTPSocketType socketType;
+    private ZMTPConnectionType type;
+
+    public Builder localIdentity(final byte[] localIdentity) {
+      return localIdentity(ByteBuffer.wrap(localIdentity));
+    }
+
+    public Builder localIdentity(final ByteBuffer localIdentity) {
+      this.localIdentity = localIdentity;
+      return this;
+    }
+
+    public Builder socketType(final ZMTPSocketType socketType) {
+      this.socketType = socketType;
+      return this;
+    }
+
+    public Builder type(final ZMTPConnectionType type) {
+      this.type = type;
+      return this;
+    }
+
+    public ZMTPSession build() {
+      return new ZMTPSession(this);
+    }
   }
 }

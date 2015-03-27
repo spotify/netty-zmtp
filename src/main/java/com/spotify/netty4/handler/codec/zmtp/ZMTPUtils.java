@@ -365,4 +365,10 @@ public class ZMTPUtils {
     buffer.readBytes(identity);
     return identity;
   }
+
+  static <T> T checkNotNull(T obj, String message) {
+    if (obj == null)
+      throw new NullPointerException(message);
+    return obj;
+  }
 }

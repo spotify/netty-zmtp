@@ -22,11 +22,10 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 
-import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageEncoder;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
 import com.spotify.netty4.util.BatchFlusher;
 
@@ -57,8 +56,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.internal.chmv8.ForkJoinPool;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.Addressed;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSession.DEFAULT_SIZE_LIMIT;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static com.spotify.netty4.handler.codec.zmtp.benchmarks.AsciiString.ASCII_STRING_FROM_STRING;
@@ -88,15 +87,21 @@ public class ApplicationBenchmark {
     final ProgressMeter meter = new ProgressMeter("requests");
 
     // Codecs
-    final ZMTP10Codec serverCodec = new ZMTP10Codec(
-        new ZMTPSession(Addressed, DEFAULT_SIZE_LIMIT, NO_IDENTITY, ROUTER),
-        new ReplyEncoder(),
-        new RequestDecoder());
+    final ZMTPCodec serverCodec = ZMTPCodec.builder()
+        .protocol(ZMTP10)
+        .connectionType(ADDRESSED)
+        .socketType(ROUTER)
+        .encoder(new ReplyEncoder())
+        .decoder(new RequestDecoder())
+        .build();
 
-    final ZMTP10Codec clientCodec = new ZMTP10Codec(
-        new ZMTPSession(Addressed, DEFAULT_SIZE_LIMIT, NO_IDENTITY, DEALER),
-        new RequestEncoder(),
-        new ReplyDecoder());
+    final ZMTPCodec clientCodec = ZMTPCodec.builder()
+        .protocol(ZMTP10)
+        .connectionType(ADDRESSED)
+        .socketType(DEALER)
+        .encoder(new RequestEncoder())
+        .decoder(new ReplyDecoder())
+        .build();
 
     // Server
     final Executor serverExecutor = new ForkJoinPool(

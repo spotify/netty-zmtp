@@ -12,6 +12,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.buf;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static org.junit.Assert.assertEquals;
 
@@ -54,10 +58,13 @@ public class PipelineTests {
 
   @Test
   public void testZMTPPipeline() {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
-
-    PipelineTester pt = new PipelineTester(new ZMTP20Codec(s, true));
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP20)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
     cmp(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f), pt.readClient());
     pt.writeClient(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 1, 4, 0, 1, 0x63));
     cmp(buf(1, 3, 0, 3, 0x66, 0x6f, 0x6f), pt.readClient());
@@ -78,10 +85,14 @@ public class PipelineTests {
 
   @Test
   public void testZMTPPipelineFragmented() {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP20)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
 
-    PipelineTester pt = new PipelineTester(new ZMTP20Codec(s, true));
     cmp(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f), pt.readClient());
     pt.writeClient(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 1, 4, 0, 1, 0x63, 1, 1, 0x65, 1));
     cmp(buf(1, 3, 0, 3, 0x66, 0x6f, 0x6f), pt.readClient());
@@ -102,10 +113,14 @@ public class PipelineTests {
 
   @Test
   public void testZMTP1PipelineLongMessage() {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP10)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
 
-    PipelineTester pt = new PipelineTester(new ZMTP10Codec(s));
     cmp(buf(0x04, 0, 0x66, 0x6f, 0x6f), pt.readClient());
 
     ByteBuf cb = Unpooled.buffer();
@@ -138,10 +153,14 @@ public class PipelineTests {
   }
 
   private void doTestZMTP1PipelineFragmentedHandshake(ByteBuf first, ByteBuf second) {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP10)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
 
-    PipelineTester pt = new PipelineTester(new ZMTP10Codec(s));
     cmp(buf(0x04, 0, 0x66, 0x6f, 0x6f), pt.readClient());
 
     // write both fragments of client handshake
@@ -171,10 +190,14 @@ public class PipelineTests {
   @Test
   // tests the case when the message to be parsed is fragmented inside the long long size field
   public void testZMTP1PipelineLongMessageFragmentedLong() {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP10)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
 
-    PipelineTester pt = new PipelineTester(new ZMTP10Codec(s));
     cmp(buf(0x04, 0, 0x66, 0x6f, 0x6f), pt.readClient());
 
     ByteBuf cb = Unpooled.buffer();
@@ -208,10 +231,14 @@ public class PipelineTests {
   @Test
   // tests the case when the message to be parsed is fragmented between 0xff flag and 8 octet length
   public void testZMTP1PipelineLongMessageFragmentedSize() {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP10)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
 
-    PipelineTester pt = new PipelineTester(new ZMTP10Codec(s));
     cmp(buf(0x04, 0, 0x66, 0x6f, 0x6f), pt.readClient());
 
     ByteBuf cb = Unpooled.buffer();
@@ -246,10 +273,14 @@ public class PipelineTests {
   @Test
   // tests fragmentation in the size field of the second message
   public void testZMTP1PipelineMultiMessage() {
-    ZMTPSession s = new ZMTPSession(
-        ZMTPConnectionType.Addressed, 1024, "foo".getBytes(), ZMTPSocketType.REQ);
+    PipelineTester pt = new PipelineTester(
+        ZMTPCodec.builder()
+            .protocol(ZMTP10)
+            .socketType(REQ)
+            .connectionType(ADDRESSED)
+            .localIdentity("foo")
+            .build());
 
-    PipelineTester pt = new PipelineTester(new ZMTP10Codec(s));
     cmp(buf(0x04, 0, 0x66, 0x6f, 0x6f), pt.readClient());
 
     ByteBuf cb = Unpooled.buffer();

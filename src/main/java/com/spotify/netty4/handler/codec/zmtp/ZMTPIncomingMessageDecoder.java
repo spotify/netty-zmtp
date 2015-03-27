@@ -26,6 +26,8 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPFrame.EMPTY_FRAME;
 
 public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
 
+  private static final long DEFAULT_SIZE_LIMIT = 4 * 1024 * 1024;
+
   private final boolean enveloped;
   private final long limit;
 
@@ -37,6 +39,10 @@ public class ZMTPIncomingMessageDecoder implements ZMTPMessageDecoder {
   private List<ZMTPFrame> head;
   private List<ZMTPFrame> tail;
   private List<ZMTPFrame> part;
+
+  public ZMTPIncomingMessageDecoder(final boolean enveloped) {
+    this(enveloped, DEFAULT_SIZE_LIMIT);
+  }
 
   public ZMTPIncomingMessageDecoder(final boolean enveloped, final long limit) {
     this.enveloped = enveloped;

@@ -17,6 +17,7 @@ import io.netty.util.concurrent.EventExecutor;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.fill;
 import static org.mockito.Matchers.any;
@@ -46,8 +47,11 @@ public class ZMTPFramingEncoderTest {
   @Test
   public void testEncodeZMTP1() throws Exception {
 
-    ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
-    session.actualVersion(1);
+    ZMTPSession session = ZMTPSession.builder()
+        .type(ADDRESSED)
+        .build();
+    session.handshakeDone(ZMTPHandshake.of(1, null));
+
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     ZMTPMessage message = new ZMTPMessage(
@@ -68,8 +72,11 @@ public class ZMTPFramingEncoderTest {
         asList(ZMTPFrame.from("id0"), ZMTPFrame.from("id1")),
         asList(ZMTPFrame.from("f0")));
 
-    ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
-    session.actualVersion(2);
+    ZMTPSession session = ZMTPSession.builder()
+        .type(ADDRESSED)
+        .build();
+    session.handshakeDone(ZMTPHandshake.of(2, null));
+
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     enc.write(ctx, message, promise);
@@ -90,8 +97,11 @@ public class ZMTPFramingEncoderTest {
                          2, 0, 0, 0, 0, 0, 0, 0x01, 0xf4));
     buf.writeBytes(LARGE_FILL);
 
-    ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, 1024);
-    session.actualVersion(2);
+    ZMTPSession session = ZMTPSession.builder()
+        .type(ADDRESSED)
+        .build();
+    session.handshakeDone(ZMTPHandshake.of(2, null));
+
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
     enc.write(ctx, message, promise);

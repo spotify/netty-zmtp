@@ -21,12 +21,12 @@ import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class ZMTPFrameIntegrationTest {
@@ -50,7 +50,7 @@ public class ZMTPFrameIntegrationTest {
       @Override
       protected void onConnect(final ZMTPSession session) {
         // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId), session.remoteIdentity());
+        assertEquals(ByteBuffer.wrap(ZMTPUtils.encodeUUID(remoteId)), session.remoteIdentity());
       }
 
       @Override
@@ -98,7 +98,7 @@ public class ZMTPFrameIntegrationTest {
       @Override
       protected void onConnect(final ZMTPSession session) {
         // Verify that we can parse the identity correctly
-        assertArrayEquals(ZMTPUtils.encodeUUID(remoteId), session.remoteIdentity());
+        assertEquals(ByteBuffer.wrap(ZMTPUtils.encodeUUID(remoteId)), session.remoteIdentity());
       }
 
       @Override

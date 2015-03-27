@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Spotify AB
+ * Copyright (c) 2012-2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,17 +16,12 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-/**
- * Type of ZMTP connection
- */
-public enum ZMTPConnectionType {
-  /**
-   * ADDRESSED contain identity frames before user content
-   */
-  ADDRESSED,
-  /**
-   * BROADCAST and NEUTRAL doesn't contain any identity frames
-   */
-  BROADCAST,
-  NEUTRAL
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+
+public interface ZMTPHandshaker {
+
+  ByteBuf onConnect();
+
+  ZMTPHandshake inputOutput(ByteBuf buffer, ChannelHandlerContext channel) throws ZMTPException;
 }

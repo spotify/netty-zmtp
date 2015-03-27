@@ -18,12 +18,11 @@ package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import com.google.common.base.Strings;
 
-import com.spotify.netty4.util.BatchFlusher;
-import com.spotify.netty4.handler.codec.zmtp.ZMTP10Codec;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
+import com.spotify.netty4.util.BatchFlusher;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -41,8 +40,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.Addressed;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSession.DEFAULT_SIZE_LIMIT;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
@@ -50,30 +48,21 @@ import static java.util.Arrays.asList;
 
 public class EndToEndBenchmark {
 
-  private static final byte[] NO_IDENTITY = null;
-
-  private static final boolean INTEROP_ON = true;
-  private static final boolean INTEROP_OFF = false;
-
   private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
-  public static final Thread.UncaughtExceptionHandler
-      UNCAUGHT_EXCEPTION_HANDLER =
-      new Thread.UncaughtExceptionHandler() {
-        @Override
-        public void uncaughtException(final Thread thread, final Throwable throwable) {
-          throwable.printStackTrace();
-        }
-      };
 
   public static void main(final String... args) throws InterruptedException {
     final ProgressMeter meter = new ProgressMeter("requests");
 
     // Codecs
-    final ZMTP10Codec serverCodec = new ZMTP10Codec(new ZMTPSession(
-        Addressed, DEFAULT_SIZE_LIMIT, NO_IDENTITY, ROUTER));
+    final ZMTPCodec serverCodec = ZMTPCodec.builder()
+        .socketType(ROUTER)
+        .connectionType(ADDRESSED)
+        .build();
 
-    final ZMTP10Codec clientCodec = new ZMTP10Codec(new ZMTPSession(
-        Addressed, DEFAULT_SIZE_LIMIT, NO_IDENTITY, DEALER));
+    final ZMTPCodec clientCodec = ZMTPCodec.builder()
+        .socketType(DEALER)
+        .connectionType(ADDRESSED)
+        .build();
 
     // Server
     final ServerBootstrap serverBootstrap = new ServerBootstrap()

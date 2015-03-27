@@ -29,6 +29,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
+
 /**
  * Helper to from connections to a zmtp server via netty
  */
@@ -63,14 +67,19 @@ public abstract class ZMTPTestConnector {
     bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
-        final ZMTPSession session = new ZMTPSession(ZMTPConnectionType.Addressed, "client".getBytes());
         ch.pipeline().addLast(
-            new ZMTP10Codec(session),
+            ZMTPCodec.builder()
+                .protocol(ZMTP20)
+                .socketType(DEALER)
+                .connectionType(ADDRESSED)
+                .localIdentity("client".getBytes())
+                .build(),
             new MessageToMessageDecoder<ZMTPIncomingMessage>() {
               @Override
-              public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-                super.channelActive(ctx);
-                onConnect(session);
+              public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
+                if (evt instanceof ZMTPSession) {
+                  onConnect((ZMTPSession) evt);
+                }
               }
 
               @Override

@@ -37,7 +37,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProtocolViolationTests {
@@ -54,16 +58,22 @@ public class ProtocolViolationTests {
 
     private volatile boolean activeCalled;
     private volatile boolean readCalled;
+    private volatile boolean handshaked;
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-      super.channelActive(ctx);
       activeCalled = true;
     }
 
     @Override
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
+      if (evt instanceof ZMTPSession) {
+        handshaked = true;
+      }
+    }
+
+    @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      super.channelRead(ctx, msg);
       ReferenceCountUtil.releaseLater(msg);
       readCalled = true;
     }
@@ -88,7 +98,12 @@ public class ProtocolViolationTests {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
-            new ZMTP10Codec(new ZMTPSession(ZMTPConnectionType.Addressed, identity.getBytes())),
+            ZMTPCodec.builder()
+                .protocol(ZMTP20)
+                .socketType(ROUTER)
+                .connectionType(ADDRESSED)
+                .localIdentity(identity)
+                .build(),
             mockHandler);
       }
     });
@@ -139,7 +154,8 @@ public class ProtocolViolationTests {
 
     Thread.sleep(100);
 
-    assertFalse(mockHandler.activeCalled);
+    assertTrue(mockHandler.activeCalled);
+    assertFalse(mockHandler.handshaked);
     assertFalse(mockHandler.readCalled);
   }
 }
