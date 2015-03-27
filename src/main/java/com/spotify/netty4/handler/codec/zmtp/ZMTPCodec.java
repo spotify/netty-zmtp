@@ -71,8 +71,6 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
     session.handshakeDone(handshake);
 
-    ctx.fireUserEventTriggered(session);
-
     updatePipeline(ctx.pipeline(), session);
 
     // This follows the pattern for dynamic pipelines documented in
@@ -80,6 +78,8 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     if (actualReadableBytes() > 0) {
       out.add(in.readBytes(actualReadableBytes()));
     }
+
+    ctx.fireUserEventTriggered(session);
   }
 
   private void updatePipeline(ChannelPipeline pipeline,

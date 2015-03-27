@@ -126,7 +126,7 @@ public class EndToEndTest {
   }
 
   @Test
-  public void testZMTP10_RouterDealer() throws InterruptedException {
+  public void test_ZMTP10_Router_ZMTP10_Dealer() throws InterruptedException {
     ZMTPCodec server = ZMTPCodec.builder()
         .protocol(ZMTP10)
         .connectionType(ADDRESSED)
@@ -143,7 +143,7 @@ public class EndToEndTest {
   }
 
   @Test
-  public void testZMTP20_RouterDealer_WithInterop() throws InterruptedException {
+  public void test_ZMTP20_Router_ZMTP20_Dealer_WithInterop() throws InterruptedException {
     ZMTPCodec server = ZMTPCodec.builder()
         .protocol(ZMTP20)
         .connectionType(ADDRESSED)
@@ -160,7 +160,7 @@ public class EndToEndTest {
   }
 
   @Test
-  public void test_ZMTP20Server_ZMTP10Client_RouterDealer() throws InterruptedException {
+  public void test_ZMTP20_Router_ZMTP10_Dealer() throws InterruptedException {
     ZMTPCodec server = ZMTPCodec.builder()
         .protocol(ZMTP20)
         .connectionType(ADDRESSED)
@@ -177,7 +177,7 @@ public class EndToEndTest {
   }
 
   @Test
-  public void testZMTP20_RouterDealer_WithNoInterop() throws InterruptedException {
+  public void test_ZMTP20_Router_ZMTP20_Dealer_WithNoInterop() throws InterruptedException {
     ZMTPCodec server = ZMTPCodec.builder()
         .protocol(ZMTP20.withoutInterop())
         .connectionType(ADDRESSED)

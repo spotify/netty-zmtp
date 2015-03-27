@@ -41,6 +41,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -85,9 +86,11 @@ public class ZMQIntegrationTest {
             new ChannelInboundHandlerAdapter() {
 
               @Override
-              public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-                super.channelActive(ctx);
-                channelsConnected.add(ctx.channel());
+              public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
+                  throws Exception {
+                if (evt instanceof ZMTPSession) {
+                  channelsConnected.add(ctx.channel());
+                }
               }
 
               @Override
