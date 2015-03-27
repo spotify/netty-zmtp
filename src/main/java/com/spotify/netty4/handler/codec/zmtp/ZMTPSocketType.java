@@ -8,13 +8,24 @@ package com.spotify.netty4.handler.codec.zmtp;
  * ordinal() can be used to extract serialize the type.
  */
 public enum ZMTPSocketType {
-  PAIR,
-  SUB,
-  PUB,
-  REQ,
-  REP,
-  DEALER,
-  ROUTER,
-  PULL,
-  PUSH
+
+  PAIR(false),
+  SUB(false),
+  PUB(false),
+  REQ(true),
+  REP(true),
+  DEALER(true),
+  ROUTER(true),
+  PULL(false),
+  PUSH(false);
+
+  private final boolean enveloped;
+
+  ZMTPSocketType(final boolean enveloped) {
+    this.enveloped = enveloped;
+  }
+
+  public boolean isEnveloped() {
+    return enveloped;
+  }
 }
