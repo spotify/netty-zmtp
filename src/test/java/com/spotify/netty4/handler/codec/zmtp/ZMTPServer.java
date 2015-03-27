@@ -107,7 +107,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
   }
 
   public String endpoint() {
-    return "tcp://" + serverAddress.getHostString() + ":" + serverAddress.getPort();
+    return "tcp://" + serverAddress.getHostName() + ":" + serverAddress.getPort();
   }
 
   @Override
