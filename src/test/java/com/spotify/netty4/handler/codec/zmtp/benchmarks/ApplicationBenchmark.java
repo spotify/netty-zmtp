@@ -23,9 +23,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEncoder;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
 import com.spotify.netty4.util.BatchFlusher;
@@ -59,8 +59,6 @@ import io.netty.util.internal.chmv8.ForkJoinPool;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static com.spotify.netty4.handler.codec.zmtp.benchmarks.AsciiString.ASCII_STRING_FROM_STRING;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -84,17 +82,13 @@ public class ApplicationBenchmark {
 
     // Codecs
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP10)
-        .connectionType(ADDRESSED)
-        .socketType(ROUTER)
+        .protocol(ZMTP10.withConnectionType(ADDRESSED))
         .encoder(new ReplyEncoder())
         .decoder(new RequestDecoder())
         .build();
 
     final ZMTPCodec clientCodec = ZMTPCodec.builder()
-        .protocol(ZMTP10)
-        .connectionType(ADDRESSED)
-        .socketType(DEALER)
+        .protocol(ZMTP10.withConnectionType(ADDRESSED))
         .encoder(new RequestEncoder())
         .decoder(new ReplyDecoder())
         .build();

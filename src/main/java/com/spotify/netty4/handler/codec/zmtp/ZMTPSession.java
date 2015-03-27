@@ -16,50 +16,36 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 
 /**
  * Represents an ongoing zmtp session
  */
 public class ZMTPSession {
 
+  private final ZMTPProtocol protocol;
   private final ByteBuffer localIdentity;
-  private final ZMTPSocketType socketType;
-  private final ZMTPConnectionType type;
-
-  private final boolean useLocalIdentity;
 
   private AtomicReference<ZMTPHandshake> handshake = new AtomicReference<ZMTPHandshake>();
 
-  private ZMTPSession(final Builder builder) {
-    this.type = builder.type;
-    this.useLocalIdentity = (builder.localIdentity != null);
-    if (builder.localIdentity == null) {
-      this.localIdentity = ByteBuffer.wrap(ZMTPUtils.encodeUUID(UUID.randomUUID()));
-    } else {
-      this.localIdentity = builder.localIdentity;
-    }
-    this.socketType = builder.socketType;
+  ZMTPSession(final ZMTPProtocol protocol) {
+    this(protocol, ByteBuffer.allocate(0));
   }
 
-  /**
-   * Type of connection dictates if a identity frame is needed
-   *
-   * @return Returns the type of connection
-   */
-  public ZMTPConnectionType connectionType() {
-    return type;
+  ZMTPSession(final ZMTPProtocol protocol, final ByteBuffer localIdentity) {
+    this.protocol = checkNotNull(protocol, "protocol");
+    this.localIdentity = checkNotNull(localIdentity, "localIdentity");
   }
 
-  /**
-   * Helper to determine if messages in this session are enveloped
-   */
-  public boolean isEnveloped() {
-    return (type == ZMTPConnectionType.ADDRESSED);
+  public ZMTPProtocol protocol() {
+    return protocol;
+  }
+
+  public ByteBuffer localIdentity() {
+    return localIdentity;
   }
 
   /**
@@ -71,20 +57,6 @@ public class ZMTPSession {
       throw new IllegalStateException("handshake not complete");
     }
     return handshake.remoteIdentity();
-  }
-
-  /**
-   * Return the local identity
-   */
-  public ByteBuffer localIdentity() {
-    return localIdentity.asReadOnlyBuffer();
-  }
-
-  /**
-   * Do we have a local identity or does the system create one
-   */
-  public boolean useLocalIdentity() {
-    return useLocalIdentity;
   }
 
   /**
@@ -112,56 +84,11 @@ public class ZMTPSession {
     return handshake.protocolVersion();
   }
 
-  @Nullable
-  public ZMTPSocketType socketType() {
-    return socketType;
-  }
-
   @Override
   public String toString() {
     return "ZMTPSession{" +
-           "localIdentity=" + localIdentity +
-           ", socketType=" + socketType +
-           ", type=" + type +
-           ", useLocalIdentity=" + useLocalIdentity +
+           "protocol=" + protocol +
            ", handshake=" + handshake +
            '}';
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-
-    private Builder() {
-    }
-
-    private ByteBuffer localIdentity;
-    private ZMTPSocketType socketType;
-    private ZMTPConnectionType type;
-
-    public Builder localIdentity(final byte[] localIdentity) {
-      return localIdentity(ByteBuffer.wrap(localIdentity));
-    }
-
-    public Builder localIdentity(final ByteBuffer localIdentity) {
-      this.localIdentity = localIdentity;
-      return this;
-    }
-
-    public Builder socketType(final ZMTPSocketType socketType) {
-      this.socketType = socketType;
-      return this;
-    }
-
-    public Builder type(final ZMTPConnectionType type) {
-      this.type = type;
-      return this;
-    }
-
-    public ZMTPSession build() {
-      return new ZMTPSession(this);
-    }
   }
 }

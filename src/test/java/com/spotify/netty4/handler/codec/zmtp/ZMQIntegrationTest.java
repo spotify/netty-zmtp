@@ -27,7 +27,6 @@ import java.util.concurrent.TimeoutException;
 
 import io.netty.util.ReferenceCountUtil;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
@@ -156,9 +155,7 @@ public class ZMQIntegrationTest {
       throws InterruptedException,
              TimeoutException {
     final ZMTPCodec codec = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .socketType(nettyType)
-        .connectionType(ADDRESSED)
+        .protocol(ZMTP20.withSocketType(nettyType))
         .localIdentity(identity)
         .build();
 
@@ -169,9 +166,7 @@ public class ZMQIntegrationTest {
 
   private ZMTPSocket nettyBind(final ZMTPSocketType nettyType) {
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .socketType(nettyType)
-        .connectionType(ADDRESSED)
+        .protocol(ZMTP20.withSocketType(nettyType))
         .localIdentity(identity)
         .build();
 

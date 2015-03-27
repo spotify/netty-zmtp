@@ -24,7 +24,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class PipelineTests {
 
-  byte[] LONG_MSG = ("To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your " +
+  byte[] LONG_MSG = (
+      "To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your " +
       "`ChannelPipeline` and it will turn incoming buffers into  `ZMTPIncomingMessage` " +
       "instances up the pipeline and accept `ZMTPMessage` instances that gets serialized into " +
       "buffers downstream.").getBytes();
@@ -58,11 +59,10 @@ public class PipelineTests {
 
   @Test
   public void testZMTPPipeline() {
+
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP20)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP20.withSocketType(REQ))
             .localIdentity("foo")
             .build());
     cmp(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f), pt.readClient());
@@ -70,7 +70,7 @@ public class PipelineTests {
     cmp(buf(1, 3, 0, 3, 0x66, 0x6f, 0x6f), pt.readClient());
 
     pt.writeClient(buf(1, 1, 0x65, 1, 0, 0, 1, 0x62));
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(1, envelope.size());
@@ -87,9 +87,7 @@ public class PipelineTests {
   public void testZMTPPipelineFragmented() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP20)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP20.withSocketType(REQ))
             .localIdentity("foo")
             .build());
 
@@ -98,7 +96,7 @@ public class PipelineTests {
     cmp(buf(1, 3, 0, 3, 0x66, 0x6f, 0x6f), pt.readClient());
 
     pt.writeClient(buf(0, 0, 1, 0x62));
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(1, envelope.size());
@@ -115,9 +113,7 @@ public class PipelineTests {
   public void testZMTP1PipelineLongMessage() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP10.withConnectionType(ADDRESSED))
             .localIdentity("foo")
             .build());
 
@@ -134,7 +130,7 @@ public class PipelineTests {
     cb.writeBytes(LONG_MSG);
 
     pt.writeClient(cb);
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
@@ -155,9 +151,7 @@ public class PipelineTests {
   private void doTestZMTP1PipelineFragmentedHandshake(ByteBuf first, ByteBuf second) {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP10.withConnectionType(ADDRESSED))
             .localIdentity("foo")
             .build());
 
@@ -176,7 +170,7 @@ public class PipelineTests {
     cb.writeBytes(LONG_MSG);
 
     pt.writeClient(cb);
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
@@ -192,9 +186,7 @@ public class PipelineTests {
   public void testZMTP1PipelineLongMessageFragmentedLong() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP10.withConnectionType(ADDRESSED))
             .localIdentity("foo")
             .build());
 
@@ -218,7 +210,7 @@ public class PipelineTests {
 
     pt.writeClient(cb);
 
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
@@ -233,9 +225,7 @@ public class PipelineTests {
   public void testZMTP1PipelineLongMessageFragmentedSize() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP10.withConnectionType(ADDRESSED))
             .localIdentity("foo")
             .build());
 
@@ -259,7 +249,7 @@ public class PipelineTests {
 
     pt.writeClient(cb);
 
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
@@ -275,9 +265,7 @@ public class PipelineTests {
   public void testZMTP1PipelineMultiMessage() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10)
-            .socketType(REQ)
-            .connectionType(ADDRESSED)
+            .protocol(ZMTP10.withConnectionType(ADDRESSED))
             .localIdentity("foo")
             .build());
 
@@ -296,9 +284,8 @@ public class PipelineTests {
     // fragmented first part of frame size
     cb.writeBytes(bytes(1, 1, 0x0ff, 0, 0));
 
-
     pt.writeClient(cb);
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage)pt.readServer();
+    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
 
     List<ZMTPFrame> envelope = m.message().envelope();
     assertEquals(0, envelope.size());
@@ -315,7 +302,7 @@ public class PipelineTests {
     cb.writeBytes(LONG_MSG);
     pt.writeClient(cb);
 
-    m = (ZMTPIncomingMessage)pt.readServer();
+    m = (ZMTPIncomingMessage) pt.readServer();
 
     envelope = m.message().envelope();
     assertEquals(0, envelope.size());

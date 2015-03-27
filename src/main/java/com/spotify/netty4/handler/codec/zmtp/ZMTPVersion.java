@@ -16,21 +16,7 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-/**
- * Type of ZMTP connection.
- */
-public enum ZMTPConnectionType {
-  ADDRESSED(true),
-  BROADCAST(false),
-  NEUTRAL(false);
-
-  private final boolean enveloped;
-
-  public boolean isEnveloped() {
-    return enveloped;
-  }
-
-  ZMTPConnectionType(final boolean enveloped) {
-    this.enveloped = enveloped;
-  }
+public enum ZMTPVersion {
+  ZMTP10,
+  ZMTP20
 }

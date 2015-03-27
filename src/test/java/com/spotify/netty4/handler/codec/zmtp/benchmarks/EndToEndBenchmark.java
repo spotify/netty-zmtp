@@ -41,7 +41,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
@@ -56,17 +55,8 @@ public class EndToEndBenchmark {
     final ProgressMeter meter = new ProgressMeter("requests");
 
     // Codecs
-    final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .socketType(ROUTER)
-        .connectionType(ADDRESSED)
-        .build();
-
-    final ZMTPCodec clientCodec = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .socketType(DEALER)
-        .connectionType(ADDRESSED)
-        .build();
+    final ZMTPCodec serverCodec = ZMTPCodec.of(ZMTP20.withSocketType(ROUTER));
+    final ZMTPCodec clientCodec = ZMTPCodec.of(ZMTP20.withSocketType(DEALER));
 
     // Server
     final ServerBootstrap serverBootstrap = new ServerBootstrap()

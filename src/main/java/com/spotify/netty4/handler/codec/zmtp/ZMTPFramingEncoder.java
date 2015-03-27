@@ -40,7 +40,7 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   private final List<ChannelPromise> promises = new ArrayList<ChannelPromise>();
 
   public ZMTPFramingEncoder(final ZMTPSession session) {
-    this(session, new ZMTPMessageEncoder(session.isEnveloped()));
+    this(session, new ZMTPMessageEncoder(session.protocol().isEnveloped()));
   }
 
   public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPEncoder encoder) {

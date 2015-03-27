@@ -357,9 +357,6 @@ public class ZMTPUtils {
     // skip the flags byte
     buffer.skipBytes(1);
 
-    if (len == 1) {
-      return null;
-    }
     final byte[] identity = new byte[(int) len - 1];
     buffer.readBytes(identity);
     return identity;

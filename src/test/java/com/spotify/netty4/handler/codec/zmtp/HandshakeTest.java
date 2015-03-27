@@ -23,6 +23,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -166,7 +167,7 @@ public class HandshakeTest {
 
     // anonymous handshake
     bs = ZMTPUtils.readZMTP1RemoteIdentity(buf(0x01, 0x00));
-    assertNull(bs);
+    assertTrue(bs.length == 0);
   }
 
   @Test

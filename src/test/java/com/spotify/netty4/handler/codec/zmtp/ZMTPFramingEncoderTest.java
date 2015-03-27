@@ -1,5 +1,8 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
+import com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,6 +21,7 @@ import io.netty.util.concurrent.EventExecutor;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.fill;
 import static org.mockito.Matchers.any;
@@ -47,9 +51,8 @@ public class ZMTPFramingEncoderTest {
   @Test
   public void testEncodeZMTP1() throws Exception {
 
-    ZMTPSession session = ZMTPSession.builder()
-        .type(ADDRESSED)
-        .build();
+    ZMTPProtocol protocol = ZMTP10.withConnectionType(ADDRESSED);
+    ZMTPSession session = new ZMTPSession(protocol);
     session.handshakeDone(ZMTPHandshake.of(1, null));
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
@@ -72,9 +75,8 @@ public class ZMTPFramingEncoderTest {
         asList(ZMTPFrame.from("id0"), ZMTPFrame.from("id1")),
         asList(ZMTPFrame.from("f0")));
 
-    ZMTPSession session = ZMTPSession.builder()
-        .type(ADDRESSED)
-        .build();
+    ZMTPProtocol protocol = ZMTP20.withSocketType(REQ);
+    ZMTPSession session = new ZMTPSession(protocol);
     session.handshakeDone(ZMTPHandshake.of(2, null));
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
@@ -97,9 +99,8 @@ public class ZMTPFramingEncoderTest {
                          2, 0, 0, 0, 0, 0, 0, 0x01, 0xf4));
     buf.writeBytes(LARGE_FILL);
 
-    ZMTPSession session = ZMTPSession.builder()
-        .type(ADDRESSED)
-        .build();
+    ZMTPProtocol protocol = ZMTP20.withSocketType(REQ);
+    ZMTPSession session = new ZMTPSession(protocol);
     session.handshakeDone(ZMTPHandshake.of(2, null));
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);

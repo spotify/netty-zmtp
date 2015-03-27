@@ -35,24 +35,22 @@ import static io.netty.util.CharsetUtil.UTF_8;
  */
 public class ZMTPCodec extends ReplayingDecoder<Void> {
 
-  private final ZMTPHandshaker handshaker;
+  private final ZMTPProtocol protocol;
   private final ZMTPSession session;
+  private final ZMTPHandshaker handshaker;
 
   private final ZMTPEncoder encoder;
   private final ZMTPDecoder decoder;
 
   public ZMTPCodec(final Builder builder) {
-    this.session = ZMTPSession.builder()
-        .localIdentity(builder.localIdentity)
-        .socketType(builder.socketType)
-        .type(builder.connectionType)
-        .build();
-    this.handshaker = checkNotNull(builder.protocol, "protocol").handshaker(session);
+    this.protocol = checkNotNull(builder.protocol, "protocol");
+    this.session = new ZMTPSession(protocol, builder.localIdentity);
+    this.handshaker = protocol.handshaker(session);
     this.encoder = (builder.encoder == null)
-                   ? new ZMTPMessageEncoder(session.isEnveloped())
+                   ? new ZMTPMessageEncoder(protocol.isEnveloped())
                    : builder.encoder;
     this.decoder = (builder.decoder == null)
-                   ? new ZMTPMessageDecoder(session.isEnveloped())
+                   ? new ZMTPMessageDecoder(protocol.isEnveloped())
                    : builder.decoder;
   }
 
@@ -98,39 +96,31 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     return new Builder();
   }
 
+  public static ZMTPCodec of(final ZMTPProtocol protocol) {
+    return builder().protocol(protocol).build();
+  }
+
   public static class Builder {
 
     private ZMTPProtocol protocol;
-    private ZMTPConnectionType connectionType;
-    private ZMTPSocketType socketType;
-    private ByteBuffer localIdentity;
+    private ByteBuffer localIdentity = ByteBuffer.allocate(0);
     private ZMTPEncoder encoder;
     private ZMTPDecoder decoder;
 
     private Builder() {
     }
 
-    public Builder protocol(final ZMTPProtocol procotol) {
-      this.protocol = procotol;
+    public Builder protocol(final ZMTPProtocol protocol) {
+      this.protocol = protocol;
       return this;
-    }
-
-    public Builder connectionType(final ZMTPConnectionType connectionType) {
-      this.connectionType = connectionType;
-      return this;
-    }
-
-    public Builder socketType(final ZMTPSocketType socketType) {
-      this.socketType = socketType;
-      return this;
-    }
-
-    public Builder localIdentity(final byte[] localIdentity) {
-      return localIdentity(ByteBuffer.wrap(localIdentity));
     }
 
     public Builder localIdentity(final CharSequence localIdentity) {
       return localIdentity(UTF_8.encode(localIdentity.toString()));
+    }
+
+    public Builder localIdentity(final byte[] localIdentity) {
+      return localIdentity(ByteBuffer.wrap(localIdentity));
     }
 
     public Builder localIdentity(final ByteBuffer localIdentity) {

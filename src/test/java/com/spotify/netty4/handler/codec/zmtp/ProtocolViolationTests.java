@@ -37,7 +37,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static org.junit.Assert.assertFalse;
@@ -99,9 +98,7 @@ public class ProtocolViolationTests {
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
             ZMTPCodec.builder()
-                .protocol(ZMTP20)
-                .socketType(ROUTER)
-                .connectionType(ADDRESSED)
+                .protocol(ZMTP20.withSocketType(ROUTER))
                 .localIdentity(identity)
                 .build(),
             mockHandler);

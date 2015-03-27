@@ -127,68 +127,39 @@ public class EndToEndTest {
 
   @Test
   public void test_ZMTP10_Router_ZMTP10_Dealer() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.builder()
-        .protocol(ZMTP10)
-        .connectionType(ADDRESSED)
-        .socketType(ROUTER)
-        .build();
-
-    ZMTPCodec client = ZMTPCodec.builder()
-        .protocol(ZMTP10)
-        .connectionType(ADDRESSED)
-        .socketType(DEALER)
-        .build();
-
+    ZMTPCodec server = ZMTPCodec.of(ZMTP10.withConnectionType(ADDRESSED));
+    ZMTPCodec client = ZMTPCodec.of(ZMTP10.withConnectionType(ADDRESSED));
     testRequestReply(server, client);
   }
 
   @Test
   public void test_ZMTP20_Router_ZMTP20_Dealer_WithInterop() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .connectionType(ADDRESSED)
-        .socketType(ROUTER)
-        .build();
-
-    ZMTPCodec client = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .connectionType(ADDRESSED)
-        .socketType(DEALER)
-        .build();
+    ZMTPCodec server = ZMTPCodec.of(ZMTP20.withSocketType(ROUTER));
+    ZMTPCodec client = ZMTPCodec.of(ZMTP20.withSocketType(DEALER));
 
     testRequestReply(server, client);
   }
 
   @Test
-  public void test_ZMTP20_Router_ZMTP10_Dealer() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.builder()
-        .protocol(ZMTP20)
-        .connectionType(ADDRESSED)
-        .socketType(ROUTER)
-        .build();
-
-    ZMTPCodec client = ZMTPCodec.builder()
-        .protocol(ZMTP10)
-        .connectionType(ADDRESSED)
-        .socketType(DEALER)
-        .build();
-
+  public void test_ZMTP20_Router_ZMTP10_Addressed() throws InterruptedException {
+    ZMTPCodec server = ZMTPCodec.of(ZMTP20.withSocketType(ROUTER));
+    ZMTPCodec client = ZMTPCodec.of(ZMTP10.withConnectionType(ADDRESSED));
     testRequestReply(server, client);
   }
 
   @Test
   public void test_ZMTP20_Router_ZMTP20_Dealer_WithNoInterop() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.builder()
-        .protocol(ZMTP20.withoutInterop())
-        .connectionType(ADDRESSED)
-        .socketType(ROUTER)
-        .build();
+    ZMTPCodec server = ZMTPCodec.of(
+        ZMTP20.builder()
+            .interop(false)
+            .socketType(ROUTER)
+            .build());
 
-    ZMTPCodec client = ZMTPCodec.builder()
-        .protocol(ZMTP20.withoutInterop())
-        .connectionType(ADDRESSED)
-        .socketType(DEALER)
-        .build();
+    ZMTPCodec client = ZMTPCodec.of(
+        ZMTP20.builder()
+            .interop(false)
+            .socketType(DEALER)
+            .build());
 
     testRequestReply(server, client);
   }

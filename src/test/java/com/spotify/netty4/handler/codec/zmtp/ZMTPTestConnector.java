@@ -16,6 +16,8 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
+
 import org.zeromq.ZMQ;
 
 import java.net.InetSocketAddress;
@@ -30,8 +32,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 
 /**
  * Helper to from connections to a zmtp server via netty
@@ -69,9 +69,7 @@ public abstract class ZMTPTestConnector {
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
             ZMTPCodec.builder()
-                .protocol(ZMTP20)
-                .socketType(DEALER)
-                .connectionType(ADDRESSED)
+                .protocol(ZMTP10.withConnectionType(ADDRESSED))
                 .localIdentity("client".getBytes())
                 .build(),
             new MessageToMessageDecoder<ZMTPIncomingMessage>() {

@@ -18,8 +18,31 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 public interface ZMTPProtocol {
 
-  ZMTP10Protocol ZMTP10 = new ZMTP10Protocol();
-  ZMTP20Protocol ZMTP20 = new ZMTP20Protocol();
+  boolean isEnveloped();
 
   ZMTPHandshaker handshaker(ZMTPSession session);
+
+  ZMTPVersion version();
+
+  static class ZMTP10 {
+
+    public static ZMTP10Protocol.Builder builder() {
+      return ZMTP10Protocol.builder();
+    }
+
+    public static ZMTP10Protocol withConnectionType(ZMTPConnectionType connectionType) {
+      return ZMTP10Protocol.builder().connectionType(connectionType).build();
+    }
+  }
+
+  static class ZMTP20 {
+
+    public static ZMTP20Protocol.Builder builder() {
+      return ZMTP20Protocol.builder();
+    }
+
+    public static ZMTP20Protocol withSocketType(ZMTPSocketType socketType) {
+      return ZMTP20Protocol.builder().socketType(socketType).build();
+    }
+  }
 }
