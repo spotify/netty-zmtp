@@ -22,6 +22,7 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.util.BatchFlusher;
 
 import java.net.InetSocketAddress;
@@ -41,6 +42,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
@@ -55,11 +57,13 @@ public class EndToEndBenchmark {
 
     // Codecs
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
+        .protocol(ZMTP20)
         .socketType(ROUTER)
         .connectionType(ADDRESSED)
         .build();
 
     final ZMTPCodec clientCodec = ZMTPCodec.builder()
+        .protocol(ZMTP20)
         .socketType(DEALER)
         .connectionType(ADDRESSED)
         .build();
@@ -103,7 +107,6 @@ public class EndToEndBenchmark {
 
     @Override
     public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
-      super.channelRegistered(ctx);
       this.flusher = new BatchFlusher(ctx.channel());
     }
 
@@ -137,16 +140,18 @@ public class EndToEndBenchmark {
 
     @Override
     public void channelRegistered(final ChannelHandlerContext ctx) throws Exception {
-      super.channelRegistered(ctx);
       this.flusher = new BatchFlusher(ctx.channel());
     }
+
     @Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-      super.channelActive(ctx);
-      for (int i = 0; i < CONCURRENCY; i++) {
-        ctx.write(req());
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
+        throws Exception {
+      if (evt instanceof ZMTPSession) {
+        for (int i = 0; i < CONCURRENCY; i++) {
+          ctx.write(req());
+        }
+        flusher.flush();
       }
-      flusher.flush();
     }
 
     private ZMTPMessage req() {
