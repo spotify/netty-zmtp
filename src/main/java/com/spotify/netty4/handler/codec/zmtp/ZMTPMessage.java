@@ -17,7 +17,7 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.charset.Charset;
-import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.netty.util.AbstractReferenceCounted;
@@ -48,39 +48,35 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   /**
    * Create a new message from a string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromUTF8(final String... frames) {
-    return from(UTF_8, frames);
+  public static ZMTPMessage fromUTF8(final String... strings) {
+    return from(UTF_8, strings);
   }
 
   /**
    * Create a new message from a list of string frames, using UTF-8 encoding.
    */
-  public static ZMTPMessage fromUTF8(final List<String> frames) {
-    return from(UTF_8, frames);
+  public static ZMTPMessage fromUTF8(final List<String> strings) {
+    return from(UTF_8, strings);
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage from(final Charset charset, final String... frames) {
-    return from(charset, asList(frames));
+  public static ZMTPMessage from(final Charset charset, final String... strings) {
+    return from(charset, asList(strings));
   }
 
   /**
    * Create a new message from a list of string frames, using a specified encoding.
    */
-  public static ZMTPMessage from(final Charset charset, final List<String> frames) {
-    return from(new AbstractList<ZMTPFrame>() {
-      @Override
-      public ZMTPFrame get(final int index) {
-        return ZMTPFrame.from(frames.get(index), charset);
-      }
-
-      @Override
-      public int size() {
-        return frames.size();
-      }
-    });
+  @SuppressWarnings("ForLoopReplaceableByForEach")
+  public static ZMTPMessage from(final Charset charset, final List<String> strings) {
+    final int n = strings.size();
+    final List<ZMTPFrame> frames = new ArrayList<ZMTPFrame>(n);
+    for (int i = 0; i < n; i++) {
+      frames.add(ZMTPFrame.from(strings.get(i), charset));
+    }
+    return from(frames);
   }
 
   /**
