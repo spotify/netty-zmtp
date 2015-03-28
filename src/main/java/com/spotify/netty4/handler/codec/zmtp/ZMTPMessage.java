@@ -33,6 +33,18 @@ public class ZMTPMessage extends AbstractReferenceCounted {
     this.frames = frames;
   }
 
+  @Override
+  public ZMTPMessage retain() {
+    super.retain();
+    return this;
+  }
+
+  @Override
+  public ZMTPMessage retain(final int increment) {
+    super.retain(increment);
+    return this;
+  }
+
   /**
    * Create a new message from a string frames, using UTF-8 encoding.
    */
