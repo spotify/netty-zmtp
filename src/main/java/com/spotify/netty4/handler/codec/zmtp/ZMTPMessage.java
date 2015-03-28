@@ -20,6 +20,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.util.AbstractReferenceCounted;
 
 import static io.netty.util.CharsetUtil.UTF_8;
@@ -27,9 +29,9 @@ import static java.util.Arrays.asList;
 
 public class ZMTPMessage extends AbstractReferenceCounted {
 
-  private final List<ZMTPFrame> frames;
+  private final List<ByteBuf> frames;
 
-  public ZMTPMessage(final List<ZMTPFrame> frames) {
+  public ZMTPMessage(final List<ByteBuf> frames) {
     this.frames = frames;
   }
 
@@ -72,9 +74,9 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static ZMTPMessage from(final Charset charset, final List<String> strings) {
     final int n = strings.size();
-    final List<ZMTPFrame> frames = new ArrayList<ZMTPFrame>(n);
+    final List<ByteBuf> frames = new ArrayList<ByteBuf>(n);
     for (int i = 0; i < n; i++) {
-      frames.add(ZMTPFrame.from(strings.get(i), charset));
+      frames.add(Unpooled.copiedBuffer(strings.get(i), charset));
     }
     return from(frames);
   }
@@ -82,7 +84,7 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   /**
    * Create a new message from a list of frames.
    */
-  public static ZMTPMessage from(final List<ZMTPFrame> frames) {
+  public static ZMTPMessage from(final List<ByteBuf> frames) {
     return new ZMTPMessage(frames);
   }
 
@@ -93,20 +95,20 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   /**
    * @return Current list of content in the message
    */
-  public List<ZMTPFrame> frames() {
+  public List<ByteBuf> frames() {
     return frames;
   }
 
   /**
    * Get a specific frame.
    */
-  public ZMTPFrame frame(final int i) {
+  public ByteBuf frame(final int i) {
     return frames.get(i);
   }
 
   @Override
   protected void deallocate() {
-    for (final ZMTPFrame frame : frames) {
+    for (final ByteBuf frame : frames) {
       frame.release();
     }
   }

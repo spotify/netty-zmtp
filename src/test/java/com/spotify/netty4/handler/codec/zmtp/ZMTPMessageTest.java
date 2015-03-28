@@ -23,6 +23,10 @@ import org.junit.Test;
 
 import java.util.List;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -41,11 +45,11 @@ public class ZMTPMessageTest {
     return new ZMTPMessage(frames(asList(frames)));
   }
 
-  private static List<ZMTPFrame> frames(final List<String> frames) {
-    return Lists.transform(frames, new Function<String, ZMTPFrame>() {
+  private static List<ByteBuf> frames(final List<String> frames) {
+    return Lists.transform(frames, new Function<String, ByteBuf>() {
       @Override
-      public ZMTPFrame apply(final String input) {
-        return ZMTPFrame.fromUTF8(input);
+      public ByteBuf apply(final String input) {
+        return Unpooled.copiedBuffer(input, UTF_8);
       }
     });
   }

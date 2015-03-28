@@ -151,13 +151,12 @@ public class ZMTPUtils {
    * @param buffer The target buffer.
    * @param more   True to write a more flag, false to write a final flag.
    */
-  public static void writeFrame(final ZMTPFrame frame, final ByteBuf buffer,
+  public static void writeFrame(final ByteBuf frame, final ByteBuf buffer,
                                 final boolean more, final int version) {
-    writeFrameHeader(buffer, frame.size(), frame.size(), more, version);
-    if (frame.hasData()) {
-      final ByteBuf source = frame.data();
-      buffer.ensureWritable(source.readableBytes());
-      source.getBytes(source.readerIndex(), buffer, source.readableBytes());
+    writeFrameHeader(buffer, frame.readableBytes(), frame.readableBytes(), more, version);
+    if (frame.isReadable()) {
+      buffer.ensureWritable(frame.readableBytes());
+      frame.getBytes(frame.readerIndex(), buffer, frame.readableBytes());
     }
   }
 
@@ -184,7 +183,7 @@ public class ZMTPUtils {
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer, int version) {
-    final List<ZMTPFrame> content = message.frames();
+    final List<ByteBuf> content = message.frames();
     final int n = content.size();
     final int lastFrame = n - 1;
     for (int i = 0; i < n; i++) {
@@ -198,8 +197,8 @@ public class ZMTPUtils {
    * @param frame The frame.
    * @return Bytes needed.
    */
-  public static int frameSize(final ZMTPFrame frame, int version) {
-    return frameSize(frame.size(), version);
+  public static int frameSize(final ByteBuf frame, int version) {
+    return frameSize(frame.readableBytes(), version);
   }
 
   /**
@@ -243,7 +242,7 @@ public class ZMTPUtils {
    * @param version ZMTP version.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static int framesSize(final List<ZMTPFrame> frames, final int version) {
+  public static int framesSize(final List<ByteBuf> frames, final int version) {
     int size = 0;
     final int n = frames.size();
     for (int i = 0; i < n; i++) {
@@ -300,12 +299,12 @@ public class ZMTPUtils {
    * @param frames The ZMTP frames.
    * @return A human readable string representation of the frames.
    */
-  public static String toString(final List<ZMTPFrame> frames) {
+  public static String toString(final List<ByteBuf> frames) {
     final StringBuilder builder = new StringBuilder("[");
     for (int i = 0; i < frames.size(); i++) {
-      final ZMTPFrame frame = frames.get(i);
+      final ByteBuf frame = frames.get(i);
       builder.append('"');
-      builder.append(toString(frame.data()));
+      builder.append(toString(frame));
       builder.append('"');
       if (i < frames.size() - 1) {
         builder.append(',');

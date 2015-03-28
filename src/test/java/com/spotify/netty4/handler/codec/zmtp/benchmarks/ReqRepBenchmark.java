@@ -19,7 +19,6 @@ package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 import com.google.common.base.Strings;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPFrame;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
@@ -146,14 +145,14 @@ public class ReqRepBenchmark {
       REQUEST_TEMPLATE.retain();
       final ByteBuf timestamp = PooledByteBufAllocator.DEFAULT.buffer(8);
       timestamp.writeLong(System.nanoTime());
-      REQUEST_TEMPLATE.frames().set(3, ZMTPFrame.from(timestamp));
+      REQUEST_TEMPLATE.frames().set(3, timestamp);
       return REQUEST_TEMPLATE;
     }
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       final ZMTPIncomingMessage message = (ZMTPIncomingMessage) msg;
-      final long timestamp = message.message().frame(3).data().readLong();
+      final long timestamp = message.message().frame(3).readLong();
       final long latency = System.nanoTime() - timestamp;
       meter.inc(1, latency);
       message.release();

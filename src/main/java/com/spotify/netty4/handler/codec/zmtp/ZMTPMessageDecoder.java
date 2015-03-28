@@ -31,7 +31,7 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
   private long messageSize;
   private int frameLength;
 
-  private List<ZMTPFrame> frames;
+  private List<ByteBuf> frames;
 
   public ZMTPMessageDecoder() {
     this(DEFAULT_SIZE_LIMIT);
@@ -46,7 +46,7 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
    * Reset parser in preparation for the next message.
    */
   private void reset() {
-    frames = new ArrayList<ZMTPFrame>();
+    frames = new ArrayList<ByteBuf>();
     truncated = false;
     messageSize = 0;
     frameLength = 0;
@@ -68,7 +68,7 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
     }
     final ByteBuf frame = data.readSlice(frameLength);
     frame.retain();
-    frames.add(new ZMTPFrame(frame));
+    frames.add(frame);
   }
 
   @Override

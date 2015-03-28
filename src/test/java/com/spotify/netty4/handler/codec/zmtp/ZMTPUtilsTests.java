@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
+import static io.netty.util.CharsetUtil.UTF_8;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
@@ -36,7 +37,7 @@ public class ZMTPUtilsTests {
   public void frameSizeTest() {
     for (boolean more : asList(TRUE, FALSE)) {
       for (int size = 0; size < 1024; size++) {
-        final ZMTPFrame frame = ZMTPFrame.from(new byte[size]);
+        final ByteBuf frame = Unpooled.wrappedBuffer(new byte[size]);
         int estimatedSize = ZMTPUtils.frameSize(frame, 1);
         final ByteBuf buffer = Unpooled.buffer();
         ZMTPUtils.writeFrame(frame, buffer, more, 1);
@@ -48,19 +49,19 @@ public class ZMTPUtilsTests {
 
   @Test
   public void messageSizeTest() {
-    final List<ZMTPFrame> EMPTY = new ArrayList<ZMTPFrame>();
-    final List<ZMTPFrame> manyFrameSizes = new ArrayList<ZMTPFrame>();
+    final List<ByteBuf> EMPTY = new ArrayList<ByteBuf>();
+    final List<ByteBuf> manyFrameSizes = new ArrayList<ByteBuf>();
     for (int i = 0; i < 1024; i++) {
-      manyFrameSizes.add(ZMTPFrame.from(new byte[i]));
+      manyFrameSizes.add(Unpooled.wrappedBuffer(new byte[i]));
     }
-    @SuppressWarnings("unchecked") final List<List<ZMTPFrame>> frameSets = asList(
+    @SuppressWarnings("unchecked") final List<List<ByteBuf>> frameSets = asList(
         EMPTY,
-        asList(ZMTPFrame.fromUTF8("foo")),
-        asList(ZMTPFrame.fromUTF8("foo"), ZMTPFrame.fromUTF8("bar")),
+        asList(Unpooled.copiedBuffer("foo", UTF_8)),
+        asList(Unpooled.copiedBuffer("foo", UTF_8), Unpooled.copiedBuffer("bar", UTF_8)),
         manyFrameSizes);
 
     for (int version : asList(1, 2)) {
-      for (List<ZMTPFrame> frames : frameSets) {
+      for (List<ByteBuf> frames : frameSets) {
         if (frames.isEmpty()) {
           continue;
         }
