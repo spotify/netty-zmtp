@@ -45,7 +45,7 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 
-public class EndToEndBenchmark {
+public class ReqRepBenchmark {
 
   private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
 
