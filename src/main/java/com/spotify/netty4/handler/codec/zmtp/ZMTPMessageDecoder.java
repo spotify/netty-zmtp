@@ -27,7 +27,6 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
 
   private final long limit;
 
-  private boolean delimited;
   private boolean truncated;
   private long messageSize;
   private int frameLength;
@@ -48,7 +47,6 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
    */
   private void reset() {
     frames = new ArrayList<ZMTPFrame>();
-    delimited = false;
     truncated = false;
     messageSize = 0;
     frameLength = 0;
