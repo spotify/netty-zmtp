@@ -31,8 +31,6 @@ public class ZMTPUtils {
   public static final byte LONG_FLAG = 0x02;
   public static final byte MORE_FLAG = 0x1;
 
-  public static final ZMTPFrame DELIMITER = ZMTPFrame.EMPTY_FRAME;
-
   /**
    * Decode a ZMTP/1.0 length field
    *
