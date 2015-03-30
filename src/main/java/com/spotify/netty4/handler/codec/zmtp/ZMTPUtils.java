@@ -58,7 +58,7 @@ public class ZMTPUtils {
    * @param out    Target buffer.
    */
   public static void encodeZMTP1Length(final long length, final ByteBuf out) {
-    encodeZMTP1Length(length, length, out, false);
+    encodeZMTP1Length(out, length, length, false);
   }
 
   /**
@@ -70,18 +70,17 @@ public class ZMTPUtils {
    */
   public static void encodeZMTP1Length(final long length, final ByteBuf out,
                                        final boolean forceLong) {
-    encodeZMTP1Length(length, length, out, forceLong);
+    encodeZMTP1Length(out, length, length, forceLong);
   }
 
   /**
    * Encode a ZMTP/1.0 frame length field.
-   *
+   *  @param out       Target buffer.
    * @param maxLength The maximum length of the field.
    * @param length    The length.
-   * @param out       Target buffer.
    * @param forceLong true to force writing length as a 64 bit unsigned integer.
    */
-  public static void encodeZMTP1Length(final long maxLength, final long length, final ByteBuf out,
+  public static void encodeZMTP1Length(final ByteBuf out, final long maxLength, final long length,
                                        final boolean forceLong) {
     if (maxLength < 255 && !forceLong) {
       out.writeByte((byte) length);
@@ -101,7 +100,7 @@ public class ZMTPUtils {
    */
   private static void encodeZMTP1FrameHeader(final ByteBuf out, final int maxLength,
                                              final int length, final boolean more) {
-    encodeZMTP1Length(maxLength + 1, length + 1, out, false);
+    encodeZMTP1Length(out, maxLength + 1, length + 1, false);
     out.writeByte(more ? MORE_FLAG : FINAL_FLAG);
   }
 
@@ -109,13 +108,14 @@ public class ZMTPUtils {
   /**
    * Encode a ZMTP/2.0 frame header.
    *
+   * @param out       Target buffer.
    * @param maxLength The maximum length of the field.
    * @param length    The length.
    * @param more      true if more frames will follow, false if this is the final frame.
-   * @param out       Target buffer.
    */
-  public static void encodeZMTP2FrameHeader(final long maxLength, final long length,
-                                            final boolean more, final ByteBuf out) {
+  public static void encodeZMTP2FrameHeader(final ByteBuf out, final long maxLength,
+                                            final long length,
+                                            final boolean more) {
     final byte flags = more ? MORE_FLAG : FINAL_FLAG;
     if (maxLength < 256) {
       out.writeByte(flags);
@@ -171,7 +171,7 @@ public class ZMTPUtils {
     if (version == 1) {
       encodeZMTP1FrameHeader(buffer, maxLength, size, more);
     } else { // version == 2
-      encodeZMTP2FrameHeader(maxLength, size, more, buffer);
+      encodeZMTP2FrameHeader(buffer, maxLength, size, more);
     }
   }
 

@@ -18,19 +18,25 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import io.netty.buffer.ByteBuf;
 
+import static java.lang.Math.min;
+
 /**
  * A writer for encoding ZMTP frames onto a {@link ByteBuf}.
  */
 public class ZMTPWriter {
 
   private final int version;
-  private final ByteBuf buf;
 
-  private int headerIndex;
+  private ByteBuf buf;
   private int frameSize;
+  private int headerIndex;
+  private int contentIndex;
 
-  ZMTPWriter(final int version, final ByteBuf buf) {
+  ZMTPWriter(final int version) {
     this.version = version;
+  }
+
+  void reset(final ByteBuf buf) {
     this.buf = buf;
   }
 
@@ -45,6 +51,7 @@ public class ZMTPWriter {
     frameSize = size;
     headerIndex = buf.writerIndex();
     ZMTPUtils.writeFrameHeader(buf, size, size, more, version);
+    contentIndex = buf.writerIndex();
     return buf;
   }
 
@@ -56,14 +63,27 @@ public class ZMTPWriter {
    * @param size New size. This must not be greater than the size provided in the call to {@link
    *             #frame}.
    * @param more true if more frames will be written, false if this is the last frame.
+   * @return A {@link ByteBuf} for writing the remainder of the frame payload, if any. The {@link
+   * ByteBuf#writerIndex()} will be set to directly after the already written payload, or truncated
+   * down to the end of the new smaller payload, if the written payload exceeds the new frame size.
    */
-  public void reframe(final int size, final boolean more) {
+  public ByteBuf reframe(final int size, final boolean more) {
     if (size > frameSize) {
+      // Although ByteBufs grow (reallocate) dynamically, the header might end up taking more space,
+      // forcing us to move the already written payload. We currently do not implement this.
       throw new IllegalArgumentException("new frame size is greater than original size");
     }
     final int mark = buf.writerIndex();
+    final int written = mark - contentIndex;
+    if (written < 0) {
+
+    }
+    final int newIndex = contentIndex + min(written, size);
     buf.writerIndex(headerIndex);
     ZMTPUtils.writeFrameHeader(buf, frameSize, size, more, version);
-    buf.writerIndex(mark);
+    buf.writerIndex(newIndex);
+    return buf;
   }
+
+
 }

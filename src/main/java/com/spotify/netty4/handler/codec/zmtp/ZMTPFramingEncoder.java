@@ -33,11 +33,12 @@ import io.netty.util.ReferenceCountUtil;
  */
 class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 
-  private final ZMTPSession session;
   private final ZMTPEncoder encoder;
 
   private final List<Object> messages = new ArrayList<Object>();
   private final List<ChannelPromise> promises = new ArrayList<ChannelPromise>();
+  private ZMTPWriter writer;
+  private ZMTPEstimator estimator;
 
   ZMTPFramingEncoder(final ZMTPSession session) {
     this(session, new ZMTPMessageEncoder());
@@ -50,8 +51,9 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
     if (encoder == null) {
       throw new NullPointerException("encoder");
     }
-    this.session = session;
     this.encoder = encoder;
+    this.writer = new ZMTPWriter(session.actualVersion());
+    this.estimator = new ZMTPEstimator(session.actualVersion());
   }
 
   @Override
@@ -66,12 +68,12 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
     if (messages == null) {
       return;
     }
-    final ZMTPEstimator estimator = new ZMTPEstimator(session.actualVersion());
+    estimator.reset();
     for (final Object message : messages) {
       encoder.estimate(message, estimator);
     }
     final ByteBuf output = ctx.alloc().buffer(estimator.size());
-    final ZMTPWriter writer = new ZMTPWriter(session.actualVersion(), output);
+    writer.reset(output);
     for (final Object message : messages) {
       encoder.encode(message, writer);
       ReferenceCountUtil.release(message);
