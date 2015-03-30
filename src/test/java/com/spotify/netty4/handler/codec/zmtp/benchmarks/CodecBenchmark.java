@@ -112,13 +112,13 @@ public class CodecBenchmark {
   }
 
   @Benchmark
-  public Object encodingV1() throws ZMTPParsingException {
+  public Object encodingV1() {
     ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), 1);
     return tmp;
   }
 
   @Benchmark
-  public Object encodingV2() throws ZMTPParsingException {
+  public Object encodingV2() {
     ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), 2);
     return tmp;
   }

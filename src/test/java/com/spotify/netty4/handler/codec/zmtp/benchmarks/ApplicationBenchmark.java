@@ -54,7 +54,6 @@ import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.internal.chmv8.ForkJoinPool;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
@@ -237,10 +236,6 @@ public class ApplicationBenchmark {
 
     public RequestPromise(final Channel channel) {
       super(channel);
-    }
-
-    public RequestPromise(final Channel channel, final EventExecutor executor) {
-      super(channel, executor);
     }
 
     public SettableFuture<Reply> replyFuture() {

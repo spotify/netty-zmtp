@@ -151,9 +151,7 @@ public class ZMQIntegrationTest {
     return socket;
   }
 
-  private ZMTPClient nettyConnect(final ZMTPSocketType nettyType)
-      throws InterruptedException,
-             TimeoutException {
+  private ZMTPClient nettyConnect(final ZMTPSocketType nettyType) {
     final ZMTPCodec codec = ZMTPCodec.builder()
         .protocol(ZMTP20.withSocketType(nettyType))
         .localIdentity(identity)

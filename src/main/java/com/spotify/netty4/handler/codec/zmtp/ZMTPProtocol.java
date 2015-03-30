@@ -22,7 +22,7 @@ public interface ZMTPProtocol {
 
   ZMTPVersion version();
 
-  static class ZMTP10 {
+  class ZMTP10 {
 
     public static ZMTP10Protocol.Builder builder() {
       return ZMTP10Protocol.builder();
@@ -33,7 +33,7 @@ public interface ZMTPProtocol {
     }
   }
 
-  static class ZMTP20 {
+  class ZMTP20 {
 
     public static ZMTP20Protocol.Builder builder() {
       return ZMTP20Protocol.builder();

@@ -38,9 +38,6 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED
  */
 abstract class ZMTPTestConnector {
 
-  private ZMQ.Context context;
-  private ZMQ.Socket serverSocket;
-
   private boolean receivedMessage = false;
 
   public abstract void preConnect(ZMQ.Socket socket);
@@ -50,8 +47,8 @@ abstract class ZMTPTestConnector {
   public abstract boolean onMessage(ZMTPIncomingMessage msg);
 
   public boolean connectAndReceive(final String ip, final int port, final int serverType) {
-    context = ZMQ.context(1);
-    serverSocket = context.socket(serverType);
+    final ZMQ.Context context = ZMQ.context(1);
+    final ZMQ.Socket serverSocket = context.socket(serverType);
 
     preConnect(serverSocket);
 

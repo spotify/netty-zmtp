@@ -49,11 +49,6 @@ import static org.junit.Assert.assertThat;
 
 public class EndToEndTest {
 
-  public static final byte[] NO_IDENTITY = null;
-
-  public static final boolean INTEROP_ON = true;
-  private static final boolean INTEROP_OFF = false;
-
   private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
 
   private Channel bind(final SocketAddress address, final ChannelHandler codec,
