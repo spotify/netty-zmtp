@@ -34,8 +34,8 @@ public class ZMTPConfig {
   private final boolean interop;
   private final ZMTPSocketType socketType;
   private final ByteBuffer localIdentity;
-  private final ZMTPEncoderFactory encoder;
-  private final ZMTPDecoderFactory decoder;
+  private final ZMTPEncoder.Factory encoder;
+  private final ZMTPDecoder.Factory decoder;
 
   private ZMTPConfig(final Builder builder) {
     this.protocol = checkNotNull(builder.protocol, "protocol");
@@ -62,11 +62,11 @@ public class ZMTPConfig {
     return localIdentity;
   }
 
-  public ZMTPEncoderFactory encoder() {
+  public ZMTPEncoder.Factory encoder() {
     return encoder;
   }
 
-  public ZMTPDecoderFactory decoder() {
+  public ZMTPDecoder.Factory decoder() {
     return decoder;
   }
 
@@ -84,8 +84,8 @@ public class ZMTPConfig {
     private boolean interop = true;
     private ZMTPSocketType socketType;
     private ByteBuffer localIdentity = ANONYMOUS;
-    private ZMTPEncoderFactory encoder = ZMTPMessageEncoder.FACTORY;
-    private ZMTPDecoderFactory decoder = ZMTPMessageDecoder.FACTORY;
+    private ZMTPEncoder.Factory encoder = ZMTPMessageEncoder.FACTORY;
+    private ZMTPDecoder.Factory decoder = ZMTPMessageDecoder.FACTORY;
 
     private Builder() {
     }
@@ -128,7 +128,7 @@ public class ZMTPConfig {
       return this;
     }
 
-    public Builder encoder(final ZMTPEncoderFactory encoder) {
+    public Builder encoder(final ZMTPEncoder.Factory encoder) {
       this.encoder = encoder;
       return this;
     }
@@ -137,7 +137,7 @@ public class ZMTPConfig {
       return encoder(new ZMTPEncoderClassFactory(encoder));
     }
 
-    public Builder decoder(final ZMTPDecoderFactory decoder) {
+    public Builder decoder(final ZMTPDecoder.Factory decoder) {
       this.decoder = decoder;
       return this;
     }
@@ -164,7 +164,7 @@ public class ZMTPConfig {
            '}';
   }
 
-  private static class ZMTPEncoderClassFactory implements ZMTPEncoderFactory {
+  private static class ZMTPEncoderClassFactory implements ZMTPEncoder.Factory {
 
     private final Constructor<? extends ZMTPEncoder> constructor;
 
@@ -197,7 +197,7 @@ public class ZMTPConfig {
     }
   }
 
-  private static class ZMTPDecoderClassFactory implements ZMTPDecoderFactory {
+  private static class ZMTPDecoderClassFactory implements ZMTPDecoder.Factory {
 
     private final Constructor<? extends ZMTPDecoder> constructor;
 

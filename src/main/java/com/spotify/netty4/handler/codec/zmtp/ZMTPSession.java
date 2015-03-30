@@ -53,7 +53,7 @@ public class ZMTPSession {
   }
 
   /**
-   * Set the
+   * Signal ZMTP handshake completion.
    */
   void handshakeDone(final ZMTPHandshake handshake) {
     if (!this.handshake.compareAndSet(null, handshake)) {

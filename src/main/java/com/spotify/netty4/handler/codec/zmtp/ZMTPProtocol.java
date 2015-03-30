@@ -22,6 +22,6 @@ public interface ZMTPProtocol {
 
   ZMTPVersion version();
 
-  final ZMTPProtocol ZMTP10 = new ZMTP10Protocol();
-  final ZMTPProtocol ZMTP20 = new ZMTP20Protocol();
+  ZMTPProtocol ZMTP10 = new ZMTP10Protocol();
+  ZMTPProtocol ZMTP20 = new ZMTP20Protocol();
 }

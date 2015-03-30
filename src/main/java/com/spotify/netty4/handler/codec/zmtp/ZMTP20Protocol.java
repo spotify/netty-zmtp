@@ -26,7 +26,7 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.encodeZMTP1Length;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.readZMTP1RemoteIdentity;
 
-public class ZMTP20Protocol implements ZMTPProtocol {
+class ZMTP20Protocol implements ZMTPProtocol {
 
   @Override
   public ZMTPHandshaker handshaker(final ZMTPConfig config) {

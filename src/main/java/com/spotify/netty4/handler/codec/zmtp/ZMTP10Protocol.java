@@ -24,7 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.encodeZMTP1Length;
 
-public class ZMTP10Protocol implements ZMTPProtocol {
+class ZMTP10Protocol implements ZMTPProtocol {
 
   @Override
   public ZMTPHandshaker handshaker(final ZMTPConfig config) {

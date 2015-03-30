@@ -18,7 +18,6 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import io.netty.buffer.ByteBuf;
 
-
 /**
  * A writer for encoding ZMTP frames onto a {@link ByteBuf}.
  */
@@ -30,7 +29,7 @@ public class ZMTPWriter {
   private int headerIndex;
   private int frameSize;
 
-  public ZMTPWriter(final int version, final ByteBuf buf) {
+  ZMTPWriter(final int version, final ByteBuf buf) {
     this.version = version;
     this.buf = buf;
   }

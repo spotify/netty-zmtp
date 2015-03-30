@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 
 public class ZMTPMessageEncoder implements ZMTPEncoder {
 
-  public static final ZMTPEncoderFactory FACTORY = new ZMTPEncoderFactory() {
+  public static final Factory FACTORY = new Factory() {
     @Override
     public ZMTPEncoder encoder(final ZMTPConfig config) {
       return new ZMTPMessageEncoder();

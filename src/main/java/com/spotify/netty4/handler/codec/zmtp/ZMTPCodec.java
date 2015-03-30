@@ -123,7 +123,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
       return this;
     }
 
-    public Builder encoder(final ZMTPEncoderFactory encoder) {
+    public Builder encoder(final ZMTPEncoder.Factory encoder) {
       config.encoder(encoder);
       return this;
     }
@@ -133,7 +133,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
       return this;
     }
 
-    public Builder decoder(final ZMTPDecoderFactory decoder) {
+    public Builder decoder(final ZMTPDecoder.Factory decoder) {
       config.decoder(decoder);
       return this;
     }

@@ -19,7 +19,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
-public interface ZMTPHandshaker {
+interface ZMTPHandshaker {
 
   /**
    * Get a greeting to send immediately when a connection is established.

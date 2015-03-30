@@ -18,21 +18,21 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.ByteBuffer;
 
-public class ZMTPHandshake {
+class ZMTPHandshake {
 
   private final int version;
   private final ByteBuffer remoteIdentity;
 
-  public ZMTPHandshake(final int version, final ByteBuffer remoteIdentity) {
+  ZMTPHandshake(final int version, final ByteBuffer remoteIdentity) {
     this.version = version;
     this.remoteIdentity = remoteIdentity;
   }
 
-  public int protocolVersion() {
+  int protocolVersion() {
     return version;
   }
 
-  public ByteBuffer remoteIdentity() {
+  ByteBuffer remoteIdentity() {
     return remoteIdentity == null ? null : remoteIdentity.asReadOnlyBuffer();
   }
 

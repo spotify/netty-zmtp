@@ -39,11 +39,11 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   private final List<Object> messages = new ArrayList<Object>();
   private final List<ChannelPromise> promises = new ArrayList<ChannelPromise>();
 
-  public ZMTPFramingEncoder(final ZMTPSession session) {
+  ZMTPFramingEncoder(final ZMTPSession session) {
     this(session, new ZMTPMessageEncoder());
   }
 
-  public ZMTPFramingEncoder(final ZMTPSession session, final ZMTPEncoder encoder) {
+  ZMTPFramingEncoder(final ZMTPSession session, final ZMTPEncoder encoder) {
     if (session == null) {
       throw new NullPointerException("session");
     }
@@ -87,8 +87,8 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 
     private final ChannelPromise[] promises;
 
-    public AggregatePromise(final Channel channel,
-                            final List<ChannelPromise> promises) {
+    private AggregatePromise(final Channel channel,
+                             final List<ChannelPromise> promises) {
       super(channel);
       this.promises = promises.toArray(new ChannelPromise[promises.size()]);
     }

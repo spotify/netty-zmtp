@@ -38,4 +38,15 @@ public interface ZMTPEncoder {
    * @param writer  The {@link ZMTPWriter} to use.
    */
   void encode(Object message, ZMTPWriter writer);
+
+  /**
+   * Creates {@link ZMTPEncoder} instances.
+   */
+  interface Factory {
+
+    /**
+     * Create a {@link ZMTPEncoder} given a {@link ZMTPConfig};
+     */
+    ZMTPEncoder encoder(ZMTPConfig config);
+  }
 }

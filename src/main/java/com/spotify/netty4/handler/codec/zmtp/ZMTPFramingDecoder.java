@@ -32,7 +32,7 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
   /**
    * Creates a new decoder.
    */
-  public ZMTPFramingDecoder(final ZMTPMessageParser parser) {
+  ZMTPFramingDecoder(final ZMTPMessageParser parser) {
     this.parser = parser;
   }
 

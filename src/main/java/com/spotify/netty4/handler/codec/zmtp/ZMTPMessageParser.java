@@ -40,7 +40,7 @@ public class ZMTPMessageParser {
   private boolean headerParsed;
 
 
-  public ZMTPMessageParser(final int version, final ZMTPDecoder decoder) {
+  ZMTPMessageParser(final int version, final ZMTPDecoder decoder) {
     this.version = version;
     this.decoder = decoder;
   }

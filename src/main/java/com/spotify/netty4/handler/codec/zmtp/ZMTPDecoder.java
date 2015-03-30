@@ -52,4 +52,15 @@ public interface ZMTPDecoder {
    * @param out {@link List} to which decoded messages should be added.
    */
   void finish(final List<Object> out);
+
+  /**
+   * Creates {@link ZMTPDecoder} instances.
+   */
+  interface Factory {
+
+    /**
+     * Create a {@link ZMTPDecoder} given a {@link ZMTPConfig};
+     */
+    ZMTPDecoder decoder(ZMTPConfig config);
+  }
 }

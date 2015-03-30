@@ -31,6 +31,10 @@ public class ZMTPMessage extends AbstractReferenceCounted {
 
   private final List<ByteBuf> frames;
 
+  /**
+   * Create a new {@link ZMTPMessage} from a {@link List} of {@link ByteBuf} frames. Assumes
+   * ownership of the list and buffers. The list is not copied and must thus not be modified again.
+   */
   public ZMTPMessage(final List<ByteBuf> frames) {
     this.frames = frames;
   }

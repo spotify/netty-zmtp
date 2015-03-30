@@ -78,6 +78,7 @@ public class CodecBenchmark {
     ZMTPUtils.writeMessage(message, incomingV2, 2);
   }
 
+  @SuppressWarnings("ForLoopReplaceableByForEach")
   private void consumeAndRelease(final Blackhole bh, final List<Object> out) {
     for (int i = 0; i < out.size(); i++) {
       final Object o = out.get(i);
