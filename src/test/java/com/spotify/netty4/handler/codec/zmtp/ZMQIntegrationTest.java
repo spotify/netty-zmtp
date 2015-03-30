@@ -36,7 +36,7 @@ public class ZMQIntegrationTest {
 
   private ZMQ.Context context;
 
-  private String identity = "identity";
+  private final String identity = "identity";
 
   private ZMTPServer server;
   private ZMTPClient client;

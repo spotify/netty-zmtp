@@ -50,7 +50,7 @@ public class ZMTP20Handshaker implements ZMTPHandshaker {
     this.interop = interop;
   }
 
-  public ZMTP20Handshaker(final ZMTPSocketType socketType, final boolean interop) {
+  private ZMTP20Handshaker(final ZMTPSocketType socketType, final boolean interop) {
     this(socketType, interop, null);
   }
 

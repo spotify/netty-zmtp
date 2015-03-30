@@ -25,8 +25,8 @@ import io.netty.util.ReferenceCountUtil;
  * and writing to it.
  */
 class PipelineTester {
-  private BlockingQueue<ByteBuf> emittedOutside = new LinkedBlockingQueue<ByteBuf>();
-  private BlockingQueue<Object> emittedInside = new LinkedBlockingQueue<Object>();
+  private final BlockingQueue<ByteBuf> emittedOutside = new LinkedBlockingQueue<ByteBuf>();
+  private final BlockingQueue<Object> emittedInside = new LinkedBlockingQueue<Object>();
   private Channel outerChannel = null;
   private Channel innerChannel = null;
 

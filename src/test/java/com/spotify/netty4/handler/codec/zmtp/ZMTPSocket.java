@@ -18,7 +18,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import java.util.concurrent.TimeoutException;
 
-public interface ZMTPSocket {
+interface ZMTPSocket {
 
   void send(ZMTPMessage request) throws InterruptedException, TimeoutException;
 

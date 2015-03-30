@@ -151,7 +151,7 @@ public class ThroughputBenchmark {
   private static class ByteBufSizeEstimator implements MessageSizeEstimator,
                                                        MessageSizeEstimator.Handle {
 
-    public static ByteBufSizeEstimator INSTANCE = new ByteBufSizeEstimator();
+    public static final ByteBufSizeEstimator INSTANCE = new ByteBufSizeEstimator();
 
     @Override
     public Handle newHandle() {

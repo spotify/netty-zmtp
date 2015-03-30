@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class PipelineTests {
 
-  byte[] LONG_MSG = (
+  private final byte[] LONG_MSG = (
       "To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your " +
       "`ChannelPipeline` and it will turn incoming buffers into  `ZMTPIncomingMessage` " +
       "instances up the pipeline and accept `ZMTPMessage` instances that gets serialized into " +

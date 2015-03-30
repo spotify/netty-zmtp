@@ -36,12 +36,12 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED
 /**
  * Helper to from connections to a zmtp server via netty
  */
-public abstract class ZMTPTestConnector {
+abstract class ZMTPTestConnector {
 
-  public ZMQ.Context context;
-  public ZMQ.Socket serverSocket;
+  private ZMQ.Context context;
+  private ZMQ.Socket serverSocket;
 
-  boolean receivedMessage = false;
+  private boolean receivedMessage = false;
 
   public abstract void preConnect(ZMQ.Socket socket);
 

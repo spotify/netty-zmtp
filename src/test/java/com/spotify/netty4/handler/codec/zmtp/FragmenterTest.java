@@ -28,9 +28,9 @@ import static org.junit.Assert.assertEquals;
 
 public class FragmenterTest {
 
-  static final int SIZE = 4;
+  private static final int SIZE = 4;
 
-  static final int[][] EXPECTED = {
+  private static final int[][] EXPECTED = {
       {1, 2, 3, 4},
       {1, 2, 4},
       {1, 3, 4},

@@ -83,7 +83,7 @@ class TestUtil {
     return sb.toString();
   }
 
-  public static String printBytes(ByteBuf buffer, int start, int length) {
+  private static String printBytes(ByteBuf buffer, int start, int length) {
     StringBuilder sb = new StringBuilder(length);
     for (int i = start; i < start + length; i++) {
       sb.append(String.format("%%%02x", buffer.getByte(i)));

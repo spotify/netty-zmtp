@@ -15,7 +15,7 @@ import io.netty.buffer.Unpooled;
  */
 public class CodecTest {
 
-  @Rule public ExpectedException expectedException = ExpectedException.none();
+  @Rule public final ExpectedException expectedException = ExpectedException.none();
 
   @Test
   public void testOverlyLongIdentity() throws Exception {

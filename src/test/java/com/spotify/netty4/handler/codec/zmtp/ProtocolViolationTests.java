@@ -48,7 +48,7 @@ public class ProtocolViolationTests {
   private Channel serverChannel;
   private InetSocketAddress serverAddress;
 
-  private String identity = "identity";
+  private final String identity = "identity";
   private NioEventLoopGroup bossGroup;
   private NioEventLoopGroup group;
 

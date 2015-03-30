@@ -18,7 +18,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 class Fragmenter {
 
-  static interface Consumer {
+  interface Consumer {
     void fragments(int[] limits, int count) throws Exception;
   }
 

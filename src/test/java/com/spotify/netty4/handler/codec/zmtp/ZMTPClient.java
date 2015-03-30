@@ -48,7 +48,7 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
   private final InetSocketAddress address;
 
   private ChannelFuture future;
-  private SettableFuture<Channel> channel = SettableFuture.create();
+  private final SettableFuture<Channel> channel = SettableFuture.create();
   private final BlockingQueue<ZMTPIncomingMessage> incomingMessages = newLinkedBlockingQueue();
 
   public ZMTPClient(final ZMTPCodec codec, final InetSocketAddress address) {

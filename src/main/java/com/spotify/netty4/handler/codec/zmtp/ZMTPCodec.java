@@ -41,7 +41,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   private final ZMTPEncoder encoder;
   private final ZMTPDecoder decoder;
 
-  public ZMTPCodec(final Builder builder) {
+  private ZMTPCodec(final Builder builder) {
     final ZMTPProtocol protocol = checkNotNull(builder.protocol, "protocol");
     this.session = new ZMTPSession(protocol, builder.localIdentity);
     this.handshaker = protocol.handshaker(session);

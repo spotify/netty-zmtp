@@ -54,7 +54,7 @@ public class EndToEndTest {
   public static final boolean INTEROP_ON = true;
   private static final boolean INTEROP_OFF = false;
 
-  public static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
+  private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
 
   private Channel bind(final SocketAddress address, final ChannelHandler codec,
                        final ChannelHandler handler) {
@@ -84,7 +84,7 @@ public class EndToEndTest {
     return bootstrap.connect(address).awaitUninterruptibly().channel();
   }
 
-  public void testRequestReply(final ChannelHandler serverCodec, final ChannelHandler clientCodec)
+  private void testRequestReply(final ChannelHandler serverCodec, final ChannelHandler clientCodec)
       throws InterruptedException {
 
     // Set up server & client
@@ -174,8 +174,8 @@ public class EndToEndTest {
 
   private static class Handler extends ChannelInboundHandlerAdapter {
 
-    private BlockingQueue<Channel> connected = Queues.newLinkedBlockingQueue();
-    private BlockingQueue<ZMTPIncomingMessage> messages = Queues.newLinkedBlockingQueue();
+    private final BlockingQueue<Channel> connected = Queues.newLinkedBlockingQueue();
+    private final BlockingQueue<ZMTPIncomingMessage> messages = Queues.newLinkedBlockingQueue();
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {

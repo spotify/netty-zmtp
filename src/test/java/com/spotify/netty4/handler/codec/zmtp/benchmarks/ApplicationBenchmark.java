@@ -68,7 +68,7 @@ public class ApplicationBenchmark {
   private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
   private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
-  public static final Thread.UncaughtExceptionHandler
+  private static final Thread.UncaughtExceptionHandler
       UNCAUGHT_EXCEPTION_HANDLER =
       new Thread.UncaughtExceptionHandler() {
         @Override
@@ -466,7 +466,7 @@ public class ApplicationBenchmark {
     return new AsciiString(chars);
   }
 
-  private static AsciiString[] METHODS = FluentIterable
+  private static final AsciiString[] METHODS = FluentIterable
       .from(asList("GET", "POST", "PUT", "DELETE", "PATCH"))
       .transform(ASCII_STRING_FROM_STRING)
       .toArray(AsciiString.class);
@@ -670,7 +670,7 @@ public class ApplicationBenchmark {
   private static class ByteBufSizeEstimator implements MessageSizeEstimator,
                                                        MessageSizeEstimator.Handle {
 
-    public static ByteBufSizeEstimator INSTANCE = new ByteBufSizeEstimator();
+    public static final ByteBufSizeEstimator INSTANCE = new ByteBufSizeEstimator();
 
     @Override
     public Handle newHandle() {

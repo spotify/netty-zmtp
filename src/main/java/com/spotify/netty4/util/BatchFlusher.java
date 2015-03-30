@@ -56,7 +56,7 @@ public class BatchFlusher {
    * tasks are run. The outstanding write tasks must be allowed to run before performing the actual
    * flush in order to ensure that their payloads have been written to the outbound buffer.
    */
-  private Runnable wakeup = new Runnable() {
+  private final Runnable wakeup = new Runnable() {
     @Override
     public void run() {
       woken = 0;

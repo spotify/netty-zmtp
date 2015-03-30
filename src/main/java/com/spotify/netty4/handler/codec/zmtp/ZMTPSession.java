@@ -29,7 +29,7 @@ public class ZMTPSession {
   private final ZMTPProtocol protocol;
   private final ByteBuffer localIdentity;
 
-  private AtomicReference<ZMTPHandshake> handshake = new AtomicReference<ZMTPHandshake>();
+  private final AtomicReference<ZMTPHandshake> handshake = new AtomicReference<ZMTPHandshake>();
 
   ZMTPSession(final ZMTPProtocol protocol) {
     this(protocol, ByteBuffer.allocate(0));
