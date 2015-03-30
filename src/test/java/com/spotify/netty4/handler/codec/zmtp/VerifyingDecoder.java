@@ -31,7 +31,7 @@ public class VerifyingDecoder implements ZMTPDecoder {
 
   private int readIndex;
   private boolean finished;
-  private int frameSize;
+  private long frameSize;
 
   public VerifyingDecoder(final ExpectedOutput expected) {
     this.expected = expected;
@@ -45,7 +45,7 @@ public class VerifyingDecoder implements ZMTPDecoder {
   }
 
   @Override
-  public void header(final int length, final boolean more, final List<Object> out) {
+  public void header(final long length, final boolean more, final List<Object> out) {
     if (finished) {
       throw new IllegalStateException("already finished");
     }
@@ -66,7 +66,7 @@ public class VerifyingDecoder implements ZMTPDecoder {
       return;
     }
     final ByteBuf expectedFrame = expected.frames.get(readIndex);
-    final ByteBuf frame = data.readBytes(frameSize);
+    final ByteBuf frame = data.readBytes((int) frameSize);
     if (!expectedFrame.equals(frame)) {
       throw new IllegalStateException(
           "read frame did not match expected frame: " +

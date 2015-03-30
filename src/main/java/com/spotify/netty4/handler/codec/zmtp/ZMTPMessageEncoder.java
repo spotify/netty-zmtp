@@ -30,7 +30,7 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
   @Override
   public void estimate(final Object msg, final ZMTPEstimator estimator) {
     final ZMTPMessage message = (ZMTPMessage) msg;
-    for (final ByteBuf frame : message.frames()) {
+    for (final ByteBuf frame : message) {
       estimator.frame(frame.readableBytes());
     }
   }
@@ -39,9 +39,9 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
   public void encode(final Object msg, final ZMTPWriter writer) {
     final ZMTPMessage message = (ZMTPMessage) msg;
 
-    for (int i = 0; i < message.frames().size(); i++) {
+    for (int i = 0; i < message.size(); i++) {
       final ByteBuf frame = message.frame(i);
-      final boolean more = i < message.frames().size() - 1;
+      final boolean more = i < message.size() - 1;
       final ByteBuf dst = writer.frame(frame.readableBytes(), more);
       dst.writeBytes(frame, frame.readerIndex(), frame.readableBytes());
     }

@@ -28,13 +28,12 @@ public interface ZMTPDecoder {
 
   /**
    * Start a new ZMTP frame.
-   *
-   * @param length The total length in bytes of the frame content.
+   *  @param length The total length in bytes of the frame content.
    * @param more   {@code true} if there are additional frames following this one in the current
    *               ZMTP message, {@code false otherwise.}
    * @param out    {@link List} to which decoded messages should be added.
    */
-  void header(final int length, boolean more, final List<Object> out);
+  void header(final long length, boolean more, final List<Object> out);
 
   /**
    * Read ZMTP frame content. Called repeatedly, at least once, per frame until all of the frame

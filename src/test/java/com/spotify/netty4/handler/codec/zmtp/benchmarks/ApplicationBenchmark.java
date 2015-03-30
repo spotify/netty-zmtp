@@ -521,8 +521,11 @@ public class ApplicationBenchmark {
     private int frameLength;
 
     @Override
-    public void header(final int length, final boolean more, final List<Object> out) {
-      frameLength = length;
+    public void header(final long length, final boolean more, final List<Object> out) {
+      if (length > Integer.MAX_VALUE) {
+        throw new IllegalArgumentException("length");
+      }
+      frameLength = (int) length;
     }
 
     @Override
@@ -576,8 +579,11 @@ public class ApplicationBenchmark {
     private ByteBuffer payload;
 
     @Override
-    public void header(final int length, final boolean more, final List<Object> out) {
-      frameLength = length;
+    public void header(final long length, final boolean more, final List<Object> out) {
+      if (length > Integer.MAX_VALUE) {
+        throw new IllegalArgumentException("length");
+      }
+      frameLength = (int) length;
     }
 
     @Override

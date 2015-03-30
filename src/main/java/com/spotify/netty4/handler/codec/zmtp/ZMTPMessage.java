@@ -18,6 +18,8 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
@@ -27,16 +29,16 @@ import io.netty.util.AbstractReferenceCounted;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
-public class ZMTPMessage extends AbstractReferenceCounted {
+public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<ByteBuf> {
 
-  private final List<ByteBuf> frames;
+  private final ByteBuf[] frames;
 
   /**
    * Create a new {@link ZMTPMessage} from a {@link List} of {@link ByteBuf} frames. Assumes
    * ownership of the list and buffers. The list is not copied and must thus not be modified again.
    */
   public ZMTPMessage(final List<ByteBuf> frames) {
-    this.frames = frames;
+    this.frames = frames.toArray(new ByteBuf[frames.size()]);
   }
 
   @Override
@@ -93,21 +95,19 @@ public class ZMTPMessage extends AbstractReferenceCounted {
   }
 
   public int size() {
-    return frames.size();
+    return frames.length;
   }
 
-  /**
-   * @return Current list of content in the message
-   */
-  public List<ByteBuf> frames() {
-    return frames;
+  @Override
+  public Iterator<ByteBuf> iterator() {
+    return new FrameIterator();
   }
 
   /**
    * Get a specific frame.
    */
   public ByteBuf frame(final int i) {
-    return frames.get(i);
+    return frames[i];
   }
 
   @Override
@@ -122,20 +122,35 @@ public class ZMTPMessage extends AbstractReferenceCounted {
     if (this == o) { return true; }
     if (o == null || getClass() != o.getClass()) { return false; }
 
-    final ZMTPMessage that = (ZMTPMessage) o;
+    final ZMTPMessage byteBufs = (ZMTPMessage) o;
 
-    if (frames != null ? !frames.equals(that.frames) : that.frames != null) { return false; }
+    // Probably incorrect - comparing Object[] arrays with Arrays.equals
+    return Arrays.equals(frames, byteBufs.frames);
 
-    return true;
   }
 
   @Override
   public int hashCode() {
-    return frames != null ? frames.hashCode() : 0;
+    return frames != null ? Arrays.hashCode(frames) : 0;
   }
 
   @Override
   public String toString() {
-    return "ZMTPMessage{" + ZMTPUtils.toString(frames) + '}';
+    return "ZMTPMessage{" + ZMTPUtils.toString(asList(frames)) + '}';
+  }
+
+  private class FrameIterator implements Iterator<ByteBuf> {
+
+    int i;
+
+    @Override
+    public boolean hasNext() {
+      return i < frames.length;
+    }
+
+    @Override
+    public ByteBuf next() {
+      return frames[i++];
+    }
   }
 }

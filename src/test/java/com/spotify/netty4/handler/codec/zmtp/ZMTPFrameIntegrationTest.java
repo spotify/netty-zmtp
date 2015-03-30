@@ -56,7 +56,7 @@ public class ZMTPFrameIntegrationTest {
       @Override
       public boolean onMessage(final ZMTPIncomingMessage msg) {
         // Verify that frames received is correct
-        assertEquals(2, msg.message().frames().size());
+        assertEquals(2, msg.message().size());
         assertEquals(Unpooled.EMPTY_BUFFER, msg.message().frame(0));
         assertEquals(Unpooled.wrappedBuffer(f.getData()), msg.message().frame(1));
 

@@ -140,7 +140,7 @@ public class CodecBenchmark {
 
 
     @Override
-    public void header(final int length, final boolean more, final List<Object> out) {
+    public void header(final long length, final boolean more, final List<Object> out) {
       this.size += size;
     }
 

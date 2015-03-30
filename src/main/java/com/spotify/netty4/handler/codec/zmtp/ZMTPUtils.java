@@ -183,11 +183,10 @@ public class ZMTPUtils {
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
   public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer, int version) {
-    final List<ByteBuf> content = message.frames();
-    final int n = content.size();
+    final int n = message.size();
     final int lastFrame = n - 1;
     for (int i = 0; i < n; i++) {
-      writeFrame(content.get(i), buffer, i < lastFrame, version);
+      writeFrame(message.frame(i), buffer, i < lastFrame, version);
     }
   }
 
@@ -232,7 +231,12 @@ public class ZMTPUtils {
    * @return The number of bytes needed.
    */
   public static int messageSize(final ZMTPMessage message, final int version) {
-    return framesSize(message.frames(), version);
+    int size = 0;
+    final int n = message.size();
+    for (int i = 0; i < n; i++) {
+      size += frameSize(message.frame(i), version);
+    }
+    return size;
   }
 
   /**

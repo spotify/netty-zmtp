@@ -21,6 +21,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
+import static java.lang.Math.min;
 
 /**
  * Streaming ZMTP parser. Parses headers and calls a {@link ZMTPDecoder} for consuming the actual
@@ -35,8 +36,8 @@ public class ZMTPParser {
   private final ZMTPDecoder decoder;
 
   private boolean hasMore;
-  private int length;
-  private int remaining;
+  private long length;
+  private long remaining;
   private boolean headerParsed;
 
 
@@ -67,9 +68,9 @@ public class ZMTPParser {
       }
 
       final int writerMark = buffer.writerIndex();
-      final int size = Math.min(remaining, buffer.readableBytes());
+      final int n = (int) min(remaining, buffer.readableBytes());
       final int readerMark = buffer.readerIndex();
-      buffer.writerIndex(readerMark + size);
+      buffer.writerIndex(readerMark + n);
       decoder.content(buffer, out);
       buffer.writerIndex(writerMark);
       final int read = buffer.readerIndex() - readerMark;
@@ -125,7 +126,7 @@ public class ZMTPParser {
   /**
    * Parse a ZMTP/2.0 frame header.
    */
-  private boolean parseZMTP2Header(ByteBuf buffer) throws ZMTPParsingException {
+  private boolean parseZMTP2Header(final ByteBuf buffer) throws ZMTPParsingException {
     if (buffer.readableBytes() < 2) {
       return false;
     }
