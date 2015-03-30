@@ -42,22 +42,22 @@ public class HandshakeTest {
 
   @Test
   public void testGreeting() {
-    ZMTPHandshaker h = new ZMTP10Handshaker(FOO);
+    ZMTPHandshaker h = new ZMTP10Protocol.Handshaker(FOO);
     cmp(h.greeting(), 0x04, 0x00, 0x66, 0x6f, 0x6f);
 
-    h = new ZMTP10Handshaker(ByteBuffer.allocate(0));
+    h = new ZMTP10Protocol.Handshaker(ByteBuffer.allocate(0));
     cmp(h.greeting(), 0x01, 0x00);
 
-    h = new ZMTP20Handshaker(SUB, true, FOO);
+    h = new ZMTP20Protocol.Handshaker(SUB, true, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f);
 
-    h = new ZMTP20Handshaker(REQ, false, FOO);
+    h = new ZMTP20Protocol.Handshaker(REQ, false, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x03, 0x00, 3, 0x66, 0x6f, 0x6f);
   }
 
   @Test
   public void test1to1Handshake() throws Exception {
-    ZMTP10Handshaker h = new ZMTP10Handshaker(FOO);
+    ZMTP10Protocol.Handshaker h = new ZMTP10Protocol.Handshaker(FOO);
     cmp(h.greeting(), 0x04, 0x00, 0x66, 0x6f, 0x6f);
     ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
@@ -67,7 +67,7 @@ public class HandshakeTest {
 
   @Test
   public void test2InteropTo1Handshake() throws Exception {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(ROUTER, true, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(ROUTER, true, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
@@ -77,7 +77,7 @@ public class HandshakeTest {
 
   @Test
   public void test2InteropTo2InteropHandshake() throws Exception {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, true, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, true, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ZMTPHandshake handshake;
     handshake = h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), ctx);
@@ -91,7 +91,7 @@ public class HandshakeTest {
 
   @Test
   public void test2InteropTo2Handshake() throws Exception {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, true, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, true, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ByteBuf cb = buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72);
@@ -107,7 +107,7 @@ public class HandshakeTest {
 
   @Test
   public void test2To2InteropHandshake() throws Exception {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, false, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, false, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
 
     try {
@@ -124,7 +124,7 @@ public class HandshakeTest {
 
   @Test
   public void test2To2Handshake() throws Exception {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, false, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, false, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     ZMTPHandshake handshake = h.handshake(buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
@@ -135,7 +135,7 @@ public class HandshakeTest {
 
   @Test
   public void test2To1Handshake() {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, false, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, false, FOO);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     try {
       assertNull(h.handshake(buf(0x04, 0, 0x62, 0x61, 0x72), ctx));
@@ -147,7 +147,8 @@ public class HandshakeTest {
 
   @Test
   public void test2To2CompatTruncated() throws Exception {
-    ZMTP20Handshaker h = new ZMTP20Handshaker(PUB, true, UTF_8.encode("identity"));
+    ZMTP20Protocol.Handshaker
+        h = new ZMTP20Protocol.Handshaker(PUB, true, UTF_8.encode("identity"));
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 9, 0x7f);
     ZMTPHandshake handshake = h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), ctx);
     assertNull(handshake);
@@ -157,7 +158,7 @@ public class HandshakeTest {
   @Test
   public void testParseZMTP2Greeting() throws Exception {
     ByteBuf b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0x00, 0x01, 0x61);
-    assertArrayEquals("a".getBytes(), ZMTP20Handshaker.parseZMTP2Greeting(b, true));
+    assertArrayEquals("a".getBytes(), ZMTP20Protocol.Handshaker.parseZMTP2Greeting(b, true));
   }
 
   @Test
@@ -178,28 +179,30 @@ public class HandshakeTest {
   @Test
   public void testDetectProtocolVersion() {
     try {
-      ZMTP20Handshaker.detectProtocolVersion(Unpooled.wrappedBuffer(new byte[0]));
+      ZMTP20Protocol.Handshaker.detectProtocolVersion(Unpooled.wrappedBuffer(new byte[0]));
       fail("Should have thown IndexOutOfBoundsException");
     } catch (IndexOutOfBoundsException e) {
       // ignore
     }
     try {
-      ZMTP20Handshaker.detectProtocolVersion(buf(0xff, 0, 0, 0));
+      ZMTP20Protocol.Handshaker.detectProtocolVersion(buf(0xff, 0, 0, 0));
       fail("Should have thown IndexOutOfBoundsException");
     } catch (IndexOutOfBoundsException e) {
       // ignore
     }
 
-    assertEquals(1, ZMTP20Handshaker.detectProtocolVersion(buf(0x07)));
-    assertEquals(1, ZMTP20Handshaker.detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0)));
-    assertEquals(2, ZMTP20Handshaker.detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 1)));
+    assertEquals(1, ZMTP20Protocol.Handshaker.detectProtocolVersion(buf(0x07)));
+    assertEquals(1, ZMTP20Protocol.Handshaker
+        .detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0)));
+    assertEquals(2, ZMTP20Protocol.Handshaker
+        .detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 1)));
   }
 
   @Test
   public void testParseZMTP2GreetingMalformed() {
     try {
       ByteBuf b = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0xf0, 0x01, 0x61);
-      ZMTP20Handshaker.parseZMTP2Greeting(b, true);
+      ZMTP20Protocol.Handshaker.parseZMTP2Greeting(b, true);
       fail("13th byte is not 0x00, should throw exception");
     } catch (ZMTPException e) {
       // pass
