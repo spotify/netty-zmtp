@@ -23,14 +23,20 @@ import io.netty.buffer.ByteBuf;
 
 public class ZMTPMessageDecoder implements ZMTPDecoder {
 
-  private static final long DEFAULT_SIZE_LIMIT = 4 * 1024 * 1024;
+  public static final ZMTPDecoderFactory FACTORY = new ZMTPDecoderFactory() {
+    @Override
+    public ZMTPDecoder decoder(final ZMTPConfig config) {
+      return new ZMTPMessageDecoder();
+    }
+  };
+
+  public static final long DEFAULT_SIZE_LIMIT = 4 * 1024 * 1024;
 
   private final long limit;
 
   private boolean truncated;
   private long messageSize;
   private int frameLength;
-
   private List<ByteBuf> frames;
 
   public ZMTPMessageDecoder() {

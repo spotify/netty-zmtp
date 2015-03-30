@@ -18,7 +18,6 @@ package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.util.BatchFlusher;
 
@@ -58,8 +57,8 @@ public class ThroughputBenchmark {
     final ProgressMeter meter = new ProgressMeter("requests");
 
     // Codecs
-    final ZMTPCodec serverCodec = ZMTPCodec.of(ZMTPProtocol.ZMTP20.withSocketType(ROUTER));
-    final ZMTPCodec clientCodec = ZMTPCodec.of(ZMTPProtocol.ZMTP20.withSocketType(DEALER));
+    final ZMTPCodec serverCodec = ZMTPCodec.builder().socketType(ROUTER).build();
+    final ZMTPCodec clientCodec = ZMTPCodec.builder().socketType(DEALER).build();
 
     // Server
     final ServerBootstrap serverBootstrap = new ServerBootstrap()

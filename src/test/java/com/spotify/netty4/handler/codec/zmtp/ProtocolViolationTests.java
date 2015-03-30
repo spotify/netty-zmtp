@@ -98,7 +98,8 @@ public class ProtocolViolationTests {
       protected void initChannel(final NioSocketChannel ch) throws Exception {
         ch.pipeline().addLast(
             ZMTPCodec.builder()
-                .protocol(ZMTP20.withSocketType(ROUTER))
+                .protocol(ZMTP20)
+                .socketType(ROUTER)
                 .localIdentity(identity)
                 .build(),
             mockHandler);

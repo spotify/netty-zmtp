@@ -20,6 +20,13 @@ import io.netty.buffer.ByteBuf;
 
 public class ZMTPMessageEncoder implements ZMTPEncoder {
 
+  public static final ZMTPEncoderFactory FACTORY = new ZMTPEncoderFactory() {
+    @Override
+    public ZMTPEncoder encoder(final ZMTPConfig config) {
+      return new ZMTPMessageEncoder();
+    }
+  };
+
   @Override
   public void estimate(final Object msg, final ZMTPEstimator estimator) {
     final ZMTPMessage message = (ZMTPMessage) msg;

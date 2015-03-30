@@ -40,7 +40,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 
@@ -52,8 +51,12 @@ public class ReqRepBenchmark {
     final ProgressMeter meter = new ProgressMeter("requests");
 
     // Codecs
-    final ZMTPCodec serverCodec = ZMTPCodec.of(ZMTP20.withSocketType(ROUTER));
-    final ZMTPCodec clientCodec = ZMTPCodec.of(ZMTP20.withSocketType(DEALER));
+    final ZMTPCodec serverCodec = ZMTPCodec.builder()
+        .socketType(ROUTER)
+        .build();
+    final ZMTPCodec clientCodec = ZMTPCodec.builder()
+        .socketType(DEALER)
+        .build();
 
     // Server
     final ServerBootstrap serverBootstrap = new ServerBootstrap()

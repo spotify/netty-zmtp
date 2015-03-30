@@ -16,60 +16,15 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
-
 public class ZMTP20Protocol implements ZMTPProtocol {
 
-  private final ZMTPSocketType socketType;
-  private final boolean interop;
-
-  private ZMTP20Protocol(final Builder builder) {
-    this.socketType = builder.socketType;
-    this.interop = builder.interop;
-  }
-
-  public ZMTPSocketType socketType() {
-    return socketType;
-  }
-
-  public boolean interop() {
-    return interop;
-  }
-
   @Override
-  public ZMTPHandshaker handshaker(final ZMTPSession session) {
-    return new ZMTP20Handshaker(socketType, interop, session.localIdentity());
+  public ZMTPHandshaker handshaker(final ZMTPConfig config) {
+    return new ZMTP20Handshaker(config.socketType(), config.interop(), config.localIdentity());
   }
 
   @Override
   public ZMTPVersion version() {
-    return ZMTP20;
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-
-    private Builder() {
-    }
-
-    private ZMTPSocketType socketType;
-    private boolean interop = true;
-
-    public Builder socketType(final ZMTPSocketType socketType) {
-      this.socketType = socketType;
-      return this;
-    }
-
-    public Builder interop(final boolean interop) {
-      this.interop = interop;
-      return this;
-    }
-
-    public ZMTP20Protocol build() {
-      return new ZMTP20Protocol(this);
-    }
+    return ZMTPVersion.ZMTP20;
   }
 }

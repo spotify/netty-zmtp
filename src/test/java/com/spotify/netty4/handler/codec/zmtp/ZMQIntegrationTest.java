@@ -151,9 +151,10 @@ public class ZMQIntegrationTest {
     return socket;
   }
 
-  private ZMTPClient nettyConnect(final ZMTPSocketType nettyType) {
+  private ZMTPClient nettyConnect(final ZMTPSocketType socketType) {
     final ZMTPCodec codec = ZMTPCodec.builder()
-        .protocol(ZMTP20.withSocketType(nettyType))
+        .protocol(ZMTP20)
+        .socketType(socketType)
         .localIdentity(identity)
         .build();
 
@@ -162,9 +163,10 @@ public class ZMQIntegrationTest {
     return client;
   }
 
-  private ZMTPSocket nettyBind(final ZMTPSocketType nettyType) {
+  private ZMTPSocket nettyBind(final ZMTPSocketType socketType) {
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP20.withSocketType(nettyType))
+        .protocol(ZMTP20)
+        .socketType(socketType)
         .localIdentity(identity)
         .build();
 

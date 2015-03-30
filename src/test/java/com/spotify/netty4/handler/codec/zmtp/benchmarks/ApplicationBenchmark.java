@@ -56,8 +56,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.chmv8.ForkJoinPool;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static com.spotify.netty4.handler.codec.zmtp.benchmarks.AsciiString.ASCII_STRING_FROM_STRING;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -81,15 +82,17 @@ public class ApplicationBenchmark {
 
     // Codecs
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP10.withConnectionType(ADDRESSED))
-        .encoder(new ReplyEncoder())
-        .decoder(new RequestDecoder())
+        .protocol(ZMTP10)
+        .socketType(ROUTER)
+        .encoder(ReplyEncoder.class)
+        .decoder(RequestDecoder.class)
         .build();
 
     final ZMTPCodec clientCodec = ZMTPCodec.builder()
-        .protocol(ZMTP10.withConnectionType(ADDRESSED))
-        .encoder(new RequestEncoder())
-        .decoder(new ReplyDecoder())
+        .protocol(ZMTP10)
+        .socketType(DEALER)
+        .encoder(RequestEncoder.class)
+        .decoder(ReplyDecoder.class)
         .build();
 
     // Server

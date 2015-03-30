@@ -26,26 +26,19 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
  */
 public class ZMTPSession {
 
-  private final ZMTPProtocol protocol;
-  private final ByteBuffer localIdentity;
-
   private final AtomicReference<ZMTPHandshake> handshake = new AtomicReference<ZMTPHandshake>();
 
-  ZMTPSession(final ZMTPProtocol protocol) {
-    this(protocol, ByteBuffer.allocate(0));
+  private final ZMTPConfig config;
+
+  ZMTPSession(final ZMTPConfig config) {
+    this.config = checkNotNull(config, "config");
   }
 
-  ZMTPSession(final ZMTPProtocol protocol, final ByteBuffer localIdentity) {
-    this.protocol = checkNotNull(protocol, "protocol");
-    this.localIdentity = checkNotNull(localIdentity, "localIdentity");
-  }
-
-  public ZMTPProtocol protocol() {
-    return protocol;
-  }
-
-  public ByteBuffer localIdentity() {
-    return localIdentity;
+  /**
+   * The the configuration of this ZMTP session.
+   */
+  public ZMTPConfig config() {
+    return config;
   }
 
   /**
@@ -87,7 +80,7 @@ public class ZMTPSession {
   @Override
   public String toString() {
     return "ZMTPSession{" +
-           "protocol=" + protocol +
+           "config=" + config +
            ", handshake=" + handshake +
            '}';
   }

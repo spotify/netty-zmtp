@@ -36,7 +36,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
@@ -121,40 +120,66 @@ public class EndToEndTest {
   }
 
   @Test
-  public void test_ZMTP10_Router_ZMTP10_Dealer() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.of(ZMTP10.withConnectionType(ADDRESSED));
-    ZMTPCodec client = ZMTPCodec.of(ZMTP10.withConnectionType(ADDRESSED));
+  public void test_ZMTP10_Router_VS_ZMTP10_Dealer() throws InterruptedException {
+    final ZMTPCodec server = ZMTPCodec.builder()
+        .protocol(ZMTP10)
+        .socketType(ROUTER)
+        .build();
+
+    final ZMTPCodec client = ZMTPCodec.builder()
+        .protocol(ZMTP10)
+        .socketType(DEALER)
+        .build();
+
     testRequestReply(server, client);
   }
 
   @Test
-  public void test_ZMTP20_Router_ZMTP20_Dealer_WithInterop() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.of(ZMTP20.withSocketType(ROUTER));
-    ZMTPCodec client = ZMTPCodec.of(ZMTP20.withSocketType(DEALER));
+  public void test_ZMTP20_Interop_Router_VS_ZMTP20_Interop_Dealer() throws InterruptedException {
+    final ZMTPCodec server = ZMTPCodec.builder()
+        .protocol(ZMTP20)
+        .interop(true)
+        .socketType(ROUTER)
+        .build();
+
+    final ZMTPCodec client = ZMTPCodec.builder()
+        .protocol(ZMTP20)
+        .interop(true)
+        .socketType(DEALER)
+        .build();
 
     testRequestReply(server, client);
   }
 
   @Test
-  public void test_ZMTP20_Router_ZMTP10_Addressed() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.of(ZMTP20.withSocketType(ROUTER));
-    ZMTPCodec client = ZMTPCodec.of(ZMTP10.withConnectionType(ADDRESSED));
+  public void test_ZMTP20_Interop_Router_VS_ZMTP10_Dealer() throws InterruptedException {
+    final ZMTPCodec server = ZMTPCodec.builder()
+        .protocol(ZMTP20)
+        .interop(true)
+        .socketType(ROUTER)
+        .build();
+
+    final ZMTPCodec client = ZMTPCodec.builder()
+        .protocol(ZMTP10)
+        .socketType(DEALER)
+        .build();
+
     testRequestReply(server, client);
   }
 
   @Test
-  public void test_ZMTP20_Router_ZMTP20_Dealer_WithNoInterop() throws InterruptedException {
-    ZMTPCodec server = ZMTPCodec.of(
-        ZMTP20.builder()
-            .interop(false)
-            .socketType(ROUTER)
-            .build());
+  public void test_ZMTP20_NoInterop_Router_VS_ZMTP20_NoInterop_Dealer() throws InterruptedException {
+    final ZMTPCodec server = ZMTPCodec.builder()
+        .protocol(ZMTP20)
+        .interop(false)
+        .socketType(ROUTER)
+        .build();
 
-    ZMTPCodec client = ZMTPCodec.of(
-        ZMTP20.builder()
-            .interop(false)
-            .socketType(DEALER)
-            .build());
+    final ZMTPCodec client = ZMTPCodec.builder()
+        .protocol(ZMTP20)
+        .interop(false)
+        .socketType(DEALER)
+        .build();
 
     testRequestReply(server, client);
   }

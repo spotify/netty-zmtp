@@ -16,49 +16,15 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
-
 public class ZMTP10Protocol implements ZMTPProtocol {
 
-  private final ZMTPConnectionType connectionType;
-
-  private ZMTP10Protocol(final Builder builder) {
-    this.connectionType = checkNotNull(builder.connectionType, "connectionType");
-  }
-
-  public ZMTPConnectionType connectionType() {
-    return connectionType;
-  }
-
   @Override
-  public ZMTP10Handshaker handshaker(final ZMTPSession session) {
-    return new ZMTP10Handshaker(session.localIdentity());
+  public ZMTP10Handshaker handshaker(final ZMTPConfig config) {
+    return new ZMTP10Handshaker(config.localIdentity());
   }
 
   @Override
   public ZMTPVersion version() {
-    return ZMTP10;
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-
-    private Builder() {
-    }
-
-    private ZMTPConnectionType connectionType;
-
-    public Builder connectionType(final ZMTPConnectionType type) {
-      this.connectionType = type;
-      return this;
-    }
-
-    public ZMTP10Protocol build() {
-      return new ZMTP10Protocol(this);
-    }
+    return ZMTPVersion.ZMTP10;
   }
 }

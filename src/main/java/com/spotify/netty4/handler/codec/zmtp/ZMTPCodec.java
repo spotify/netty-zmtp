@@ -21,36 +21,30 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.CombinedChannelDuplexHandler;
 import io.netty.handler.codec.ReplayingDecoder;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
-import static io.netty.util.CharsetUtil.UTF_8;
 
 /**
  * A ZMTP codec for Netty.
+ *
+ * Note: A single codec instance is not {@link Sharable} among multiple {@link Channel} instances.
  */
 public class ZMTPCodec extends ReplayingDecoder<Void> {
 
   private final ZMTPSession session;
   private final ZMTPHandshaker handshaker;
 
-  private final ZMTPEncoder encoder;
-  private final ZMTPDecoder decoder;
+  private final ZMTPConfig config;
 
-  private ZMTPCodec(final Builder builder) {
-    final ZMTPProtocol protocol = checkNotNull(builder.protocol, "protocol");
-    this.session = new ZMTPSession(protocol, builder.localIdentity);
-    this.handshaker = protocol.handshaker(session);
-    this.encoder = (builder.encoder == null)
-                   ? new ZMTPMessageEncoder()
-                   : builder.encoder;
-    this.decoder = (builder.decoder == null)
-                   ? new ZMTPMessageDecoder()
-                   : builder.decoder;
+  private ZMTPCodec(final ZMTPConfig config) {
+    this.config = checkNotNull(config, "config");
+    this.session = new ZMTPSession(config);
+    this.handshaker = config.protocol().handshaker(config);
   }
 
   @Override
@@ -70,7 +64,14 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
     session.handshakeDone(handshake);
 
-    updatePipeline(ctx.pipeline(), session);
+    final ZMTPDecoder decoder = config.decoder().decoder(config);
+    final ZMTPEncoder encoder = config.encoder().encoder(config);
+    final ZMTPMessageParser parser = ZMTPMessageParser.create(session.actualVersion(), decoder);
+    final ChannelHandler handler =
+        new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
+            new ZMTPFramingDecoder(parser),
+            new ZMTPFramingEncoder(session, encoder));
+    ctx.pipeline().replace(this, ctx.name(), handler);
 
     // This follows the pattern for dynamic pipelines documented in
     // http://netty.io/4.0/api/io/netty/handler/codec/ReplayingDecoder.html
@@ -81,64 +82,69 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     ctx.fireUserEventTriggered(session);
   }
 
-  private void updatePipeline(ChannelPipeline pipeline,
-                              ZMTPSession session) {
-    final ZMTPMessageParser parser = ZMTPMessageParser.create(session.actualVersion(), decoder);
-    final ChannelHandler handler =
-        new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
-            new ZMTPFramingDecoder(parser),
-            new ZMTPFramingEncoder(session, encoder));
-    pipeline.replace(this, "zmtp-codec", handler);
-  }
-
   public static Builder builder() {
     return new Builder();
   }
 
-  public static ZMTPCodec of(final ZMTPProtocol protocol) {
-    return builder().protocol(protocol).build();
-  }
-
   public static class Builder {
 
-    private ZMTPProtocol protocol;
-    private ByteBuffer localIdentity = ByteBuffer.allocate(0);
-    private ZMTPEncoder encoder;
-    private ZMTPDecoder decoder;
+    private final ZMTPConfig.Builder config = ZMTPConfig.builder();
 
     private Builder() {
     }
 
     public Builder protocol(final ZMTPProtocol protocol) {
-      this.protocol = protocol;
+      config.protocol(protocol);
+      return this;
+    }
+
+    public Builder interop(final boolean interop) {
+      config.interop(interop);
+      return this;
+    }
+
+    public Builder socketType(final ZMTPSocketType socketType) {
+      config.socketType(socketType);
       return this;
     }
 
     public Builder localIdentity(final CharSequence localIdentity) {
-      return localIdentity(UTF_8.encode(localIdentity.toString()));
+      config.localIdentity(localIdentity);
+      return this;
     }
 
     public Builder localIdentity(final byte[] localIdentity) {
-      return localIdentity(ByteBuffer.wrap(localIdentity));
+      config.localIdentity(localIdentity);
+      return this;
     }
 
     public Builder localIdentity(final ByteBuffer localIdentity) {
-      this.localIdentity = localIdentity;
+      config.localIdentity(localIdentity);
       return this;
     }
 
-    public Builder encoder(final ZMTPEncoder encoder) {
-      this.encoder = encoder;
+    public Builder encoder(final ZMTPEncoderFactory encoder) {
+      config.encoder(encoder);
       return this;
     }
 
-    public Builder decoder(final ZMTPDecoder decoder) {
-      this.decoder = decoder;
+    public Builder encoder(final Class<? extends ZMTPEncoder> encoder) {
+      config.encoder(encoder);
+      return this;
+    }
+
+    public Builder decoder(final ZMTPDecoderFactory decoder) {
+      config.decoder(decoder);
+      return this;
+    }
+
+    public Builder decoder(final Class<? extends ZMTPDecoder> decoder) {
+      config.decoder(decoder);
       return this;
     }
 
     public ZMTPCodec build() {
-      return new ZMTPCodec(this);
+      return new ZMTPCodec(config.build());
     }
   }
 }

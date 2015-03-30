@@ -10,7 +10,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.buf;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPConnectionType.ADDRESSED;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
@@ -60,7 +59,8 @@ public class PipelineTests {
 
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP20.withSocketType(REQ))
+            .protocol(ZMTP20)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
     cmp(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f), pt.readClient());
@@ -80,7 +80,8 @@ public class PipelineTests {
   public void testZMTPPipelineFragmented() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP20.withSocketType(REQ))
+            .protocol(ZMTP20)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
 
@@ -101,7 +102,8 @@ public class PipelineTests {
   public void testZMTP1PipelineLongMessage() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10.withConnectionType(ADDRESSED))
+            .protocol(ZMTP10)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
 
@@ -136,7 +138,8 @@ public class PipelineTests {
   private void doTestZMTP1PipelineFragmentedHandshake(ByteBuf first, ByteBuf second) {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10.withConnectionType(ADDRESSED))
+            .protocol(ZMTP10)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
 
@@ -168,7 +171,8 @@ public class PipelineTests {
   public void testZMTP1PipelineLongMessageFragmentedLong() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10.withConnectionType(ADDRESSED))
+            .protocol(ZMTP10)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
 
@@ -204,7 +208,8 @@ public class PipelineTests {
   public void testZMTP1PipelineLongMessageFragmentedSize() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10.withConnectionType(ADDRESSED))
+            .protocol(ZMTP10)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
 
@@ -241,7 +246,8 @@ public class PipelineTests {
   public void testZMTP1PipelineMultiMessage() {
     PipelineTester pt = new PipelineTester(
         ZMTPCodec.builder()
-            .protocol(ZMTP10.withConnectionType(ADDRESSED))
+            .protocol(ZMTP10)
+            .socketType(REQ)
             .localIdentity("foo")
             .build());
 
