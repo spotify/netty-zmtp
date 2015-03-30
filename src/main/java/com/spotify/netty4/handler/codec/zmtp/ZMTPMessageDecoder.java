@@ -25,7 +25,7 @@ import static java.lang.Math.min;
 
 public class ZMTPMessageDecoder implements ZMTPDecoder {
 
-  private final long MAX_LIMIT = Integer.MAX_VALUE;
+  public static final long MAX_LIMIT = Integer.MAX_VALUE;
 
   public static final Factory FACTORY = new Factory() {
     @Override
