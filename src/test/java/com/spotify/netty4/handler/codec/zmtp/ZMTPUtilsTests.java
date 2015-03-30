@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -38,9 +39,9 @@ public class ZMTPUtilsTests {
     for (boolean more : asList(TRUE, FALSE)) {
       for (int size = 0; size < 1024; size++) {
         final ByteBuf frame = Unpooled.wrappedBuffer(new byte[size]);
-        int estimatedSize = ZMTPUtils.frameSize(frame, 1);
+        int estimatedSize = ZMTPUtils.frameSize(frame, ZMTP10);
         final ByteBuf buffer = Unpooled.buffer();
-        ZMTPUtils.writeFrame(frame, buffer, more, 1);
+        ZMTPUtils.writeFrame(frame, buffer, more, ZMTP10);
         int writtenSize = buffer.readableBytes();
         assertEquals(writtenSize, estimatedSize);
       }
@@ -60,7 +61,7 @@ public class ZMTPUtilsTests {
         asList(Unpooled.copiedBuffer("foo", UTF_8), Unpooled.copiedBuffer("bar", UTF_8)),
         manyFrameSizes);
 
-    for (int version : asList(1, 2)) {
+    for (ZMTPVersion version : ZMTPVersion.supportedVersions()) {
       for (List<ByteBuf> frames : frameSets) {
         if (frames.isEmpty()) {
           continue;

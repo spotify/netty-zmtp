@@ -40,6 +40,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
+
 @State(Scope.Benchmark)
 public class CodecBenchmark {
 
@@ -54,28 +57,28 @@ public class CodecBenchmark {
       "datadatadatadatadatadatadatadatadatadata",
       "datadatadatadatadatadatadatadatadatadata");
 
-  private final ZMTPParser messageParserV1 =
-      ZMTPParser.create(1, new ZMTPMessageDecoder(Integer.MAX_VALUE));
+  private final ZMTPParser messageParserZMTP10 =
+      ZMTPParser.create(ZMTP10, new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
-  private final ZMTPParser messageParserV2 =
-      ZMTPParser.create(2, new ZMTPMessageDecoder(Integer.MAX_VALUE));
+  private final ZMTPParser messageParserZMTP20 =
+      ZMTPParser.create(ZMTP20, new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
-  private final ZMTPParser discardingParserV1 =
-      ZMTPParser.create(1, new Discarder());
+  private final ZMTPParser discardingParserZMTP10 =
+      ZMTPParser.create(ZMTP10, new Discarder());
 
-  private final ZMTPParser discardingParserV2 =
-      ZMTPParser.create(2, new Discarder());
+  private final ZMTPParser discardingParserZMTP20 =
+      ZMTPParser.create(ZMTP20, new Discarder());
 
-  private final ByteBuf incomingV1;
-  private final ByteBuf incomingV2;
+  private final ByteBuf incomingZMTP10;
+  private final ByteBuf incomingZMTP20;
 
   private final ByteBuf tmp = PooledByteBufAllocator.DEFAULT.buffer(4096);
 
   {
-    incomingV1 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, 1));
-    incomingV2 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, 2));
-    ZMTPUtils.writeMessage(message, incomingV1, 1);
-    ZMTPUtils.writeMessage(message, incomingV2, 2);
+    incomingZMTP10 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, ZMTP10));
+    incomingZMTP20 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, ZMTP20));
+    ZMTPUtils.writeMessage(message, incomingZMTP10, ZMTP10);
+    ZMTPUtils.writeMessage(message, incomingZMTP20, ZMTP20);
   }
 
   @SuppressWarnings("ForLoopReplaceableByForEach")
@@ -89,38 +92,38 @@ public class CodecBenchmark {
   }
 
   @Benchmark
-  public void parsingToMessageV1(final Blackhole bh) throws ZMTPParsingException {
-    messageParserV1.parse(incomingV1.resetReaderIndex(), out);
+  public void parsingToMessageZMTP10(final Blackhole bh) throws ZMTPParsingException {
+    messageParserZMTP10.parse(incomingZMTP10.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public void parsingToMessageV2(final Blackhole bh) throws ZMTPParsingException {
-    messageParserV2.parse(incomingV2.resetReaderIndex(), out);
+  public void parsingToMessageZMTP20(final Blackhole bh) throws ZMTPParsingException {
+    messageParserZMTP20.parse(incomingZMTP20.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public void discardingV1(final Blackhole bh) throws ZMTPParsingException {
-    discardingParserV1.parse(incomingV1.resetReaderIndex(), out);
+  public void discardingZMTP10(final Blackhole bh) throws ZMTPParsingException {
+    discardingParserZMTP10.parse(incomingZMTP10.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public void discardingV2(final Blackhole bh) throws ZMTPParsingException {
-    discardingParserV2.parse(incomingV2.resetReaderIndex(), out);
+  public void discardingZMTP20(final Blackhole bh) throws ZMTPParsingException {
+    discardingParserZMTP20.parse(incomingZMTP20.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
-  public Object encodingV1() {
-    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), 1);
+  public Object encodingZMTP10() {
+    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), ZMTP10);
     return tmp;
   }
 
   @Benchmark
-  public Object encodingV2() {
-    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), 2);
+  public Object encodingZMTP20() {
+    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), ZMTP20);
     return tmp;
   }
 

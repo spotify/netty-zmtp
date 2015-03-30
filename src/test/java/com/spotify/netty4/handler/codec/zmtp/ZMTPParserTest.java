@@ -33,6 +33,7 @@ import io.netty.buffer.Unpooled;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.supportedVersions;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
@@ -61,14 +62,14 @@ public class ZMTPParserTest {
 
   @Theory
   public void testParse(final String[] frames) throws Exception {
-    for (final int version : asList(1, 2)) {
+    for (final ZMTPVersion version : supportedVersions()) {
       testParse(asList(frames), version);
     }
   }
 
-  private void testParse(final List<String> input, final int version)
+  private void testParse(final List<String> input, final ZMTPVersion version)
       throws Exception {
-    System.out.printf("version=%d, input=%s%n", version, input);
+    System.out.printf("version=%s, input=%s%n", version, input);
 
     final ExpectedOutput expected = new ExpectedOutput(frames(input));
 
@@ -134,7 +135,7 @@ public class ZMTPParserTest {
     return zmtpFrames.build();
   }
 
-  private ByteBuf serialize(final List<String> frames, int version) {
+  private ByteBuf serialize(final List<String> frames, final ZMTPVersion version) {
     final ZMTPMessage message = ZMTPMessage.fromUTF8(frames);
     final int messageSize = ZMTPUtils.messageSize(message, version);
     final ByteBuf buffer = Unpooled.buffer(messageSize);

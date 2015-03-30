@@ -25,6 +25,7 @@ import io.netty.channel.ChannelHandlerContext;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.encodeZMTP1Length;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.readZMTP1RemoteIdentity;
+import static java.lang.String.format;
 
 class ZMTP20Protocol implements ZMTPProtocol {
 
@@ -74,52 +75,56 @@ class ZMTP20Protocol implements ZMTPProtocol {
     public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
         throws ZMTPException {
       if (splitHandshake) {
-        return new ZMTPHandshake(2, ByteBuffer.wrap(parseZMTP2Greeting(in, false)));
+        return ZMTPHandshake.of(ZMTPVersion.ZMTP20, ByteBuffer.wrap(parseZMTP2Greeting(in, false)));
       }
 
       if (interop) {
         in.markReaderIndex();
-        int version = detectProtocolVersion(in);
-        if (version == 1) {
-          in.resetReaderIndex();
-          // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
-          // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
-          ctx.writeAndFlush(Unpooled.wrappedBuffer(localIdentity));
-          return ZMTPHandshake.of(version, ByteBuffer.wrap(readZMTP1RemoteIdentity(in)));
-        } else {
-          splitHandshake = true;
-          ctx.writeAndFlush(makeZMTP2Greeting(false));
-          return null;
+        final ZMTPVersion version = detectProtocolVersion(in);
+        switch (version) {
+          case ZMTP10:
+            in.resetReaderIndex();
+            // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
+            // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
+            ctx.writeAndFlush(Unpooled.wrappedBuffer(localIdentity));
+            return ZMTPHandshake.of(version, ByteBuffer.wrap(readZMTP1RemoteIdentity(in)));
+          case ZMTP20:
+            splitHandshake = true;
+            ctx.writeAndFlush(makeZMTP2Greeting(false));
+            return null;
+          default:
+            throw new ZMTPException("Unknown ZMTP version: " + version);
         }
       } else {
-        return new ZMTPHandshake(2, ByteBuffer.wrap(parseZMTP2Greeting(in, true)));
+        return ZMTPHandshake.of(ZMTPVersion.ZMTP20, ByteBuffer.wrap(parseZMTP2Greeting(in, true)));
       }
     }
 
     /**
      * Read enough bytes from buffer to deduce the remote protocol version.
      *
-     * @param buffer the buffer of data to determine version from
-     * @return false if not enough data is available, else true
-     * @throws IndexOutOfBoundsException if there is not enough data available in buffer
+     * @param buffer the buffer of data to determine version from.
+     * @return The detected {@link ZMTPVersion}.
+     * @throws IndexOutOfBoundsException if there is not enough data available in buffer.
      */
-    static int detectProtocolVersion(final ByteBuf buffer) {
+    static ZMTPVersion detectProtocolVersion(final ByteBuf buffer) {
       if (buffer.readByte() != (byte) 0xff) {
-        return 1;
+        return ZMTPVersion.ZMTP10;
       }
       buffer.skipBytes(8);
       if ((buffer.readByte() & 0x01) == 0) {
-        return 1;
+        return ZMTPVersion.ZMTP10;
       }
-      return 2;
+      // TODO (dano): parse revision & socket type here
+      return ZMTPVersion.ZMTP20;
     }
 
     /**
      * Make a ByteBuf containing a ZMTP/2.0 greeting, possibly leaving out the 10 initial signature
      * octets if includeSignature is false.
      *
-     * @param includeSignature true if a full greeting should be sent, false if the initial 10 octets
-     *                         should be left out
+     * @param includeSignature true if a full greeting should be sent, false if the initial 10
+     *                         octets should be left out
      * @return a ByteBuf containing the greeting
      */
     private ByteBuf makeZMTP2Greeting(boolean includeSignature) {
@@ -159,12 +164,16 @@ class ZMTP20Protocol implements ZMTPProtocol {
         }
         buffer.skipBytes(9);
       }
-      // ignoring version number and socket type for now
-      buffer.skipBytes(2);
-      int val = buffer.readByte();
+      final int revision = buffer.readByte();
+      if (revision != ZMTPVersion.ZMTP20.revision()) {
+        throw new ZMTPException("Unsupported ZMTP revision: " + revision);
+      }
+      // Skip socket type for now
+      buffer.skipBytes(1);
+      final int val = buffer.readByte();
       if (val != 0x00) {
-        String s = String.format("Malformed greeting. Byte 13 expected to be 0x00, was: 0x%02x", val);
-        throw new ZMTPException(s);
+        throw new ZMTPException(format(
+            "Malformed greeting. Byte 13 expected to be 0x00, was: 0x%02x", val));
       }
       int len = buffer.readByte();
       final byte[] identity = new byte[len];

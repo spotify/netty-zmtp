@@ -18,10 +18,10 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 public class ZMTPEstimator {
 
-  private final int version;
+  private final ZMTPVersion version;
   private int size;
 
-  public ZMTPEstimator(final int version) {
+  public ZMTPEstimator(final ZMTPVersion version) {
     this.version = version;
   }
 

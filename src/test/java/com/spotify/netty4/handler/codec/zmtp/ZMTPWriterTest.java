@@ -27,6 +27,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -44,7 +45,7 @@ public class ZMTPWriterTest {
 
   @Test
   public void testOneFrame() throws Exception {
-    final ZMTPWriter writer = new ZMTPWriter(1);
+    final ZMTPWriter writer = new ZMTPWriter(ZMTP10);
     final ByteBuf buf = Unpooled.buffer();
     writer.reset(buf);
 
@@ -55,7 +56,7 @@ public class ZMTPWriterTest {
 
     frame.writeBytes(content.duplicate());
 
-    final ZMTPParser parser = new ZMTPParser(1, new RawDecoder());
+    final ZMTPParser parser = new ZMTPParser(ZMTP10, new RawDecoder());
     parser.parse(buf, out);
 
     assertThat(out, hasSize(1));
@@ -64,7 +65,7 @@ public class ZMTPWriterTest {
 
   @Test
   public void testTwoFrames() throws Exception {
-    final ZMTPWriter writer = new ZMTPWriter(1);
+    final ZMTPWriter writer = new ZMTPWriter(ZMTP10);
     final ByteBuf buf = Unpooled.buffer();
     writer.reset(buf);
 
@@ -74,7 +75,7 @@ public class ZMTPWriterTest {
     writer.frame(f0.readableBytes(), true).writeBytes(f0.duplicate());
     writer.frame(f1.readableBytes(), false).writeBytes(f1.duplicate());
 
-    final ZMTPParser parser = new ZMTPParser(1, new RawDecoder());
+    final ZMTPParser parser = new ZMTPParser(ZMTP10, new RawDecoder());
     parser.parse(buf, out);
 
     assertThat(out, hasSize(1));
@@ -83,8 +84,8 @@ public class ZMTPWriterTest {
 
   @Test
   public void testReframe() throws Exception {
-    final ZMTPParser parser = new ZMTPParser(1, new RawDecoder());
-    final ZMTPWriter writer = new ZMTPWriter(1);
+    final ZMTPParser parser = new ZMTPParser(ZMTP10, new RawDecoder());
+    final ZMTPWriter writer = new ZMTPWriter(ZMTP10);
     final ByteBuf buf = Unpooled.buffer();
 
     writer.reset(buf);

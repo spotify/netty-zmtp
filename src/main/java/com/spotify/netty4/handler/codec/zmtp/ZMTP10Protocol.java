@@ -53,7 +53,7 @@ class ZMTP10Protocol implements ZMTPProtocol {
     public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
         throws ZMTPException {
       final byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(in);
-      return new ZMTPHandshake(1, ByteBuffer.wrap(remoteIdentity));
+      return new ZMTPHandshake(ZMTPVersion.ZMTP10, ByteBuffer.wrap(remoteIdentity));
     }
 
     /**

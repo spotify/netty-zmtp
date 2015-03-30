@@ -18,6 +18,8 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.PUB;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.SUB;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -62,7 +64,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     verifyZeroInteractions(ctx);
-    assertEquals(ZMTPHandshake.of(1, BAR), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTP10, BAR), handshake);
   }
 
   @Test
@@ -72,7 +74,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     verify(ctx).writeAndFlush(buf(0x66, 0x6f, 0x6f));
-    assertEquals(ZMTPHandshake.of(1, BAR), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTP10, BAR), handshake);
   }
 
   @Test
@@ -86,7 +88,7 @@ public class HandshakeTest {
     handshake = h.handshake(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
     verifyNoMoreInteractions(ctx);
-    assertEquals(ZMTPHandshake.of(2, BAR), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR), handshake);
   }
 
   @Test
@@ -102,7 +104,7 @@ public class HandshakeTest {
     handshake = h.handshake(cb, ctx);
     assertNotNull(handshake);
     verifyNoMoreInteractions(ctx);
-    assertEquals(ZMTPHandshake.of(2, BAR), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR), handshake);
   }
 
   @Test
@@ -119,7 +121,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(
         buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
-    assertEquals(ZMTPHandshake.of(2, BAR), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR), handshake);
   }
 
   @Test
@@ -129,7 +131,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
     assertNotNull(handshake);
-    assertEquals(ZMTPHandshake.of(2, BAR), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR), handshake);
   }
 
 
@@ -191,10 +193,10 @@ public class HandshakeTest {
       // ignore
     }
 
-    assertEquals(1, ZMTP20Protocol.Handshaker.detectProtocolVersion(buf(0x07)));
-    assertEquals(1, ZMTP20Protocol.Handshaker
+    assertEquals(ZMTP10, ZMTP20Protocol.Handshaker.detectProtocolVersion(buf(0x07)));
+    assertEquals(ZMTP10, ZMTP20Protocol.Handshaker
         .detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0)));
-    assertEquals(2, ZMTP20Protocol.Handshaker
+    assertEquals(ZMTP20, ZMTP20Protocol.Handshaker
         .detectProtocolVersion(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 1)));
   }
 

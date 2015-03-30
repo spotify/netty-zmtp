@@ -66,7 +66,7 @@ public class ZMTPFrameIntegrationTest {
       }
     };
 
-    assertEquals(true, tester.connectAndReceive("127.0.0.1", 10001, ZMQ.REQ));
+    assertEquals(true, tester.connectAndReceive(ZMQ.REQ));
   }
 
   @Test
@@ -116,6 +116,6 @@ public class ZMTPFrameIntegrationTest {
       }
     };
 
-    assertEquals(true, tester.connectAndReceive("127.0.0.1", 4711, ZMQ.REQ));
+    assertEquals(true, tester.connectAndReceive(ZMQ.REQ));
   }
 }

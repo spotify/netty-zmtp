@@ -31,7 +31,7 @@ public class ZMTPParser {
 
   private static final byte LONG_FLAG = 0x02;
 
-  private final int version;
+  private final ZMTPVersion version;
 
   private final ZMTPDecoder decoder;
 
@@ -40,8 +40,10 @@ public class ZMTPParser {
   private long remaining;
   private boolean headerParsed;
 
-
-  ZMTPParser(final int version, final ZMTPDecoder decoder) {
+  ZMTPParser(final ZMTPVersion version, final ZMTPDecoder decoder) {
+    if (!ZMTPVersion.isSupported(version)){
+      throw new IllegalArgumentException("Unsupported version: " + version);
+    }
     this.version = version;
     this.decoder = decoder;
   }
@@ -90,7 +92,14 @@ public class ZMTPParser {
    * Parse a ZMTP frame header.
    */
   private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPParsingException {
-    return version == 1 ? parseZMTP1Header(buffer) : parseZMTP2Header(buffer);
+    switch (version) {
+      case ZMTP10:
+        return parseZMTP1Header(buffer);
+      case ZMTP20:
+        return parseZMTP2Header(buffer);
+      default:
+        throw new AssertionError();
+    }
   }
 
   /**
@@ -147,7 +156,7 @@ public class ZMTPParser {
     return true;
   }
 
-  public static ZMTPParser create(final int version, final ZMTPDecoder decoder) {
+  public static ZMTPParser create(final ZMTPVersion version, final ZMTPDecoder decoder) {
     return new ZMTPParser(version, decoder);
   }
 }

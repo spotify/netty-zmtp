@@ -20,15 +20,15 @@ import java.nio.ByteBuffer;
 
 class ZMTPHandshake {
 
-  private final int version;
+  private final ZMTPVersion version;
   private final ByteBuffer remoteIdentity;
 
-  ZMTPHandshake(final int version, final ByteBuffer remoteIdentity) {
+  ZMTPHandshake(final ZMTPVersion version, final ByteBuffer remoteIdentity) {
     this.version = version;
     this.remoteIdentity = remoteIdentity;
   }
 
-  int protocolVersion() {
+  ZMTPVersion protocolVersion() {
     return version;
   }
 
@@ -44,17 +44,14 @@ class ZMTPHandshake {
     final ZMTPHandshake that = (ZMTPHandshake) o;
 
     if (version != that.version) { return false; }
-    if (remoteIdentity != null ? !remoteIdentity.equals(that.remoteIdentity)
-                               : that.remoteIdentity != null) {
-      return false;
-    }
+    return !(remoteIdentity != null ? !remoteIdentity.equals(that.remoteIdentity)
+                                    : that.remoteIdentity != null);
 
-    return true;
   }
 
   @Override
   public int hashCode() {
-    int result = version;
+    int result = version != null ? version.hashCode() : 0;
     result = 31 * result + (remoteIdentity != null ? remoteIdentity.hashCode() : 0);
     return result;
   }
@@ -67,7 +64,7 @@ class ZMTPHandshake {
            '}';
   }
 
-  public static ZMTPHandshake of(final int protocolVersion, final ByteBuffer remoteIdentity) {
+  static ZMTPHandshake of(final ZMTPVersion protocolVersion, final ByteBuffer remoteIdentity) {
     return new ZMTPHandshake(protocolVersion, remoteIdentity);
   }
 }

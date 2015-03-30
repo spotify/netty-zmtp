@@ -44,13 +44,13 @@ abstract class ZMTPTestConnector {
 
   public abstract boolean onMessage(ZMTPIncomingMessage msg);
 
-  public boolean connectAndReceive(final String ip, final int port, final int serverType) {
+  public boolean connectAndReceive(final int serverType) {
     final ZMQ.Context context = ZMQ.context(1);
     final ZMQ.Socket serverSocket = context.socket(serverType);
 
     preConnect(serverSocket);
 
-    serverSocket.bind("tcp://" + ip + ":" + port);
+    final int port = serverSocket.bindToRandomPort("tcp://127.0.0.1");
 
     // Configure the client.
     final Bootstrap bootstrap = new Bootstrap();
@@ -89,7 +89,7 @@ abstract class ZMTPTestConnector {
     });
 
     // Start the connection attempt.
-    final ChannelFuture future = bootstrap.connect(new InetSocketAddress(ip, port));
+    final ChannelFuture future = bootstrap.connect(new InetSocketAddress("127.0.0.1", port));
 
     future.awaitUninterruptibly();
 

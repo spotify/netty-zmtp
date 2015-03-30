@@ -75,7 +75,8 @@ public class ZMTPUtils {
 
   /**
    * Encode a ZMTP/1.0 frame length field.
-   *  @param out       Target buffer.
+   *
+   * @param out       Target buffer.
    * @param maxLength The maximum length of the field.
    * @param length    The length.
    * @param forceLong true to force writing length as a 64 bit unsigned integer.
@@ -152,7 +153,7 @@ public class ZMTPUtils {
    * @param more   True to write a more flag, false to write a final flag.
    */
   public static void writeFrame(final ByteBuf frame, final ByteBuf buffer,
-                                final boolean more, final int version) {
+                                final boolean more, final ZMTPVersion version) {
     writeFrameHeader(buffer, frame.readableBytes(), frame.readableBytes(), more, version);
     if (frame.isReadable()) {
       buffer.ensureWritable(frame.readableBytes());
@@ -167,22 +168,28 @@ public class ZMTPUtils {
    * @param more   True to write a more flag, false to write a final flag.
    */
   public static void writeFrameHeader(final ByteBuf buffer, final int maxLength, final int size,
-                                      final boolean more, final int version) {
-    if (version == 1) {
-      encodeZMTP1FrameHeader(buffer, maxLength, size, more);
-    } else { // version == 2
-      encodeZMTP2FrameHeader(buffer, maxLength, size, more);
+                                      final boolean more, final ZMTPVersion version) {
+    switch (version) {
+      case ZMTP10:
+        encodeZMTP1FrameHeader(buffer, maxLength, size, more);
+        break;
+      case ZMTP20:
+        encodeZMTP2FrameHeader(buffer, maxLength, size, more);
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown version: " + version);
     }
   }
 
   /**
    * Write a ZMTP message to a buffer.
    *
-   * @param message   The message to write.
-   * @param buffer    The target buffer.
+   * @param message The message to write.
+   * @param buffer  The target buffer.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer, int version) {
+  public static void writeMessage(final ZMTPMessage message, final ByteBuf buffer,
+                                  ZMTPVersion version) {
     final int n = message.size();
     final int lastFrame = n - 1;
     for (int i = 0; i < n; i++) {
@@ -196,7 +203,7 @@ public class ZMTPUtils {
    * @param frame The frame.
    * @return Bytes needed.
    */
-  public static int frameSize(final ByteBuf frame, int version) {
+  public static int frameSize(final ByteBuf frame, final ZMTPVersion version) {
     return frameSize(frame.readableBytes(), version);
   }
 
@@ -207,30 +214,33 @@ public class ZMTPUtils {
    * @param version     ZMTP version.
    * @return Bytes needed.
    */
-  public static int frameSize(final int payloadSize, final int version) {
-    if (version == 1) {
-      if (payloadSize + 1 < 255) {
-        return 1 + 1 + payloadSize;
-      } else {
-        return 1 + 8 + 1 + payloadSize;
-      }
-    } else { // version 2
-      if (payloadSize < 256) {
-        return 1 + 1 + payloadSize;
-      } else {
-        return 1 + 8 + payloadSize;
-      }
+  public static int frameSize(final int payloadSize, final ZMTPVersion version) {
+    switch (version) {
+      case ZMTP10:
+        if (payloadSize + 1 < 255) {
+          return 1 + 1 + payloadSize;
+        } else {
+          return 1 + 8 + 1 + payloadSize;
+        }
+      case ZMTP20:
+        if (payloadSize < 256) {
+          return 1 + 1 + payloadSize;
+        } else {
+          return 1 + 8 + payloadSize;
+        }
+      default:
+        throw new IllegalArgumentException("Unknown version: " + version);
     }
   }
 
   /**
    * Calculate bytes needed to serialize a ZMTP message.
    *
-   * @param message   The message.
-   * @param version   ZMTP version.
+   * @param message The message.
+   * @param version ZMTP version.
    * @return The number of bytes needed.
    */
-  public static int messageSize(final ZMTPMessage message, final int version) {
+  public static int messageSize(final ZMTPMessage message, final ZMTPVersion version) {
     int size = 0;
     final int n = message.size();
     for (int i = 0; i < n; i++) {
@@ -246,7 +256,7 @@ public class ZMTPUtils {
    * @param version ZMTP version.
    */
   @SuppressWarnings("ForLoopReplaceableByForEach")
-  public static int framesSize(final List<ByteBuf> frames, final int version) {
+  public static int framesSize(final List<ByteBuf> frames, final ZMTPVersion version) {
     int size = 0;
     final int n = frames.size();
     for (int i = 0; i < n; i++) {
@@ -336,7 +346,7 @@ public class ZMTPUtils {
     return identity;
   }
 
-  static <T> T checkNotNull(T obj, String message) {
+  static <T> T checkNotNull(final T obj, final String message) {
     if (obj == null) { throw new NullPointerException(message); }
     return obj;
   }

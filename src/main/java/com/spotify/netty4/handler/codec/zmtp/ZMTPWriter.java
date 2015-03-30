@@ -25,14 +25,14 @@ import static java.lang.Math.min;
  */
 public class ZMTPWriter {
 
-  private final int version;
+  private final ZMTPVersion version;
 
   private ByteBuf buf;
   private int frameSize;
   private int headerIndex;
   private int contentIndex;
 
-  ZMTPWriter(final int version) {
+  ZMTPWriter(final ZMTPVersion version) {
     this.version = version;
   }
 

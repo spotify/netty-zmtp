@@ -16,7 +16,47 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+
 public enum ZMTPVersion {
-  ZMTP10,
-  ZMTP20
+  ZMTP10(0, true),
+  ZMTP20(1, true);
+
+  private final int revision;
+  private final boolean supported;
+
+  ZMTPVersion(final int revision, final boolean supported) {
+    this.revision = revision;
+    this.supported = supported;
+  }
+
+  public int revision() {
+    return revision;
+  }
+
+  public boolean supported() {
+    return supported;
+  }
+
+  private static final List<ZMTPVersion> SUPPORTED = unmodifiableList(asList(ZMTP10, ZMTP20));
+
+  public static boolean isSupported(final ZMTPVersion version) {
+    return SUPPORTED.contains(version);
+  }
+
+  public static boolean isSupported(final int revision) {
+    for (final ZMTPVersion version : SUPPORTED) {
+      if (version.revision == revision) {
+        return version.supported;
+      }
+    }
+    return false;
+  }
+
+  public static List<ZMTPVersion> supportedVersions() {
+    return SUPPORTED;
+  }
 }

@@ -47,6 +47,10 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     this.handshaker = config.protocol().handshaker(config);
   }
 
+  public ZMTPSession session() {
+    return session;
+  }
+
   @Override
   public void channelActive(final ChannelHandlerContext ctx) throws Exception {
     super.channelActive(ctx);
@@ -66,7 +70,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
     final ZMTPDecoder decoder = config.decoder().decoder(config);
     final ZMTPEncoder encoder = config.encoder().encoder(config);
-    final ZMTPParser parser = ZMTPParser.create(session.actualVersion(), decoder);
+    final ZMTPParser parser = ZMTPParser.create(session.negotiatedVersion(), decoder);
     final ChannelHandler handler =
         new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
             new ZMTPFramingDecoder(parser),

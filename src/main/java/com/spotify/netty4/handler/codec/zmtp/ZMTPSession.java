@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 
 /**
- * Represents an ongoing zmtp session
+ * Represents a single ZMTP session.
  */
 public class ZMTPSession {
 
@@ -64,12 +64,12 @@ public class ZMTPSession {
   /**
    * An integer representing the actual version of an ZMTP connection. Note that this property does
    * not effect which protocol versions support (To pick a version, select one of the CodecBase
-   * subclasses) and the actualVersion might be lower than the highest supported version of your
+   * subclasses) and the negotiatedVersion might be lower than the highest supported version of your
    * CodecBase subclass due to interoperability downgrades.
    *
    * @return 1 for ZMTP/1.0 or 2 for ZMTP/2.0.
    */
-  public int actualVersion() {
+  public ZMTPVersion negotiatedVersion() {
     final ZMTPHandshake handshake = this.handshake.get();
     if (handshake == null) {
       throw new IllegalStateException("handshake not complete");
