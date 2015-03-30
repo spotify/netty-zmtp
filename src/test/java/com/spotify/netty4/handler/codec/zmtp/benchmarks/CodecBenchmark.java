@@ -21,7 +21,7 @@ import com.google.common.collect.Lists;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageParser;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPParser;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPParsingException;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPUtils;
 
@@ -54,17 +54,17 @@ public class CodecBenchmark {
       "datadatadatadatadatadatadatadatadatadata",
       "datadatadatadatadatadatadatadatadatadata");
 
-  private final ZMTPMessageParser messageParserV1 =
-      ZMTPMessageParser.create(1, new ZMTPMessageDecoder(Integer.MAX_VALUE));
+  private final ZMTPParser messageParserV1 =
+      ZMTPParser.create(1, new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
-  private final ZMTPMessageParser messageParserV2 =
-      ZMTPMessageParser.create(2, new ZMTPMessageDecoder(Integer.MAX_VALUE));
+  private final ZMTPParser messageParserV2 =
+      ZMTPParser.create(2, new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
-  private final ZMTPMessageParser discardingParserV1 =
-      ZMTPMessageParser.create(1, new Discarder());
+  private final ZMTPParser discardingParserV1 =
+      ZMTPParser.create(1, new Discarder());
 
-  private final ZMTPMessageParser discardingParserV2 =
-      ZMTPMessageParser.create(2, new Discarder());
+  private final ZMTPParser discardingParserV2 =
+      ZMTPParser.create(2, new Discarder());
 
   private final ByteBuf incomingV1;
   private final ByteBuf incomingV2;

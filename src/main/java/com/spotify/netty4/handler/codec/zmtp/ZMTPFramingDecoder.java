@@ -27,12 +27,12 @@ import io.netty.handler.codec.ByteToMessageDecoder;
  */
 class ZMTPFramingDecoder extends ByteToMessageDecoder {
 
-  private final ZMTPMessageParser parser;
+  private final ZMTPParser parser;
 
   /**
    * Creates a new decoder.
    */
-  ZMTPFramingDecoder(final ZMTPMessageParser parser) {
+  ZMTPFramingDecoder(final ZMTPParser parser) {
     this.parser = parser;
   }
 

@@ -23,10 +23,10 @@ import io.netty.buffer.ByteBuf;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
 
 /**
- * Decodes ZMTP messages from a channel buffer, reading and accumulating frame by frame, keeping
- * state and updating buffer reader indices as necessary.
+ * Streaming ZMTP parser. Parses headers and calls a {@link ZMTPDecoder} for consuming the actual
+ * payload.
  */
-public class ZMTPMessageParser {
+public class ZMTPParser {
 
   private static final byte LONG_FLAG = 0x02;
 
@@ -40,17 +40,15 @@ public class ZMTPMessageParser {
   private boolean headerParsed;
 
 
-  ZMTPMessageParser(final int version, final ZMTPDecoder decoder) {
+  ZMTPParser(final int version, final ZMTPDecoder decoder) {
     this.version = version;
     this.decoder = decoder;
   }
 
   /**
-   * Parses as many whole frames from the buffer as possible, until the final frame is encountered.
-   * If the message was completed, it returns the frames of the message. Otherwise it returns null
-   * to indicate that more data is needed.
+   * Parse headers and call a {@link ZMTPDecoder} to produce some decoded output.
    *
-   * @param buffer {@link ByteBuf} with data to decode
+   * @param buffer {@link ByteBuf} data to decode
    * @param out    {@link List} to which decoded messages should be added
    */
   public void parse(final ByteBuf buffer, final List<Object> out)
@@ -148,7 +146,7 @@ public class ZMTPMessageParser {
     return true;
   }
 
-  public static ZMTPMessageParser create(final int version, final ZMTPDecoder decoder) {
-    return new ZMTPMessageParser(version, decoder);
+  public static ZMTPParser create(final int version, final ZMTPDecoder decoder) {
+    return new ZMTPParser(version, decoder);
   }
 }

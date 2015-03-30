@@ -66,7 +66,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
     final ZMTPDecoder decoder = config.decoder().decoder(config);
     final ZMTPEncoder encoder = config.encoder().encoder(config);
-    final ZMTPMessageParser parser = ZMTPMessageParser.create(session.actualVersion(), decoder);
+    final ZMTPParser parser = ZMTPParser.create(session.actualVersion(), decoder);
     final ChannelHandler handler =
         new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
             new ZMTPFramingDecoder(parser),

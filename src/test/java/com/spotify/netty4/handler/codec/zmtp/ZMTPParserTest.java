@@ -37,14 +37,14 @@ import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
 /**
- * This test attempts to thoroughly exercise the {@link ZMTPMessageParser} by feeding it input
+ * This test attempts to thoroughly exercise the {@link ZMTPParser} by feeding it input
  * fragmented in every possible way using {@link Fragmenter}. Everything from whole un-fragmented
  * message parsing to each byte being fragmented in a separate buffer is tested. Generating all
  * possible message fragmentations takes some time, so running this test can typically take a few
  * minutes.
  */
 @RunWith(Theories.class)
-public class ZMTPMessageParserTest {
+public class ZMTPParserTest {
 
   @DataPoints
   public static String[][] FRAMES = {
@@ -78,7 +78,7 @@ public class ZMTPMessageParserTest {
     // Test parsing the whole message
     {
       final VerifyingDecoder verifier = new VerifyingDecoder(expected);
-      final ZMTPMessageParser parser = ZMTPMessageParser.create(version, verifier);
+      final ZMTPParser parser = ZMTPParser.create(version, verifier);
       parser.parse(serialized, null);
       verifier.assertFinished();
       serialized.setIndex(0, serializedLength);
@@ -95,7 +95,7 @@ public class ZMTPMessageParserTest {
 
     // Test parsing fragmented input
     final VerifyingDecoder verifier = new VerifyingDecoder();
-    final ZMTPMessageParser parser = ZMTPMessageParser.create(version, verifier);
+    final ZMTPParser parser = ZMTPParser.create(version, verifier);
     new Fragmenter(serialized.readableBytes()).fragment(new Fragmenter.Consumer() {
       @Override
       public void fragments(final int[] limits, final int count) throws Exception {
