@@ -16,29 +16,24 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-public class ZMTPEstimator {
+import io.netty.buffer.ByteBuf;
 
-  private int size;
+interface ZMTPWireFormat {
 
-  private ZMTPWireFormat wireFormat;
+  int frameLength(int content);
 
-  ZMTPEstimator(final ZMTPWireFormat wireFormat) {
-    this.wireFormat = wireFormat;
-  }
+  Header header();
 
-  public void reset() {
-    size = 0;
-  }
+  interface Header {
 
-  public void frame(final int size) {
-    this.size += wireFormat.frameLength(size);
-  }
+    void set(int maxLength, int length, boolean more);
 
-  public int size() {
-    return size;
-  }
+    void write(ByteBuf out);
 
-  static ZMTPEstimator create(final ZMTPVersion version) {
-    return new ZMTPEstimator(ZMTPWireFormats.wireFormat(version));
+    boolean read(ByteBuf in) throws ZMTPParsingException;
+
+    long length();
+
+    boolean more();
   }
 }

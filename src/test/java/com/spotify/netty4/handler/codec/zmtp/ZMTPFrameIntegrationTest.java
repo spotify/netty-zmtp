@@ -39,7 +39,7 @@ public class ZMTPFrameIntegrationTest {
     final ZMTPTestConnector tester = new ZMTPTestConnector() {
       @Override
       public void preConnect(final ZMQ.Socket socket) {
-        socket.setIdentity(ZMTPUtils.encodeUUID(remoteId));
+        socket.setIdentity(encodeUUID(remoteId));
       }
 
       @Override
@@ -50,7 +50,7 @@ public class ZMTPFrameIntegrationTest {
       @Override
       protected void onConnect(final ZMTPSession session) {
         // Verify that we can parse the identity correctly
-        assertEquals(ByteBuffer.wrap(ZMTPUtils.encodeUUID(remoteId)), session.remoteIdentity());
+        assertEquals(ByteBuffer.wrap(encodeUUID(remoteId)), session.remoteIdentity());
       }
 
       @Override
@@ -84,7 +84,7 @@ public class ZMTPFrameIntegrationTest {
           m.addString("test-frame-" + i);
         }
 
-        socket.setIdentity(ZMTPUtils.encodeUUID(remoteId));
+        socket.setIdentity(encodeUUID(remoteId));
       }
 
       @Override
@@ -96,7 +96,7 @@ public class ZMTPFrameIntegrationTest {
       @Override
       protected void onConnect(final ZMTPSession session) {
         // Verify that we can parse the identity correctly
-        assertEquals(ByteBuffer.wrap(ZMTPUtils.encodeUUID(remoteId)), session.remoteIdentity());
+        assertEquals(ByteBuffer.wrap(encodeUUID(remoteId)), session.remoteIdentity());
       }
 
       @Override
@@ -117,5 +117,18 @@ public class ZMTPFrameIntegrationTest {
     };
 
     assertEquals(true, tester.connectAndReceive(ZMQ.REQ));
+  }
+
+  private static byte[] encodeUUID(final UUID uuid) {
+    final long most = uuid.getMostSignificantBits();
+    final long least = uuid.getLeastSignificantBits();
+
+    return new byte[]{
+        (byte) (most >>> 56), (byte) (most >>> 48), (byte) (most >>> 40),
+        (byte) (most >>> 32), (byte) (most >>> 24), (byte) (most >>> 16),
+        (byte) (most >>> 8), (byte) most,
+        (byte) (least >>> 56), (byte) (least >>> 48), (byte) (least >>> 40),
+        (byte) (least >>> 32), (byte) (least >>> 24), (byte) (least >>> 16),
+        (byte) (least >>> 8), (byte) least};
   }
 }

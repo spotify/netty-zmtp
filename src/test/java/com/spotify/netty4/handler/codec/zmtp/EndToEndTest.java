@@ -100,16 +100,20 @@ public class EndToEndTest {
     assertThat("unexpected client connection", client.connected.poll(), is(nullValue()));
 
     // Send and receive request
-    clientChannel.writeAndFlush(helloWorldMessage());
+    final ZMTPMessage helloWorldMessage = ZMTPMessage.fromUTF8("", "hello", "world");
+    clientChannel.writeAndFlush(helloWorldMessage.retain());
     ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
     assertThat(receivedRequest, is(notNullValue()));
-    assertThat(receivedRequest.message(), is(helloWorldMessage()));
+    assertThat(receivedRequest.message(), is(helloWorldMessage));
+    helloWorldMessage.release();
 
     // Send and receive reply
-    serverConnectedChannel.writeAndFlush(fooBarMessage());
+    final ZMTPMessage fooBarMessage = ZMTPMessage.fromUTF8("", "foo", "bar");
+    serverConnectedChannel.writeAndFlush(fooBarMessage.retain());
     ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
     assertThat(receivedReply, is(notNullValue()));
-    assertThat(receivedReply.message(), is(fooBarMessage()));
+    assertThat(receivedReply.message(), is(fooBarMessage));
+    fooBarMessage.release();
 
     // Make sure there's no left over messages/connections on the wires
     Thread.sleep(1000);
@@ -182,14 +186,6 @@ public class EndToEndTest {
         .build();
 
     testRequestReply(server, client);
-  }
-
-  private ZMTPMessage helloWorldMessage() {
-    return ZMTPMessage.fromUTF8("", "hello", "world");
-  }
-
-  private ZMTPMessage fooBarMessage() {
-    return ZMTPMessage.fromUTF8("", "foo", "bar");
   }
 
   private static class Handler extends ChannelInboundHandlerAdapter {

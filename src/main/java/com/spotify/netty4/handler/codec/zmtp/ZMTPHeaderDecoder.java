@@ -16,29 +16,7 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-public class ZMTPEstimator {
+public interface ZMTPHeaderDecoder {
 
-  private int size;
-
-  private ZMTPWireFormat wireFormat;
-
-  ZMTPEstimator(final ZMTPWireFormat wireFormat) {
-    this.wireFormat = wireFormat;
-  }
-
-  public void reset() {
-    size = 0;
-  }
-
-  public void frame(final int size) {
-    this.size += wireFormat.frameLength(size);
-  }
-
-  public int size() {
-    return size;
-  }
-
-  static ZMTPEstimator create(final ZMTPVersion version) {
-    return new ZMTPEstimator(ZMTPWireFormats.wireFormat(version));
-  }
+  void header(final long length, boolean more);
 }

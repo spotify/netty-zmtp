@@ -20,7 +20,10 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
@@ -28,9 +31,66 @@ import io.netty.buffer.Unpooled;
 
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
+@RunWith(Parameterized.class)
 public class ZMTPMessageTest {
+
+  @Parameterized.Parameters(name = "{0}")
+  public static Iterable<Object[]> versions() {
+    final List<Object[]> versions = new ArrayList<Object[]>();
+    for (final ZMTPVersion version : ZMTPVersion.supportedVersions()) {
+      versions.add(new Object[]{version});
+    }
+    return versions;
+  }
+
+  @Parameterized.Parameter(0)
+  public ZMTPVersion version;
+
+  @Test
+  public void testNotEquals() {
+    final ZMTPMessage m1 = ZMTPMessage.fromUTF8("hello", "world");
+    final ZMTPMessage m2 = ZMTPMessage.fromUTF8("foo", "bar");
+    assertThat(m1, is(not(m2)));
+  }
+
+  @Test
+  public void testEquals() {
+    final ZMTPMessage m1 = ZMTPMessage.fromUTF8("hello", "world");
+    final ZMTPMessage m2 = ZMTPMessage.fromUTF8("hello", "world");
+    assertThat(m1, is(m2));
+  }
+
+  @Test
+  public void testIdentityEquals() {
+    final ZMTPMessage m = ZMTPMessage.fromUTF8("hello", "world");
+    assertThat(m, is(m));
+  }
+
+  @Test
+  public void testWriteAndRead() throws ZMTPParsingException {
+    final ZMTPMessage message = ZMTPMessage.fromUTF8("hello", "world");
+    final ByteBuf buffer = message.write(version);
+    final ZMTPMessage read = ZMTPMessage.read(buffer, version);
+    assertThat(read, is(message));
+  }
+
+  @Test
+  public void testWriteAndReadTwoMessages() throws ZMTPParsingException {
+    final ZMTPMessage m1 = ZMTPMessage.fromUTF8("hello", "world");
+    final ZMTPMessage m2 = ZMTPMessage.fromUTF8("foo", "bar");
+    final ByteBuf buffer = Unpooled.buffer();
+    m1.write(buffer, version);
+    m2.write(buffer, version);
+    final ZMTPMessage r1 = ZMTPMessage.read(buffer, version);
+    final ZMTPMessage r2 = ZMTPMessage.read(buffer, version);
+    assertThat(r1, is(m1));
+    assertThat(r2, is(m2));
+  }
 
   @Test
   public void testFromStringsUTF8() {
@@ -42,7 +102,7 @@ public class ZMTPMessageTest {
   }
 
   private ZMTPMessage message(final String... frames) {
-    return new ZMTPMessage(frames(asList(frames)));
+    return ZMTPMessage.from(frames(asList(frames)));
   }
 
   private static List<ByteBuf> frames(final List<String> frames) {

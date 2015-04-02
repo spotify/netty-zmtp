@@ -165,11 +165,13 @@ public class HandshakeTest {
 
   @Test
   public void testReadZMTP1RemoteIdentity() throws Exception {
-    byte[] bs = ZMTPUtils.readZMTP1RemoteIdentity(buf(0x04, 0x00, 0x62, 0x61, 0x72));
+    byte[] bs = ZMTP10WireFormat.readIdentity(buf(0x04, 0x00, 0x62, 0x61, 0x72));
+    assertNotNull(bs);
     assertEquals(BAR, ByteBuffer.wrap(bs));
 
     // anonymous handshake
-    bs = ZMTPUtils.readZMTP1RemoteIdentity(buf(0x01, 0x00));
+    bs = ZMTP10WireFormat.readIdentity(buf(0x01, 0x00));
+    assertNotNull(bs);
     assertTrue(bs.length == 0);
   }
 

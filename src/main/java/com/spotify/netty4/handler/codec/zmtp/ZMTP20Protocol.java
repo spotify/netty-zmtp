@@ -23,8 +23,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.encodeZMTP1Length;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.readZMTP1RemoteIdentity;
 import static java.lang.String.format;
 
 class ZMTP20Protocol implements ZMTPProtocol {
@@ -87,7 +85,9 @@ class ZMTP20Protocol implements ZMTPProtocol {
             // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
             // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
             ctx.writeAndFlush(Unpooled.wrappedBuffer(localIdentity));
-            return ZMTPHandshake.of(version, ByteBuffer.wrap(readZMTP1RemoteIdentity(in)));
+            final byte[] remoteIdentity = ZMTP10WireFormat.readIdentity(in);
+            assert remoteIdentity != null;
+            return ZMTPHandshake.of(version, ByteBuffer.wrap(remoteIdentity));
           case ZMTP20:
             splitHandshake = true;
             ctx.writeAndFlush(makeZMTP2Greeting(false));
@@ -130,7 +130,7 @@ class ZMTP20Protocol implements ZMTPProtocol {
     private ByteBuf makeZMTP2Greeting(boolean includeSignature) {
       ByteBuf out = Unpooled.buffer();
       if (includeSignature) {
-        encodeZMTP1Length(0, out, true);
+        ZMTP10WireFormat.writeLength(0, out, true);
         // last byte of signature
         out.writeByte(0x7f);
         // protocol revision
@@ -152,7 +152,7 @@ class ZMTP20Protocol implements ZMTPProtocol {
      */
     private ByteBuf makeZMTP2CompatSignature() {
       ByteBuf out = Unpooled.buffer();
-      encodeZMTP1Length(localIdentity.remaining() + 1, out, true);
+      ZMTP10WireFormat.writeLength(localIdentity.remaining() + 1, out, true);
       out.writeByte(0x7f);
       return out;
     }

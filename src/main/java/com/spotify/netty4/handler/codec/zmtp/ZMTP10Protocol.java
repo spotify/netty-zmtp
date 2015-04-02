@@ -22,8 +22,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.encodeZMTP1Length;
-
 class ZMTP10Protocol implements ZMTPProtocol {
 
   @Override
@@ -52,7 +50,8 @@ class ZMTP10Protocol implements ZMTPProtocol {
     @Override
     public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
         throws ZMTPException {
-      final byte[] remoteIdentity = ZMTPUtils.readZMTP1RemoteIdentity(in);
+      final byte[] remoteIdentity = ZMTP10WireFormat.readIdentity(in);
+      assert remoteIdentity != null;
       return new ZMTPHandshake(ZMTPVersion.ZMTP10, ByteBuffer.wrap(remoteIdentity));
     }
 
@@ -64,7 +63,7 @@ class ZMTP10Protocol implements ZMTPProtocol {
      */
     private ByteBuf makeZMTP1Greeting() {
       final ByteBuf out = Unpooled.buffer();
-      encodeZMTP1Length(localIdentity.remaining() + 1, out);
+      ZMTP10WireFormat.writeLength(localIdentity.remaining() + 1, out);
       out.writeByte(0x00);
       out.writeBytes(localIdentity.duplicate());
       return out;

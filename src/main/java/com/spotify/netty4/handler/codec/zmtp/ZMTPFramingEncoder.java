@@ -52,8 +52,8 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
       throw new NullPointerException("encoder");
     }
     this.encoder = encoder;
-    this.writer = new ZMTPWriter(session.negotiatedVersion());
-    this.estimator = new ZMTPEstimator(session.negotiatedVersion());
+    this.writer = ZMTPWriter.create(session.negotiatedVersion());
+    this.estimator = ZMTPEstimator.create(session.negotiatedVersion());
   }
 
   @Override

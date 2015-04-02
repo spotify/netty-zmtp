@@ -14,16 +14,9 @@
  * the License.
  */
 
-package com.spotify.netty4.handler.codec.zmtp.benchmarks;
+package com.spotify.netty4.handler.codec.zmtp;
 
 import com.google.common.collect.Lists;
-
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessageDecoder;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPParser;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPParsingException;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPUtils;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
@@ -42,6 +35,8 @@ import io.netty.util.ReferenceCountUtil;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
+
+// FIXME (dano): this benchmark needs to be in this package because it uses some internals
 
 @State(Scope.Benchmark)
 public class CodecBenchmark {
@@ -72,13 +67,15 @@ public class CodecBenchmark {
   private final ByteBuf incomingZMTP10;
   private final ByteBuf incomingZMTP20;
 
+  private final ZMTPMessageEncoder encoder = new ZMTPMessageEncoder();
+  private final ZMTPWriter writerZMTP10 = ZMTPWriter.create(ZMTP10);
+  private final ZMTPWriter writerZMTP20 = ZMTPWriter.create(ZMTP20);
+
   private final ByteBuf tmp = PooledByteBufAllocator.DEFAULT.buffer(4096);
 
   {
-    incomingZMTP10 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, ZMTP10));
-    incomingZMTP20 = PooledByteBufAllocator.DEFAULT.buffer(ZMTPUtils.messageSize(message, ZMTP20));
-    ZMTPUtils.writeMessage(message, incomingZMTP10, ZMTP10);
-    ZMTPUtils.writeMessage(message, incomingZMTP20, ZMTP20);
+    incomingZMTP10 = message.write(PooledByteBufAllocator.DEFAULT, ZMTP10);
+    incomingZMTP20 = message.write(PooledByteBufAllocator.DEFAULT, ZMTP20);
   }
 
   @SuppressWarnings("ForLoopReplaceableByForEach")
@@ -117,13 +114,15 @@ public class CodecBenchmark {
 
   @Benchmark
   public Object encodingZMTP10() {
-    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), ZMTP10);
+    writerZMTP10.reset(tmp.setIndex(0, 0));
+    encoder.encode(message, writerZMTP10);
     return tmp;
   }
 
   @Benchmark
   public Object encodingZMTP20() {
-    ZMTPUtils.writeMessage(message, tmp.setIndex(0, 0), ZMTP20);
+    writerZMTP20.reset(tmp.setIndex(0, 0));
+    encoder.encode(message, writerZMTP20);
     return tmp;
   }
 

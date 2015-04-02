@@ -25,15 +25,19 @@ import static java.lang.Math.min;
  */
 public class ZMTPWriter {
 
-  private final ZMTPVersion version;
+  private final ZMTPWireFormat.Header header;
 
   private ByteBuf buf;
   private int frameSize;
   private int headerIndex;
   private int contentIndex;
 
-  ZMTPWriter(final ZMTPVersion version) {
-    this.version = version;
+  ZMTPWriter(final ZMTPWireFormat wireFormat) {
+    this(wireFormat.header());
+  }
+
+  ZMTPWriter(final ZMTPWireFormat.Header header) {
+    this.header = header;
   }
 
   void reset(final ByteBuf buf) {
@@ -50,7 +54,8 @@ public class ZMTPWriter {
   public ByteBuf frame(final int size, final boolean more) {
     frameSize = size;
     headerIndex = buf.writerIndex();
-    ZMTPUtils.writeFrameHeader(buf, size, size, more, version);
+    header.set(size, size, more);
+    header.write(buf);
     contentIndex = buf.writerIndex();
     return buf;
   }
@@ -76,14 +81,17 @@ public class ZMTPWriter {
     final int mark = buf.writerIndex();
     final int written = mark - contentIndex;
     if (written < 0) {
-
+      throw new IllegalStateException("written < 0");
     }
     final int newIndex = contentIndex + min(written, size);
     buf.writerIndex(headerIndex);
-    ZMTPUtils.writeFrameHeader(buf, frameSize, size, more, version);
+    header.set(frameSize, size, more);
+    header.write(buf);
     buf.writerIndex(newIndex);
     return buf;
   }
 
-
+  static ZMTPWriter create(final ZMTPVersion version) {
+    return new ZMTPWriter(ZMTPWireFormats.wireFormat(version));
+  }
 }

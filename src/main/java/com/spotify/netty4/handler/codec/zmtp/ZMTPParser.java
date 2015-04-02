@@ -20,31 +20,23 @@ import java.util.List;
 
 import io.netty.buffer.ByteBuf;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.MORE_FLAG;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPWireFormats.wireFormat;
 import static java.lang.Math.min;
 
 /**
  * Streaming ZMTP parser. Parses headers and calls a {@link ZMTPDecoder} for consuming the actual
  * payload.
  */
-public class ZMTPParser {
-
-  private static final byte LONG_FLAG = 0x02;
-
-  private final ZMTPVersion version;
+class ZMTPParser {
 
   private final ZMTPDecoder decoder;
+  private final ZMTPWireFormat.Header header;
 
-  private boolean hasMore;
-  private long length;
   private long remaining;
   private boolean headerParsed;
 
-  ZMTPParser(final ZMTPVersion version, final ZMTPDecoder decoder) {
-    if (!ZMTPVersion.isSupported(version)){
-      throw new IllegalArgumentException("Unsupported version: " + version);
-    }
-    this.version = version;
+  ZMTPParser(final ZMTPWireFormat wireFormat, final ZMTPDecoder decoder) {
+    this.header = wireFormat.header();
     this.decoder = decoder;
   }
 
@@ -54,19 +46,19 @@ public class ZMTPParser {
    * @param buffer {@link ByteBuf} data to decode
    * @param out    {@link List} to which decoded messages should be added
    */
-  public void parse(final ByteBuf buffer, final List<Object> out)
+  void parse(final ByteBuf buffer, final List<Object> out)
       throws ZMTPParsingException {
     while (buffer.isReadable()) {
       if (!headerParsed) {
         final int mark = buffer.readerIndex();
-        headerParsed = parseZMTPHeader(buffer);
+        headerParsed = header.read(buffer);
         if (!headerParsed) {
           // Wait for more data
           buffer.readerIndex(mark);
           return;
         }
-        decoder.header(length, hasMore, out);
-        remaining = length;
+        decoder.header(header.length(), header.more(), out);
+        remaining = header.length();
       }
 
       final int writerMark = buffer.writerIndex();
@@ -81,82 +73,14 @@ public class ZMTPParser {
         // Wait for more data
         return;
       }
-      if (!hasMore) {
+      if (!header.more()) {
         decoder.finish(out);
       }
       headerParsed = false;
     }
   }
 
-  /**
-   * Parse a ZMTP frame header.
-   */
-  private boolean parseZMTPHeader(final ByteBuf buffer) throws ZMTPParsingException {
-    switch (version) {
-      case ZMTP10:
-        return parseZMTP1Header(buffer);
-      case ZMTP20:
-        return parseZMTP2Header(buffer);
-      default:
-        throw new AssertionError();
-    }
-  }
-
-  /**
-   * Parse a ZMTP/1.0 frame header.
-   */
-  private boolean parseZMTP1Header(final ByteBuf buffer) throws ZMTPParsingException {
-    final long len = ZMTPUtils.decodeZMTP1Length(buffer);
-
-    if (len > Integer.MAX_VALUE) {
-      throw new ZMTPParsingException("Received too large frame: " + len);
-    }
-
-    if (len == -1) {
-      return false;
-    }
-
-    if (len == 0) {
-      throw new ZMTPParsingException("Received frame with zero length");
-    }
-
-    // Read if we have more frames from flag byte
-    if (buffer.readableBytes() < 1) {
-      // Wait for more data to decode
-      return false;
-    }
-
-    length = (int) len - 1;
-    hasMore = (buffer.readByte() & MORE_FLAG) == MORE_FLAG;
-
-    return true;
-  }
-
-  /**
-   * Parse a ZMTP/2.0 frame header.
-   */
-  private boolean parseZMTP2Header(final ByteBuf buffer) throws ZMTPParsingException {
-    if (buffer.readableBytes() < 2) {
-      return false;
-    }
-    int flags = buffer.readByte();
-    hasMore = (flags & MORE_FLAG) == MORE_FLAG;
-    if ((flags & LONG_FLAG) != LONG_FLAG) {
-      length = buffer.readByte() & 0xff;
-      return true;
-    }
-    if (buffer.readableBytes() < 8) {
-      return false;
-    }
-    final long len = buffer.readLong();
-    if (len > Integer.MAX_VALUE) {
-      throw new ZMTPParsingException("Received too large frame: " + len);
-    }
-    length = (int) len;
-    return true;
-  }
-
-  public static ZMTPParser create(final ZMTPVersion version, final ZMTPDecoder decoder) {
-    return new ZMTPParser(version, decoder);
+  static ZMTPParser create(final ZMTPVersion version, final ZMTPDecoder decoder) {
+    return new ZMTPParser(wireFormat(version), decoder);
   }
 }

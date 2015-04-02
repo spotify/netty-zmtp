@@ -28,7 +28,8 @@ public interface ZMTPDecoder {
 
   /**
    * Start a new ZMTP frame.
-   *  @param length The total length in bytes of the frame content.
+   *
+   * @param length The total length in bytes of the frame content.
    * @param more   {@code true} if there are additional frames following this one in the current
    *               ZMTP message, {@code false otherwise.}
    * @param out    {@link List} to which decoded messages should be added.

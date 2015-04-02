@@ -16,9 +16,6 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
 import com.spotify.netty4.handler.codec.zmtp.VerifyingDecoder.ExpectedOutput;
 
 import org.junit.experimental.theories.DataPoints;
@@ -29,23 +26,24 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.supportedVersions;
-import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
 /**
- * This test attempts to thoroughly exercise the {@link ZMTPParser} by feeding it input
- * fragmented in every possible way using {@link Fragmenter}. Everything from whole un-fragmented
- * message parsing to each byte being fragmented in a separate buffer is tested. Generating all
- * possible message fragmentations takes some time, so running this test can typically take a few
- * minutes.
+ * This test attempts to thoroughly exercise the {@link ZMTPParser} by feeding it input fragmented
+ * in every possible way using {@link Fragmenter}. Everything from whole un-fragmented message
+ * parsing to each byte being fragmented in a separate buffer is tested. Generating all possible
+ * message fragmentations takes some time, so running this test can typically take a few minutes.
  */
 @RunWith(Theories.class)
 public class ZMTPParserTest {
+
+  private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
 
   @DataPoints
   public static String[][] FRAMES = {
@@ -71,9 +69,11 @@ public class ZMTPParserTest {
       throws Exception {
     System.out.printf("version=%s, input=%s%n", version, input);
 
-    final ExpectedOutput expected = new ExpectedOutput(frames(input));
+    final ZMTPMessage inputMessage = ZMTPMessage.fromUTF8(ALLOC, input);
 
-    final ByteBuf serialized = serialize(input, version);
+    final ExpectedOutput expected = new ExpectedOutput(inputMessage);
+
+    final ByteBuf serialized = inputMessage.write(ALLOC, version);
     final int serializedLength = serialized.readableBytes();
 
     // Test parsing the whole message
@@ -89,10 +89,11 @@ public class ZMTPParserTest {
     final List<String> envelope = asList("e", "");
     final List<String> content = asList("a", "b", "c");
     final List<String> frames = newArrayList(concat(envelope, content));
-    final ByteBuf trivialSerialized = serialize(frames, version);
+    final ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, frames);
+    final ByteBuf trivialSerialized = message.write(ALLOC, version);
     final int trivialLength = trivialSerialized.readableBytes();
-    final ExpectedOutput trivialExpected = new ExpectedOutput(frames(
-        Lists.newArrayList(concat(envelope, content))));
+    final ExpectedOutput trivialExpected = new ExpectedOutput(
+        ZMTPMessage.fromUTF8(ALLOC, concat(envelope, content)));
 
     // Test parsing fragmented input
     final VerifyingDecoder verifier = new VerifyingDecoder();
@@ -123,23 +124,4 @@ public class ZMTPParserTest {
     });
   }
 
-  public static List<ByteBuf> frames(final String... frames) {
-    return frames(asList(frames));
-  }
-
-  public static List<ByteBuf> frames(final List<String> frames) {
-    final ImmutableList.Builder<ByteBuf> zmtpFrames = ImmutableList.builder();
-    for (final String frame : frames) {
-      zmtpFrames.add(Unpooled.copiedBuffer(frame, UTF_8));
-    }
-    return zmtpFrames.build();
-  }
-
-  private ByteBuf serialize(final List<String> frames, final ZMTPVersion version) {
-    final ZMTPMessage message = ZMTPMessage.fromUTF8(frames);
-    final int messageSize = ZMTPUtils.messageSize(message, version);
-    final ByteBuf buffer = Unpooled.buffer(messageSize);
-    ZMTPUtils.writeMessage(message, buffer, version);
-    return buffer;
-  }
 }

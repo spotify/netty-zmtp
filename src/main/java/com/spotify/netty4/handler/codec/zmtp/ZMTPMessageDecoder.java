@@ -116,7 +116,7 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
 
   @Override
   public void finish(final List<Object> out) {
-    final ZMTPMessage message = new ZMTPMessage(frames);
+    final ZMTPMessage message = ZMTPMessage.from(frames);
     final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(
         message, truncated, messageSize);
     reset();

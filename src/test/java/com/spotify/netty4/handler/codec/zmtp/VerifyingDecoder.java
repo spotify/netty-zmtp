@@ -16,14 +16,9 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.util.CharsetUtil;
-import joptsimple.internal.Strings;
 
 public class VerifyingDecoder implements ZMTPDecoder {
 
@@ -49,7 +44,7 @@ public class VerifyingDecoder implements ZMTPDecoder {
     if (finished) {
       throw new IllegalStateException("already finished");
     }
-    if (readIndex >= expected.frames.size()) {
+    if (readIndex >= expected.message.size()) {
       throw new IllegalStateException(
           "more frames than expected: " +
           "readIndex=" + readIndex + ", " +
@@ -65,7 +60,7 @@ public class VerifyingDecoder implements ZMTPDecoder {
     if (data.readableBytes() < frameSize) {
       return;
     }
-    final ByteBuf expectedFrame = expected.frames.get(readIndex);
+    final ByteBuf expectedFrame = expected.message.frame(readIndex);
     final ByteBuf frame = data.readBytes((int) frameSize);
     if (!expectedFrame.equals(frame)) {
       throw new IllegalStateException(
@@ -82,7 +77,7 @@ public class VerifyingDecoder implements ZMTPDecoder {
     if (finished) {
       throw new IllegalStateException("already finished");
     }
-    if (readIndex != expected.frames.size()) {
+    if (readIndex != expected.message.size()) {
       throw new IllegalStateException(
           "less than expected frames read: " +
           "readIndex=" + readIndex + ", " +
@@ -101,24 +96,15 @@ public class VerifyingDecoder implements ZMTPDecoder {
 
   static class ExpectedOutput {
 
-    private final List<ByteBuf> frames;
+    private final ZMTPMessage message;
 
-    public ExpectedOutput(final List<ByteBuf> frames) {
-      this.frames = frames;
+    public ExpectedOutput(final ZMTPMessage message) {
+      this.message = message;
     }
 
     @Override
     public String toString() {
-      return '[' + toString(frames) + ']';
-    }
-
-    private String toString(final List<ByteBuf> frames) {
-      return Strings.join(Lists.transform(frames, new Function<ByteBuf, String>() {
-        @Override
-        public String apply(final ByteBuf frame) {
-          return frame.toString(CharsetUtil.UTF_8);
-        }
-      }), ", ");
+      return message.toString();
     }
   }
 }

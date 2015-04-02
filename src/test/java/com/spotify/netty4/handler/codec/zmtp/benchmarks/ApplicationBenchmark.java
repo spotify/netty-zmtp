@@ -59,7 +59,6 @@ import io.netty.util.internal.chmv8.ForkJoinPool;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
-import static com.spotify.netty4.handler.codec.zmtp.benchmarks.AsciiString.ASCII_STRING_FROM_STRING;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
@@ -466,7 +465,7 @@ public class ApplicationBenchmark {
 
   private static final AsciiString[] METHODS = FluentIterable
       .from(asList("GET", "POST", "PUT", "DELETE", "PATCH"))
-      .transform(ASCII_STRING_FROM_STRING)
+      .transform(AsciiString.ASCII_STRING_FROM_STRING)
       .toArray(AsciiString.class);
 
   private static CharSequence readMethod(final ByteBuf data, final int size) {

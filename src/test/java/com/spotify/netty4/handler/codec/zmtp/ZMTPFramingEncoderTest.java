@@ -1,5 +1,7 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
+import com.google.common.base.Strings;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +16,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.concurrent.EventExecutor;
-import joptsimple.internal.Strings;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
@@ -34,7 +35,7 @@ public class ZMTPFramingEncoderTest {
 
   @Captor ArgumentCaptor<ByteBuf> bufCaptor;
 
-  private static final String LARGE_FILL = Strings.repeat('a', 500);
+  private static final String LARGE_FILL = Strings.repeat("a", 500);
 
   @Before
   public void setUp() {
