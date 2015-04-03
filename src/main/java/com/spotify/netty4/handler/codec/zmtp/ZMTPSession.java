@@ -74,7 +74,7 @@ public class ZMTPSession {
     if (handshake == null) {
       throw new IllegalStateException("handshake not complete");
     }
-    return handshake.protocolVersion();
+    return handshake.negotiatedVersion();
   }
 
   @Override

@@ -29,11 +29,6 @@ class ZMTP10Protocol implements ZMTPProtocol {
     return new Handshaker(config.localIdentity());
   }
 
-  @Override
-  public ZMTPVersion version() {
-    return ZMTPVersion.ZMTP10;
-  }
-
   static class Handshaker implements ZMTPHandshaker {
 
     private final ByteBuffer localIdentity;
@@ -44,30 +39,16 @@ class ZMTP10Protocol implements ZMTPProtocol {
 
     @Override
     public ByteBuf greeting() {
-      return makeZMTP1Greeting();
+      final ByteBuf out = Unpooled.buffer();
+      return ZMTP10WireFormat.writeGreeting(out, localIdentity);
     }
 
     @Override
     public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
         throws ZMTPException {
-      final byte[] remoteIdentity = ZMTP10WireFormat.readIdentity(in);
-      assert remoteIdentity != null;
-      return new ZMTPHandshake(ZMTPVersion.ZMTP10, ByteBuffer.wrap(remoteIdentity));
+      final ZMTPGreeting remoteGreeting = ZMTP10WireFormat.readGreeting(in);
+      assert remoteGreeting != null;
+      return new ZMTPHandshake(ZMTPVersion.ZMTP10, remoteGreeting);
     }
-
-    /**
-     * Create and return a ByteBuf containing an ZMTP/1.0 greeting based on on the constructor
-     * provided session.
-     *
-     * @return a ByteBuf with a greeting
-     */
-    private ByteBuf makeZMTP1Greeting() {
-      final ByteBuf out = Unpooled.buffer();
-      ZMTP10WireFormat.writeLength(localIdentity.remaining() + 1, out);
-      out.writeByte(0x00);
-      out.writeBytes(localIdentity.duplicate());
-      return out;
-    }
-
   }
 }

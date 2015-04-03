@@ -37,7 +37,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

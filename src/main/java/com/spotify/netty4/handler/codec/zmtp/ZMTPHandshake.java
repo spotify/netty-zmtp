@@ -21,19 +21,19 @@ import java.nio.ByteBuffer;
 class ZMTPHandshake {
 
   private final ZMTPVersion version;
-  private final ByteBuffer remoteIdentity;
+  private final ZMTPGreeting greeting;
 
-  ZMTPHandshake(final ZMTPVersion version, final ByteBuffer remoteIdentity) {
+  ZMTPHandshake(final ZMTPVersion version, final ZMTPGreeting greeting) {
     this.version = version;
-    this.remoteIdentity = remoteIdentity;
+    this.greeting = greeting;
   }
 
-  ZMTPVersion protocolVersion() {
+  ZMTPVersion negotiatedVersion() {
     return version;
   }
 
   ByteBuffer remoteIdentity() {
-    return remoteIdentity == null ? null : remoteIdentity.asReadOnlyBuffer();
+    return greeting.identity();
   }
 
   @Override
@@ -44,15 +44,14 @@ class ZMTPHandshake {
     final ZMTPHandshake that = (ZMTPHandshake) o;
 
     if (version != that.version) { return false; }
-    return !(remoteIdentity != null ? !remoteIdentity.equals(that.remoteIdentity)
-                                    : that.remoteIdentity != null);
+    return !(greeting != null ? !greeting.equals(that.greeting) : that.greeting != null);
 
   }
 
   @Override
   public int hashCode() {
     int result = version != null ? version.hashCode() : 0;
-    result = 31 * result + (remoteIdentity != null ? remoteIdentity.hashCode() : 0);
+    result = 31 * result + (greeting != null ? greeting.hashCode() : 0);
     return result;
   }
 
@@ -60,11 +59,11 @@ class ZMTPHandshake {
   public String toString() {
     return "ZMTPHandshake{" +
            "version=" + version +
-           ", remoteIdentity=" + remoteIdentity +
+           ", greeting=" + greeting +
            '}';
   }
 
-  static ZMTPHandshake of(final ZMTPVersion protocolVersion, final ByteBuffer remoteIdentity) {
-    return new ZMTPHandshake(protocolVersion, remoteIdentity);
+  static ZMTPHandshake of(final ZMTPVersion negotiatedVersion, final ZMTPGreeting greeting) {
+    return new ZMTPHandshake(negotiatedVersion, greeting);
   }
 }

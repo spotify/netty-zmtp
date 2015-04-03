@@ -16,7 +16,11 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.nio.ByteBuffer;
+
 import io.netty.buffer.ByteBuf;
+
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.UNKNOWN;
 
 class ZMTP10WireFormat implements ZMTPWireFormat {
 
@@ -27,7 +31,7 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
   /**
    * Read the remote identity octets from a ZMTP/1.0 greeting.
    */
-  static byte[] readIdentity(final ByteBuf buffer) throws ZMTPParsingException {
+  static ByteBuffer readIdentity(final ByteBuf buffer) throws ZMTPParsingException {
     final long len = readLength(buffer);
     if (len == -1) {
       return null;
@@ -41,7 +45,7 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
 
     final byte[] identity = new byte[(int) len - 1];
     buffer.readBytes(identity);
-    return identity;
+    return ByteBuffer.wrap(identity);
   }
 
   /**
@@ -102,6 +106,19 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
     }
   }
 
+  /**
+   * Create and return a ByteBuf containing an ZMTP/1.0 greeting based on on the constructor
+   * provided session.
+   *
+   * @return a ByteBuf with a greeting
+   */
+  static ByteBuf writeGreeting(final ByteBuf out, final ByteBuffer identity) {
+    writeLength(identity.remaining() + 1, out);
+    out.writeByte(0x00);
+    out.writeBytes(identity.duplicate());
+    return out;
+  }
+
   @Override
   public Header header() {
     return new ZMTP10Header();
@@ -114,6 +131,14 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
     } else {
       return 1 + 8 + 1 + content;
     }
+  }
+
+  public static ZMTPGreeting readGreeting(final ByteBuf in) throws ZMTPParsingException {
+    final ByteBuffer remoteIdentity = readIdentity(in);
+    if (remoteIdentity == null) {
+      return null;
+    }
+    return new ZMTPGreeting(0, UNKNOWN, remoteIdentity);
   }
 
   static class ZMTP10Header implements Header {

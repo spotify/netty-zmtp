@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.netty.util.ReferenceCountUtil;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static org.junit.Assert.assertEquals;

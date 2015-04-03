@@ -19,9 +19,4 @@ package com.spotify.netty4.handler.codec.zmtp;
 public interface ZMTPProtocol {
 
   ZMTPHandshaker handshaker(ZMTPConfig config);
-
-  ZMTPVersion version();
-
-  ZMTPProtocol ZMTP10 = new ZMTP10Protocol();
-  ZMTPProtocol ZMTP20 = new ZMTP20Protocol();
 }

@@ -36,8 +36,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static java.util.concurrent.TimeUnit.SECONDS;

@@ -16,6 +16,8 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import static java.lang.String.format;
+
 class ZMTPUtils {
 
   static <T> T checkNotNull(final T obj, final String message) {
@@ -23,5 +25,11 @@ class ZMTPUtils {
       throw new NullPointerException(message);
     }
     return obj;
+  }
+
+  static void checkArgument(final boolean expression, final String message, final Object... args) {
+    if (!expression) {
+      throw new IllegalArgumentException(format(message, args));
+    }
   }
 }

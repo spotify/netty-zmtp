@@ -16,7 +16,8 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-public interface ZMTPHeaderDecoder {
+public class ZMTPProtocols {
 
-  void header(final long length, boolean more);
+  public static final ZMTPProtocol ZMTP10 = new ZMTP10Protocol();
+  public static final ZMTPProtocol ZMTP20 = new ZMTP20Protocol();
 }

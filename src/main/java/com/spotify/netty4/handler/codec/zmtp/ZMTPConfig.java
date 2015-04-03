@@ -80,7 +80,7 @@ public class ZMTPConfig {
 
   public static class Builder {
 
-    private ZMTPProtocol protocol = ZMTPProtocol.ZMTP20;
+    private ZMTPProtocol protocol = ZMTPProtocols.ZMTP20;
     private boolean interop = true;
     private ZMTPSocketType socketType;
     private ByteBuffer localIdentity = ANONYMOUS;

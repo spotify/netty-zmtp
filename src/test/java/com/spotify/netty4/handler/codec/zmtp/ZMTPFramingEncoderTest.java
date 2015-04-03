@@ -19,8 +19,8 @@ import io.netty.util.concurrent.EventExecutor;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP10;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocol.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static org.mockito.Matchers.any;
