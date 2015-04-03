@@ -82,27 +82,23 @@ public class EndToEndTest {
       throws InterruptedException {
 
     // Set up server & client
-    Handler server = new Handler();
-    Handler client = new Handler();
-    Channel serverChannel = bind(ANY_PORT, serverCodec, server);
-    SocketAddress address = serverChannel.localAddress();
-    Channel clientChannel = connect(address, clientCodec, client);
-    Channel clientConnectedChannel = client.connected.poll(5, SECONDS);
-    assertThat(clientConnectedChannel, is(notNullValue()));
-    Channel serverConnectedChannel = server.connected.poll(5, SECONDS);
+    final Handler server = new Handler();
+    final Handler client = new Handler();
+    final SocketAddress address = bind(ANY_PORT, serverCodec, server).localAddress();
+    final Channel clientChannel = connect(address, clientCodec, client);
+    final Channel serverConnectedChannel = server.connected.poll(5, SECONDS);
     assertThat(serverConnectedChannel, is(notNullValue()));
 
     // Make sure there's no left over messages/connections on the wires
-    Thread.sleep(1000);
+    Thread.sleep(100);
     assertThat("unexpected server message", server.messages.poll(), is(nullValue()));
     assertThat("unexpected client message", client.messages.poll(), is(nullValue()));
     assertThat("unexpected server connection", server.connected.poll(), is(nullValue()));
-    assertThat("unexpected client connection", client.connected.poll(), is(nullValue()));
 
     // Send and receive request
     final ZMTPMessage helloWorldMessage = ZMTPMessage.fromUTF8("", "hello", "world");
     clientChannel.writeAndFlush(helloWorldMessage.retain());
-    ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
+    final ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
     assertThat(receivedRequest, is(notNullValue()));
     assertThat(receivedRequest.message(), is(helloWorldMessage));
     helloWorldMessage.release();
@@ -110,17 +106,16 @@ public class EndToEndTest {
     // Send and receive reply
     final ZMTPMessage fooBarMessage = ZMTPMessage.fromUTF8("", "foo", "bar");
     serverConnectedChannel.writeAndFlush(fooBarMessage.retain());
-    ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
+    final ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
     assertThat(receivedReply, is(notNullValue()));
     assertThat(receivedReply.message(), is(fooBarMessage));
     fooBarMessage.release();
 
     // Make sure there's no left over messages/connections on the wires
-    Thread.sleep(1000);
+    Thread.sleep(100);
     assertThat("unexpected server message", server.messages.poll(), is(nullValue()));
     assertThat("unexpected client message", client.messages.poll(), is(nullValue()));
     assertThat("unexpected server connection", server.connected.poll(), is(nullValue()));
-    assertThat("unexpected client connection", client.connected.poll(), is(nullValue()));
   }
 
   @Test
