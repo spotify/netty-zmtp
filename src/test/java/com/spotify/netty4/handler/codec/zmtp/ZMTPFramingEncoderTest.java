@@ -13,6 +13,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.concurrent.EventExecutor;
@@ -28,6 +29,8 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZMTPFramingEncoderTest {
+
+  private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
 
   @Mock ChannelHandlerContext ctx;
   @Mock ChannelPromise promise;
@@ -56,7 +59,7 @@ public class ZMTPFramingEncoderTest {
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
 
-    ZMTPMessage message = ZMTPMessage.fromUTF8("id0", "id1", "", "f0");
+    ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, "id0", "id1", "", "f0");
 
     enc.write(ctx, message, promise);
     enc.flush(ctx);
@@ -68,7 +71,7 @@ public class ZMTPFramingEncoderTest {
   @Test
   public void testEncodeZMTP2() throws Exception {
 
-    ZMTPMessage message = ZMTPMessage.fromUTF8("id0", "id1", "", "f0");
+    ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, "id0", "id1", "", "f0");
 
     ZMTPConfig config = ZMTPConfig.builder()
         .protocol(ZMTP20)
@@ -88,7 +91,7 @@ public class ZMTPFramingEncoderTest {
 
   @Test
   public void testEncodeZMTP2Long() throws Exception {
-    ZMTPMessage message = ZMTPMessage.fromUTF8("id0", "", LARGE_FILL);
+    ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, "id0", "", LARGE_FILL);
     ByteBuf buf = Unpooled.buffer();
     buf.writeBytes(bytes(1, 3, 0x69, 0x64, 0x30,
                          1, 0,

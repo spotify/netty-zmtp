@@ -80,7 +80,7 @@ public class ZMTPMessageTest {
   @Test
   public void testWriteAndRead() throws ZMTPParsingException {
     final ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
-    final ByteBuf buffer = message.write(version);
+    final ByteBuf buffer = message.write(ALLOC, version);
     final ZMTPMessage read = ZMTPMessage.read(buffer, version);
     assertThat(read, is(message));
   }

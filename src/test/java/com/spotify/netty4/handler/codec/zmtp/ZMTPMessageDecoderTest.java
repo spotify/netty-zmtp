@@ -25,7 +25,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessage.fromUTF8;
 import static io.netty.util.CharsetUtil.UTF_8;
@@ -35,6 +37,8 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZMTPMessageDecoderTest {
+
+  private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
 
   @Test
   public void testSingleFrame() throws Exception {
@@ -47,7 +51,7 @@ public class ZMTPMessageDecoderTest {
     decoder.content(content, out);
     decoder.finish(out);
 
-    final Object expected = new ZMTPIncomingMessage(fromUTF8("hello"), false, 5);
+    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "hello"), false, 5);
     assertThat(out, hasSize(1));
     assertThat(out, contains(expected));
   }
@@ -63,7 +67,7 @@ public class ZMTPMessageDecoderTest {
     decoder.content(content, out);
     decoder.finish(out);
 
-    final Object expected = new ZMTPIncomingMessage(fromUTF8("he"), true, 5);
+    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "he"), true, 5);
     assertThat(out, hasSize(1));
     assertThat(out, contains(expected));
   }
@@ -82,7 +86,7 @@ public class ZMTPMessageDecoderTest {
     decoder.content(f1, out);
     decoder.finish(out);
 
-    final Object expected = new ZMTPIncomingMessage(fromUTF8("hello", "world"), false, 10);
+    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "hello", "world"), false, 10);
     assertThat(out, hasSize(1));
     assertThat(out, contains(expected));
   }
@@ -102,7 +106,7 @@ public class ZMTPMessageDecoderTest {
     decoder.content(f1, out);
     decoder.finish(out);
 
-    final Object expected = new ZMTPIncomingMessage(fromUTF8("hello", "wo"), true, 10);
+    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "hello", "wo"), true, 10);
     assertThat(out, hasSize(1));
     assertThat(out, contains(expected));
   }
