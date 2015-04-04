@@ -17,7 +17,9 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicReference;
+
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.GlobalEventExecutor;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 
@@ -26,7 +28,8 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
  */
 public class ZMTPSession {
 
-  private final AtomicReference<ZMTPHandshake> handshake = new AtomicReference<ZMTPHandshake>();
+  private final DefaultPromise<ZMTPHandshake> handshake = new DefaultPromise<ZMTPHandshake>(
+      GlobalEventExecutor.INSTANCE);
 
   private final ZMTPConfig config;
 
@@ -45,31 +48,30 @@ public class ZMTPSession {
    * Get the remote session id (can be used for persistent queuing)
    */
   public ByteBuffer remoteIdentity() {
-    final ZMTPHandshake handshake = this.handshake.get();
-    if (handshake == null) {
-      throw new IllegalStateException("handshake not complete");
-    }
-    return handshake.remoteIdentity();
-  }
-
-  /**
-   * Signal ZMTP handshake completion.
-   */
-  void handshakeDone(final ZMTPHandshake handshake) {
-    if (!this.handshake.compareAndSet(null, handshake)) {
-      throw new IllegalStateException("handshake result already set");
-    }
+    return handshake().remoteIdentity();
   }
 
   /**
    * The ZMTP framing version negotiated as part of the handshake on connection establishment.
    */
   public ZMTPVersion negotiatedVersion() {
-    final ZMTPHandshake handshake = this.handshake.get();
-    if (handshake == null) {
+    return handshake().negotiatedVersion();
+  }
+
+  /**
+   * Signal ZMTP handshake completion.
+   */
+  void handshakeDone(final ZMTPHandshake handshake) {
+    this.handshake.setSuccess(handshake);
+  }
+
+  private ZMTPHandshake handshake() {
+    if (!handshake.isDone()) {
       throw new IllegalStateException("handshake not complete");
     }
-    return handshake.negotiatedVersion();
+    final ZMTPHandshake handshake = this.handshake.getNow();
+    assert handshake != null;
+    return handshake;
   }
 
   @Override
