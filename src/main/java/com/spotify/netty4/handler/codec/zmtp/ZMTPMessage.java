@@ -29,6 +29,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.AbstractReferenceCounted;
 import io.netty.util.internal.RecyclableArrayList;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static io.netty.buffer.ByteBufUtil.encodeString;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -37,12 +38,8 @@ public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<By
 
   private final ByteBuf[] frames;
 
-  private ZMTPMessage(final Collection<ByteBuf> frames) {
-    this(frames.toArray(new ByteBuf[frames.size()]));
-  }
-
   private ZMTPMessage(final ByteBuf[] frames) {
-    this.frames = frames;
+    this.frames = checkNotNull(frames, "frames");
   }
 
   @Override
@@ -125,7 +122,8 @@ public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<By
    * Create a new message from a list of frames.
    */
   public static ZMTPMessage from(final Collection<ByteBuf> frames) {
-    return new ZMTPMessage(frames);
+    checkNotNull(frames, "frames");
+    return new ZMTPMessage(frames.toArray(new ByteBuf[frames.size()]));
   }
 
   /**
