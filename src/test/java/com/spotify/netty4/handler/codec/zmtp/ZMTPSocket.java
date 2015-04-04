@@ -16,6 +16,7 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
 interface ZMTPSocket {
@@ -23,4 +24,6 @@ interface ZMTPSocket {
   void send(ZMTPMessage request) throws InterruptedException, TimeoutException;
 
   ZMTPIncomingMessage recv() throws InterruptedException;
+
+  ByteBuffer remoteIdentity() throws InterruptedException;
 }

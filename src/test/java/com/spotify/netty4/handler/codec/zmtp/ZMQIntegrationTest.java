@@ -19,6 +19,8 @@ package com.spotify.netty4.handler.codec.zmtp;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
@@ -30,13 +32,36 @@ import io.netty.util.ReferenceCountUtil;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
+import static io.netty.util.CharsetUtil.UTF_8;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
+@RunWith(Parameterized.class)
 public class ZMQIntegrationTest {
 
-  private ZMQ.Context context;
+  private static final String ZMQ_IDENTITY = "zmq";
+  private static final String ZMQ_ANONYMOUS = "";
+  private static final String NETTY_IDENTITY = "netty";
+  private static final String NETTY_ANONYMOUS = "";
 
-  private final String identity = "identity";
+  @Parameterized.Parameters(name = "identites: zmq=\"{0}\" netty=\"{1}\"")
+  public static Object[][] identities() {
+    return new Object[][]{
+        {ZMQ_IDENTITY, NETTY_IDENTITY},
+        {ZMQ_IDENTITY, NETTY_ANONYMOUS},
+        {ZMQ_ANONYMOUS, NETTY_IDENTITY},
+        {ZMQ_ANONYMOUS, NETTY_ANONYMOUS}
+    };
+  }
+
+  @Parameterized.Parameter(0)
+  public String zmqIdentity;
+
+  @Parameterized.Parameter(1)
+  public String nettyIdentity;
+
+  private ZMQ.Context context;
 
   private ZMTPServer server;
   private ZMTPClient client;
@@ -99,6 +124,8 @@ public class ZMQIntegrationTest {
 
   private void testReqRep(final ZMQ.Socket req, final ZMTPSocket rep)
       throws InterruptedException, TimeoutException {
+    verifyRemoteIdentity(rep);
+
     // Send request
     final ZMsg request = ZMsg.newStringMsg("envelope", "", "hello", "world");
     request.send(req, false);
@@ -116,8 +143,9 @@ public class ZMQIntegrationTest {
     assertEquals(request, reply);
   }
 
-  private static void testReqRep(final ZMTPSocket req, final ZMQ.Socket rep)
+  private void testReqRep(final ZMTPSocket req, final ZMQ.Socket rep)
       throws InterruptedException, TimeoutException {
+    verifyRemoteIdentity(req);
 
     // Send request
     final ZMTPMessage request = ZMTPMessage.fromUTF8("envelope", "", "hello", "world");
@@ -138,15 +166,16 @@ public class ZMQIntegrationTest {
     assertEquals(request, reply.message());
   }
 
-
   private ZMQ.Socket zmqBind(final int zmqType) {
     socket = context.socket(zmqType);
+    setIdentity(socket);
     port = socket.bindToRandomPort("tcp://127.0.0.1");
     return socket;
   }
 
   private ZMQ.Socket zmqConnect(final int zmqType) {
     socket = context.socket(zmqType);
+    setIdentity(socket);
     socket.connect(server.endpoint());
     return socket;
   }
@@ -155,7 +184,7 @@ public class ZMQIntegrationTest {
     final ZMTPCodec codec = ZMTPCodec.builder()
         .protocol(ZMTP20)
         .socketType(socketType)
-        .localIdentity(identity)
+        .localIdentity(nettyIdentity)
         .build();
 
     client = new ZMTPClient(codec, new InetSocketAddress("127.0.0.1", port));
@@ -167,7 +196,7 @@ public class ZMQIntegrationTest {
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
         .protocol(ZMTP20)
         .socketType(socketType)
-        .localIdentity(identity)
+        .localIdentity(nettyIdentity)
         .build();
 
     server = new ZMTPServer(serverCodec);
@@ -176,5 +205,16 @@ public class ZMQIntegrationTest {
     return server;
   }
 
+  private void setIdentity(final ZMQ.Socket socket) {
+    if (!zmqIdentity.equals(ZMQ_ANONYMOUS)) {
+      socket.setIdentity(zmqIdentity.getBytes(UTF_8));
+    }
+  }
 
+  private void verifyRemoteIdentity(final ZMTPSocket socket) throws InterruptedException {
+    if (zmqIdentity.equals(ZMQ_ANONYMOUS)) {
+      return;
+    }
+    assertThat(socket.remoteIdentity(), is(UTF_8.encode(zmqIdentity)));
+  }
 }

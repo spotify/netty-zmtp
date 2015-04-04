@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.Closeable;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 
@@ -49,6 +50,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
 
   private final BlockingQueue<ZMTPIncomingMessage> incomingMessages = newLinkedBlockingQueue();
   private final SettableFuture<Channel> incomingChannel = SettableFuture.create();
+  private final SettableFuture<ZMTPSession> incomingSession = SettableFuture.create();
 
   private final ZMTPCodec codec;
   private final InetSocketAddress bindAddress;
@@ -123,12 +125,22 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
     return incomingMessages.take();
   }
 
+  @Override
+  public ByteBuffer remoteIdentity() throws InterruptedException {
+    try {
+      return incomingSession.get().remoteIdentity();
+    } catch (ExecutionException e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
   private class Handler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
         throws Exception {
       if (evt instanceof ZMTPSession) {
+        incomingSession.set((ZMTPSession) evt);
         incomingChannel.set(ctx.channel());
       }
     }
