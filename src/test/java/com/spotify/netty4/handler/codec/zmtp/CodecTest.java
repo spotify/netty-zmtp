@@ -1,30 +1,26 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.Arrays;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-/**
- * Tests related to CodecBase and ZMTP*Codec
- */
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 public class CodecTest {
 
   @Rule public final ExpectedException expectedException = ExpectedException.none();
 
   @Test
   public void testZMTP10OverlyLongIdentity() throws Exception {
-    byte[] overlyLong = new byte[256];
-    Arrays.fill(overlyLong, (byte) 'a');
-    ByteBuf buffer = Unpooled.buffer();
-    ZMTP10WireFormat.writeLength(overlyLong.length + 1, buffer);
+    final ByteBuf buffer = Unpooled.buffer();
+    buffer.writeByte(0xFF);
+    buffer.writeLong(256 + 1);
     buffer.writeByte(0);
-    buffer.writeBytes(overlyLong);
+    buffer.writeBytes(new byte[256]);
 
     expectedException.expect(ZMTPException.class);
     ZMTP10WireFormat.readIdentity(buffer);
@@ -32,29 +28,26 @@ public class CodecTest {
 
   @Test
   public void testLongZMTP1FrameLengthMissingLong() {
-    ByteBuf buffer = Unpooled.buffer();
+    final ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
-    long size = ZMTP10WireFormat.readLength(buffer);
-    Assert.assertEquals("Length shouldn't have been determined",
-                        -1, size);
+    final long size = ZMTP10WireFormat.readLength(buffer);
+    assertThat("Length shouldn't have been determined", size, is(-1L));
   }
 
   @Test
   public void testLongZMTP1FrameLengthWithLong() {
-    ByteBuf buffer = Unpooled.buffer();
+    final ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     buffer.writeLong(4);
-    long size = ZMTP10WireFormat.readLength(buffer);
-    Assert.assertEquals("Frame length should be after the first byte",
-                        4, size);
+    final long size = ZMTP10WireFormat.readLength(buffer);
+    assertThat("Frame length should be after the first byte", size, is(4L));
   }
 
   @Test
-  public void testZMTP1LenghtEmptyBuffer() {
-    ByteBuf buffer = Unpooled.buffer();
-    long size = ZMTP10WireFormat.readLength(buffer);
-    Assert.assertEquals("Empty buffer should return -1 frame length",
-                        -1, size);
+  public void testZMTP1LengthEmptyBuffer() {
+    final ByteBuf buffer = Unpooled.buffer();
+    final long size = ZMTP10WireFormat.readLength(buffer);
+    assertThat("Empty buffer should return -1 frame length", size, is(-1L));
   }
 
 }

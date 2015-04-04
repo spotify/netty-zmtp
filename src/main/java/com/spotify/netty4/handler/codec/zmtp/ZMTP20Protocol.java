@@ -25,6 +25,7 @@ import io.netty.channel.ChannelHandlerContext;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.detectProtocolVersion;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.readGreeting;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.readGreetingBody;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.writeGreetingBody;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.UNKNOWN;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkArgument;
 
@@ -87,7 +88,8 @@ class ZMTP20Protocol implements ZMTPProtocol {
           case ZMTP20:
             splitHandshake = true;
             final ByteBuf out = Unpooled.buffer();
-            ctx.writeAndFlush(ZMTP20WireFormat.writeGreetingBody(out, socketType, identity));
+            writeGreetingBody(out, socketType, identity);
+            ctx.writeAndFlush(out);
             return null;
           default:
             throw new ZMTPException("Unknown ZMTP version: " + version);

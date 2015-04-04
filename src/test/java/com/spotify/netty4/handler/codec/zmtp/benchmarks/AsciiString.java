@@ -22,6 +22,8 @@ import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class AsciiString implements CharSequence {
 
   public static final Function<String, AsciiString>
@@ -36,7 +38,7 @@ public class AsciiString implements CharSequence {
   private final byte[] chars;
 
   public AsciiString(final byte[] chars) {
-    this.chars = chars;
+    this.chars = checkNotNull(chars, "chars");
   }
 
   @Override
@@ -58,20 +60,12 @@ public class AsciiString implements CharSequence {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) { return true; }
+    if (o == null || getClass() != o.getClass()) { return false; }
 
     final AsciiString that = (AsciiString) o;
 
-    if (!Arrays.equals(chars, that.chars)) {
-      return false;
-    }
-
-    return true;
+    return Arrays.equals(chars, that.chars);
   }
 
   @Override

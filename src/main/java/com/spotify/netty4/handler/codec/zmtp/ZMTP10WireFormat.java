@@ -25,7 +25,6 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.UNKNOWN;
 class ZMTP10WireFormat implements ZMTPWireFormat {
 
   private static final byte FINAL_FLAG = 0x0;
-  private static final byte LONG_FLAG = 0x02;
   private static final byte MORE_FLAG = 0x1;
 
   /**
@@ -67,38 +66,24 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
   }
 
   /**
-   * Write a ZMTP/1.0 frame length field.
+   * Write a ZMTP/1.0 frame length.
    *
    * @param length The length.
    * @param out    Target buffer.
    */
   static void writeLength(final long length, final ByteBuf out) {
-    writeLength(out, length, length, false);
+    writeLength(out, length, length);
   }
 
   /**
-   * Write a ZMTP/1.0 frame length field.
-   *
-   * @param length    The length.
-   * @param out       Target buffer.
-   * @param forceLong true to force writing length as a 64 bit unsigned integer.
-   */
-  static void writeLength(final long length, final ByteBuf out,
-                          final boolean forceLong) {
-    writeLength(out, length, length, forceLong);
-  }
-
-  /**
-   * Write a ZMTP/1.0 frame length field.
+   * Write a ZMTP/1.0 frame length.
    *
    * @param out       Target buffer.
    * @param maxLength The maximum length of the field.
    * @param length    The length.
-   * @param forceLong true to force writing length as a 64 bit unsigned integer.
    */
-  static void writeLength(final ByteBuf out, final long maxLength, final long length,
-                          final boolean forceLong) {
-    if (maxLength < 255 && !forceLong) {
+  static void writeLength(final ByteBuf out, final long maxLength, final long length) {
+    if (maxLength < 255) {
       out.writeByte((byte) length);
     } else {
       out.writeByte(0xFF);
@@ -106,17 +91,24 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
     }
   }
 
+  static ZMTPGreeting readGreeting(final ByteBuf in) throws ZMTPParsingException {
+    final ByteBuffer remoteIdentity = readIdentity(in);
+    if (remoteIdentity == null) {
+      return null;
+    }
+    return new ZMTPGreeting(0, UNKNOWN, remoteIdentity);
+  }
+
   /**
-   * Create and return a ByteBuf containing an ZMTP/1.0 greeting based on on the constructor
-   * provided session.
+   * Write a ZMTP/1.0 greeting.
    *
-   * @return a ByteBuf with a greeting
+   * @param out      Target buffer.
+   * @param identity Socket identity.
    */
-  static ByteBuf writeGreeting(final ByteBuf out, final ByteBuffer identity) {
+  static void writeGreeting(final ByteBuf out, final ByteBuffer identity) {
     writeLength(identity.remaining() + 1, out);
     out.writeByte(0x00);
     out.writeBytes(identity.duplicate());
-    return out;
   }
 
   @Override
@@ -131,14 +123,6 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
     } else {
       return 1 + 8 + 1 + content;
     }
-  }
-
-  public static ZMTPGreeting readGreeting(final ByteBuf in) throws ZMTPParsingException {
-    final ByteBuffer remoteIdentity = readIdentity(in);
-    if (remoteIdentity == null) {
-      return null;
-    }
-    return new ZMTPGreeting(0, UNKNOWN, remoteIdentity);
   }
 
   static class ZMTP10Header implements Header {
@@ -156,7 +140,7 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
 
     @Override
     public void write(final ByteBuf out) {
-      writeLength(out, maxLength + 1, length + 1, false);
+      writeLength(out, maxLength + 1, length + 1);
       out.writeByte(more ? MORE_FLAG : FINAL_FLAG);
     }
 

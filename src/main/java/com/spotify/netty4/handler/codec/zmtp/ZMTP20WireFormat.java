@@ -22,14 +22,40 @@ import io.netty.buffer.ByteBuf;
 
 import static java.lang.String.format;
 
+/**
+ * Tools for reading and writing the ZMTP/2.0 wire format, greeting and message frames.
+ */
 class ZMTP20WireFormat implements ZMTPWireFormat {
 
   static final byte FINAL_FLAG = 0x0;
   static final byte LONG_FLAG = 0x02;
   static final byte MORE_FLAG = 0x1;
 
+  @Override
+  public int frameLength(final int content) {
+    if (content < 256) {
+      return 1 + 1 + content;
+    } else {
+      return 1 + 8 + content;
+    }
+  }
+
+  @Override
+  public Header header() {
+    return new ZMTP20Header();
+  }
+
+  /**
+   * Read a ZMTP/2.0 greeting.
+   *
+   * @param in The buffer to read the greeting from.
+   * @return A {@link ZMTPGreeting}.
+   * @throws ZMTPParsingException      If the greeting is malformed.
+   * @throws IndexOutOfBoundsException If there is not enough readable bytes to read an entire
+   *                                   greeting.
+   */
   static ZMTPGreeting readGreeting(ByteBuf in)
-      throws ZMTPException {
+      throws ZMTPParsingException {
     if (in.readByte() != (byte) 0xff) {
       throw new ZMTPParsingException("Illegal ZMTP/2.0 greeting, first octet not 0xff");
     }
@@ -37,7 +63,16 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     return readGreetingBody(in);
   }
 
-  static ZMTPGreeting readGreetingBody(final ByteBuf in) throws ZMTPException {
+  /**
+   * Read a ZMTP/2.0 greeting body.
+   *
+   * @param in The buffer to read the greeting from.
+   * @return A {@link ZMTPGreeting}.
+   * @throws ZMTPParsingException      If the greeting is malformed.
+   * @throws IndexOutOfBoundsException If there is not enough readable bytes to read an entire
+   *                                   greeting.
+   */
+  static ZMTPGreeting readGreetingBody(final ByteBuf in) throws ZMTPParsingException {
     final int revision = in.readByte();
     final ZMTPSocketType socketType = readSocketType(in);
     final int flags = in.readByte();
@@ -51,9 +86,28 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     return new ZMTPGreeting(revision, socketType, ByteBuffer.wrap(identity));
   }
 
+  /**
+   * Read a ZMTP/2.0 socket type.
+   *
+   * @param in The buffer to read the socket type from.
+   * @return A {@link ZMTPSocketType}.
+   * @throws ZMTPParsingException      If the socket type is malformed.
+   * @throws IndexOutOfBoundsException If there is not enough readable bytes to read an entire
+   *                                   socket type.
+   */
   static ZMTPSocketType readSocketType(final ByteBuf in) throws ZMTPParsingException {
-    final int type = in.readByte();
-    switch (type) {
+    return socketType((int) in.readByte());
+  }
+
+  /**
+   * Translate a ZMTP/2.0 wire socket type representation to a {@link ZMTPSocketType}.
+   *
+   * @param socketType The ZMTP/2.0 wire socket type.
+   * @return a {@link ZMTPSocketType}
+   * @throws ZMTPParsingException If the socket type is invalid.
+   */
+  static ZMTPSocketType socketType(final int socketType) throws ZMTPParsingException {
+    switch (socketType) {
       case 0:
         return ZMTPSocketType.PAIR;
       case 1:
@@ -73,33 +127,27 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
       case 8:
         return ZMTPSocketType.PUSH;
       default:
-        throw new ZMTPParsingException("Unknown socket type: " + type);
+        throw new ZMTPParsingException("Invalid socket type: " + socketType);
     }
   }
 
   /**
-   * Read enough bytes from buffer to deduce the remote protocol version.
+   * Write a ZMTP/2.0 socket type.
    *
-   * @param in the buffer of data to determine version from.
-   * @return The detected {@link ZMTPVersion}.
-   * @throws IndexOutOfBoundsException if there is not enough data available in buffer.
+   * @param out        The buffer to write the socket type to.
+   * @param socketType The socket type to write.
    */
-  static ZMTPVersion detectProtocolVersion(final ByteBuf in) {
-    if (in.readByte() != (byte) 0xff) {
-      return ZMTPVersion.ZMTP10;
-    }
-    in.skipBytes(8);
-    if ((in.readByte() & 0x01) == 0) {
-      return ZMTPVersion.ZMTP10;
-    }
-    return ZMTPVersion.ZMTP20;
-  }
-
-  public static void writeSocketType(final ByteBuf out, final ZMTPSocketType socketType) {
+  static void writeSocketType(final ByteBuf out, final ZMTPSocketType socketType) {
     out.writeByte(socketType(socketType));
   }
 
-  private static int socketType(final ZMTPSocketType socketType) {
+  /**
+   * Translate a {@link ZMTPSocketType} to a ZMTP/2.0 wire representation.
+   *
+   * @param socketType The {@link ZMTPSocketType}.
+   * @return The ZMTP/2.0 wire representation.
+   */
+  static int socketType(final ZMTPSocketType socketType) {
     switch (socketType) {
       case PAIR:
         return 0;
@@ -124,22 +172,58 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     }
   }
 
-  static ByteBuf writeGreeting(final ByteBuf out, final ZMTPSocketType socketType,
-                               final ByteBuffer identity) {
-    writeSignature(out);
-    writeGreetingBody(out, socketType, identity);
-    return out;
+  /**
+   * Read enough bytes from buffer to deduce the remote protocol version in a backwards compatible
+   * ZMTP handshake.
+   *
+   * @param in the buffer of data to determine version from.
+   * @return The detected {@link ZMTPVersion}.
+   * @throws IndexOutOfBoundsException if there is not enough data available in buffer.
+   */
+  static ZMTPVersion detectProtocolVersion(final ByteBuf in) {
+    if (in.readByte() != (byte) 0xff) {
+      return ZMTPVersion.ZMTP10;
+    }
+    in.skipBytes(8);
+    if ((in.readByte() & 0x01) == 0) {
+      return ZMTPVersion.ZMTP10;
+    }
+    return ZMTPVersion.ZMTP20;
   }
 
-  static ByteBuf writeSignature(final ByteBuf out) {
+  /**
+   * Write a ZMTP/2.0 greeting.
+   *
+   * @param out        The buffer to write the greeting to.
+   * @param socketType The socket type.
+   * @param identity   The socket identity.
+   */
+  static void writeGreeting(final ByteBuf out, final ZMTPSocketType socketType,
+                            final ByteBuffer identity) {
+    writeSignature(out);
+    writeGreetingBody(out, socketType, identity);
+  }
+
+  /**
+   * Write a ZMTP/2.0 greeting signature.
+   *
+   * @param out The buffer to write the signature to.
+   */
+  static void writeSignature(final ByteBuf out) {
     out.writeByte(0xff);
     out.writeLong(0x00);
     out.writeByte(0x7f);
-    return out;
   }
 
-  static ByteBuf writeGreetingBody(final ByteBuf out, final ZMTPSocketType socketType,
-                                   final ByteBuffer identity) {
+  /**
+   * Write a ZMTP/2.0 greeting body.
+   *
+   * @param out        The buffer to write the greeting body to.
+   * @param socketType The socket type.
+   * @param identity   The socket identity.
+   */
+  static void writeGreetingBody(final ByteBuf out, final ZMTPSocketType socketType,
+                                final ByteBuffer identity) {
     out.writeByte(0x01);
     // socket-type
     writeSocketType(out, socketType);
@@ -148,14 +232,18 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     out.writeByte(0x00);
     out.writeByte(identity.remaining());
     out.writeBytes(identity.duplicate());
-    return out;
   }
 
-  static ByteBuf writeCompatSignature(final ByteBuf out, final ByteBuffer identity) {
+  /**
+   * Write a backwards compatible ZMTP/2.0 greeting signature.
+   *
+   * @param out      The buffer to write the signature to.
+   * @param identity The socket identity.
+   */
+  static void writeCompatSignature(final ByteBuf out, final ByteBuffer identity) {
     out.writeByte(0xFF);
     out.writeLong(identity.remaining() + 1);
     out.writeByte(0x7f);
-    return out;
   }
 
   static class ZMTP20Header implements Header {
@@ -210,20 +298,6 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     @Override
     public boolean more() {
       return more;
-    }
-  }
-
-  @Override
-  public Header header() {
-    return new ZMTP20Header();
-  }
-
-  @Override
-  public int frameLength(final int content) {
-    if (content < 256) {
-      return 1 + 1 + content;
-    } else {
-      return 1 + 8 + content;
     }
   }
 }

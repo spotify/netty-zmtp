@@ -18,6 +18,8 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import io.netty.util.ReferenceCounted;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
+
 /**
  * An incoming ZMTP message.
  */
@@ -27,9 +29,9 @@ public class ZMTPIncomingMessage implements ReferenceCounted {
   private final boolean truncated;
   private final long byteSize;
 
-  public ZMTPIncomingMessage(final ZMTPMessage message,
-                             final boolean truncated, final long byteSize) {
-    this.message = message;
+  public ZMTPIncomingMessage(final ZMTPMessage message, final boolean truncated,
+                             final long byteSize) {
+    this.message = checkNotNull(message, "message");
     this.truncated = truncated;
     this.byteSize = byteSize;
   }
@@ -93,16 +95,14 @@ public class ZMTPIncomingMessage implements ReferenceCounted {
 
     final ZMTPIncomingMessage that = (ZMTPIncomingMessage) o;
 
-    if (byteSize != that.byteSize) { return false; }
     if (truncated != that.truncated) { return false; }
-    if (message != null ? !message.equals(that.message) : that.message != null) { return false; }
-
-    return true;
+    if (byteSize != that.byteSize) { return false; }
+    return message.equals(that.message);
   }
 
   @Override
   public int hashCode() {
-    int result = message != null ? message.hashCode() : 0;
+    int result = message.hashCode();
     result = 31 * result + (truncated ? 1 : 0);
     result = 31 * result + (int) (byteSize ^ (byteSize >>> 32));
     return result;
