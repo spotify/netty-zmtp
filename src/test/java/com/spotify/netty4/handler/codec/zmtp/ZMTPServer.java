@@ -96,13 +96,12 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
   public void close() {
     if (serverChannel != null) {
       serverChannel.close();
-      serverChannel.closeFuture().awaitUninterruptibly();
     }
     if (bossGroup != null) {
-      bossGroup.shutdownGracefully().awaitUninterruptibly();
+      bossGroup.shutdownGracefully();
     }
     if (group != null) {
-      group.shutdownGracefully().awaitUninterruptibly();
+      group.shutdownGracefully();
     }
   }
 
