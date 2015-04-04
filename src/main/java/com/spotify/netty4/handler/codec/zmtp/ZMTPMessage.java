@@ -311,5 +311,10 @@ public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<By
     public ByteBuf next() {
       return frames[i++];
     }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException("remove");
+    }
   }
 }
