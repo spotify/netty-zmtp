@@ -23,11 +23,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -38,6 +42,8 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(Parameterized.class)
 public class ZMTPMessageTest {
+
+  private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
 
   @Parameterized.Parameters(name = "{0}")
   public static Iterable<Object[]> versions() {
@@ -53,27 +59,27 @@ public class ZMTPMessageTest {
 
   @Test
   public void testNotEquals() {
-    final ZMTPMessage m1 = ZMTPMessage.fromUTF8("hello", "world");
-    final ZMTPMessage m2 = ZMTPMessage.fromUTF8("foo", "bar");
+    final ZMTPMessage m1 = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
+    final ZMTPMessage m2 = ZMTPMessage.fromUTF8(ALLOC, "foo", "bar");
     assertThat(m1, is(not(m2)));
   }
 
   @Test
   public void testEquals() {
-    final ZMTPMessage m1 = ZMTPMessage.fromUTF8("hello", "world");
-    final ZMTPMessage m2 = ZMTPMessage.fromUTF8("hello", "world");
+    final ZMTPMessage m1 = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
+    final ZMTPMessage m2 = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
     assertThat(m1, is(m2));
   }
 
   @Test
   public void testIdentityEquals() {
-    final ZMTPMessage m = ZMTPMessage.fromUTF8("hello", "world");
+    final ZMTPMessage m = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
     assertThat(m, is(m));
   }
 
   @Test
   public void testWriteAndRead() throws ZMTPParsingException {
-    final ZMTPMessage message = ZMTPMessage.fromUTF8("hello", "world");
+    final ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
     final ByteBuf buffer = message.write(version);
     final ZMTPMessage read = ZMTPMessage.read(buffer, version);
     assertThat(read, is(message));
@@ -81,8 +87,8 @@ public class ZMTPMessageTest {
 
   @Test
   public void testWriteAndReadTwoMessages() throws ZMTPParsingException {
-    final ZMTPMessage m1 = ZMTPMessage.fromUTF8("hello", "world");
-    final ZMTPMessage m2 = ZMTPMessage.fromUTF8("foo", "bar");
+    final ZMTPMessage m1 = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
+    final ZMTPMessage m2 = ZMTPMessage.fromUTF8(ALLOC, "foo", "bar");
     final ByteBuf buffer = Unpooled.buffer();
     m1.write(buffer, version);
     m2.write(buffer, version);
@@ -94,11 +100,11 @@ public class ZMTPMessageTest {
 
   @Test
   public void testFromStringsUTF8() {
-    assertEquals(ZMTPMessage.fromUTF8(""), message(""));
-    assertEquals(ZMTPMessage.fromUTF8("a"), message("a"));
-    assertEquals(ZMTPMessage.fromUTF8("aa"), message("aa"));
-    assertEquals(ZMTPMessage.fromUTF8("aa", "bb"), message("aa", "bb"));
-    assertEquals(ZMTPMessage.fromUTF8("aa", "", "bb"), message("aa", "", "bb"));
+    assertEquals(ZMTPMessage.fromUTF8(ALLOC, ""), message(""));
+    assertEquals(ZMTPMessage.fromUTF8(ALLOC, "a"), message("a"));
+    assertEquals(ZMTPMessage.fromUTF8(ALLOC, "aa"), message("aa"));
+    assertEquals(ZMTPMessage.fromUTF8(ALLOC, "aa", "bb"), message("aa", "bb"));
+    assertEquals(ZMTPMessage.fromUTF8(ALLOC, "aa", "", "bb"), message("aa", "", "bb"));
   }
 
   private ZMTPMessage message(final String... frames) {
@@ -109,7 +115,7 @@ public class ZMTPMessageTest {
     return Lists.transform(frames, new Function<String, ByteBuf>() {
       @Override
       public ByteBuf apply(final String input) {
-        return Unpooled.copiedBuffer(input, UTF_8);
+        return ByteBufUtil.encodeString(ALLOC, CharBuffer.wrap(input), UTF_8);
       }
     });
   }
