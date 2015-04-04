@@ -17,6 +17,7 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
@@ -184,7 +185,11 @@ public class ZMTPConfig {
     public ZMTPEncoder encoder(final ZMTPConfig config) {
       try {
         return constructor.newInstance();
-      } catch (ReflectiveOperationException e) {
+      } catch (InstantiationException e) {
+        throw new RuntimeException(e);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException(e);
+      } catch (InvocationTargetException e) {
         throw new RuntimeException(e);
       }
     }
