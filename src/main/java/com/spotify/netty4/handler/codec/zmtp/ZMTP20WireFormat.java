@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 
 import io.netty.buffer.ByteBuf;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static java.lang.String.format;
 
 /**
@@ -49,12 +50,12 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
    * Read a ZMTP/2.0 greeting.
    *
    * @param in The buffer to read the greeting from.
-   * @return A {@link ZMTPGreeting}.
+   * @return A {@link com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.Greeting}.
    * @throws ZMTPParsingException      If the greeting is malformed.
    * @throws IndexOutOfBoundsException If there is not enough readable bytes to read an entire
    *                                   greeting.
    */
-  static ZMTPGreeting readGreeting(ByteBuf in)
+  static Greeting readGreeting(ByteBuf in)
       throws ZMTPParsingException {
     if (in.readByte() != (byte) 0xff) {
       throw new ZMTPParsingException("Illegal ZMTP/2.0 greeting, first octet not 0xff");
@@ -67,12 +68,12 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
    * Read a ZMTP/2.0 greeting body.
    *
    * @param in The buffer to read the greeting from.
-   * @return A {@link ZMTPGreeting}.
+   * @return A {@link com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.Greeting}.
    * @throws ZMTPParsingException      If the greeting is malformed.
    * @throws IndexOutOfBoundsException If there is not enough readable bytes to read an entire
    *                                   greeting.
    */
-  static ZMTPGreeting readGreetingBody(final ByteBuf in) throws ZMTPParsingException {
+  static Greeting readGreetingBody(final ByteBuf in) throws ZMTPParsingException {
     final int revision = in.readByte();
     final ZMTPSocketType socketType = readSocketType(in);
     final int flags = in.readByte();
@@ -83,7 +84,7 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     final int len = in.readByte();
     final byte[] identity = new byte[len];
     in.readBytes(identity);
-    return new ZMTPGreeting(revision, socketType, ByteBuffer.wrap(identity));
+    return new Greeting(revision, socketType, ByteBuffer.wrap(identity));
   }
 
   /**
@@ -298,6 +299,64 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     @Override
     public boolean more() {
       return more;
+    }
+  }
+
+  /**
+   * The ZMTP/2.0 greeting contents.
+   */
+  static class Greeting {
+
+    private final int revision;
+    private final ZMTPSocketType socketType;
+    private final ByteBuffer identity;
+
+    Greeting(final int revision, final ZMTPSocketType socketType, final ByteBuffer identity) {
+      this.revision = revision;
+      this.socketType = checkNotNull(socketType, "socketType");
+      this.identity = checkNotNull(identity, "identity");
+    }
+
+    int revision() {
+      return revision;
+    }
+
+    ZMTPSocketType socketType() {
+      return socketType;
+    }
+
+    ByteBuffer identity() {
+      return identity.asReadOnlyBuffer();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) { return true; }
+      if (o == null || getClass() != o.getClass()) { return false; }
+
+      final Greeting that = (Greeting) o;
+
+      if (revision != that.revision) { return false; }
+      if (socketType != that.socketType) { return false; }
+      return !(identity != null ? !identity.equals(that.identity) : that.identity != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = revision;
+      result = 31 * result + (socketType != null ? socketType.hashCode() : 0);
+      result = 31 * result + (identity != null ? identity.hashCode() : 0);
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return "Greeting{" +
+             "revision=" + revision +
+             ", socketType=" + socketType +
+             ", identity=" + identity +
+             '}';
     }
   }
 }

@@ -5,25 +5,13 @@ package com.spotify.netty4.handler.codec.zmtp;
  * pair has compatible socket types.
  */
 public enum ZMTPSocketType {
-
-  PAIR(false),
-  SUB(false),
-  PUB(false),
-  REQ(true),
-  REP(true),
-  DEALER(true),
-  ROUTER(true),
-  PULL(false),
-  PUSH(false),
-  UNKNOWN(false);
-
-  private final boolean enveloped;
-
-  ZMTPSocketType(final boolean enveloped) {
-    this.enveloped = enveloped;
-  }
-
-  public boolean isEnveloped() {
-    return enveloped;
-  }
+  PAIR,
+  SUB,
+  PUB,
+  REQ,
+  REP,
+  DEALER,
+  ROUTER,
+  PULL,
+  PUSH
 }

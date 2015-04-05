@@ -16,6 +16,8 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.Greeting;
+
 import java.nio.ByteBuffer;
 
 import io.netty.buffer.ByteBuf;
@@ -26,8 +28,9 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.detectProto
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.readGreeting;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.readGreetingBody;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.writeGreetingBody;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.UNKNOWN;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkArgument;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
 
 class ZMTP20Protocol implements ZMTPProtocol {
 
@@ -45,7 +48,7 @@ class ZMTP20Protocol implements ZMTPProtocol {
     private boolean splitHandshake;
 
     Handshaker(final ZMTPSocketType socketType, final boolean interop, final ByteBuffer identity) {
-      checkArgument(socketType != null && socketType != UNKNOWN, "ZMTP/2.0 requires a socket type");
+      checkArgument(socketType != null, "ZMTP/2.0 requires a socket type");
       this.socketType = socketType;
       this.identity = identity;
       this.interop = interop;
@@ -66,11 +69,11 @@ class ZMTP20Protocol implements ZMTPProtocol {
     public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
         throws ZMTPException {
       if (splitHandshake) {
-        final ZMTPGreeting remoteGreeting = readGreetingBody(in);
+        final Greeting remoteGreeting = readGreetingBody(in);
         if (remoteGreeting.revision() < 1) {
           throw new ZMTPException("Bad ZMTP revision: " + remoteGreeting.revision());
         }
-        return ZMTPHandshake.of(ZMTPVersion.ZMTP20, remoteGreeting);
+        return ZMTPHandshake.of(ZMTP20, remoteGreeting.identity(), remoteGreeting.socketType());
       }
 
       if (interop) {
@@ -82,9 +85,9 @@ class ZMTP20Protocol implements ZMTPProtocol {
             // when a ZMTP/1.0 peer is detected, just send the identity bytes. Together
             // with the compatibility signature it makes for a valid ZMTP/1.0 greeting.
             ctx.writeAndFlush(Unpooled.wrappedBuffer(identity));
-            final ZMTPGreeting remoteGreeting = ZMTP10WireFormat.readGreeting(in);
-            assert remoteGreeting != null;
-            return ZMTPHandshake.of(version, remoteGreeting);
+            final ByteBuffer remoteIdentity = ZMTP10WireFormat.readIdentity(in);
+            assert remoteIdentity != null;
+            return ZMTPHandshake.of(ZMTP10, remoteIdentity);
           case ZMTP20:
             splitHandshake = true;
             final ByteBuf out = Unpooled.buffer();
@@ -95,8 +98,8 @@ class ZMTP20Protocol implements ZMTPProtocol {
             throw new ZMTPException("Unknown ZMTP version: " + version);
         }
       } else {
-        final ZMTPGreeting greeting = readGreeting(in);
-        return ZMTPHandshake.of(ZMTPVersion.ZMTP20, greeting);
+        final Greeting remoteGreeting = readGreeting(in);
+        return ZMTPHandshake.of(ZMTP20, remoteGreeting.identity(), remoteGreeting.socketType());
       }
     }
 

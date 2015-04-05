@@ -40,10 +40,6 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   private ZMTPWriter writer;
   private ZMTPEstimator estimator;
 
-  ZMTPFramingEncoder(final ZMTPSession session) {
-    this(session, new ZMTPMessageEncoder());
-  }
-
   ZMTPFramingEncoder(final ZMTPSession session, final ZMTPEncoder encoder) {
     if (session == null) {
       throw new NullPointerException("session");

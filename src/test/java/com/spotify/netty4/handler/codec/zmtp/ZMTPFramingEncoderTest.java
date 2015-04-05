@@ -20,6 +20,7 @@ import io.netty.util.concurrent.EventExecutor;
 
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPConfig.ANONYMOUS;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
@@ -55,9 +56,9 @@ public class ZMTPFramingEncoderTest {
         .socketType(DEALER)
         .build();
     ZMTPSession session = new ZMTPSession(config);
-    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP10, null));
+    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP10, ANONYMOUS));
 
-    ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
+    ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session, new ZMTPMessageEncoder());
 
     ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, "id0", "id1", "", "f0");
 
@@ -78,9 +79,9 @@ public class ZMTPFramingEncoderTest {
         .socketType(DEALER)
         .build();
     ZMTPSession session = new ZMTPSession(config);
-    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP20, null));
+    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP20, ANONYMOUS));
 
-    ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
+    ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session, new ZMTPMessageEncoder());
 
     enc.write(ctx, message, promise);
     enc.flush(ctx);
@@ -104,9 +105,9 @@ public class ZMTPFramingEncoderTest {
         .build();
     ZMTPSession session = new ZMTPSession(config);
 
-    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP20, null));
+    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP20, ANONYMOUS));
 
-    ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session);
+    ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session, new ZMTPMessageEncoder());
 
     enc.write(ctx, message, promise);
     enc.flush(ctx);

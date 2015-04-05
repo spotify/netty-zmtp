@@ -18,22 +18,34 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nullable;
+
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
+
 class ZMTPHandshake {
 
-  private final ZMTPVersion version;
-  private final ZMTPGreeting greeting;
+  private final ZMTPVersion negotiatedVersion;
+  private final ByteBuffer remoteIdentity;
+  private final ZMTPSocketType remoteSocketType;
 
-  ZMTPHandshake(final ZMTPVersion version, final ZMTPGreeting greeting) {
-    this.version = version;
-    this.greeting = greeting;
+  private ZMTPHandshake(final ZMTPVersion negotiatedVersion,
+                        final ByteBuffer remoteIdentity, final ZMTPSocketType remoteSocketType) {
+    this.negotiatedVersion = checkNotNull(negotiatedVersion, "negotiatedVersion");
+    this.remoteIdentity = checkNotNull(remoteIdentity, "remoteIdentity");
+    this.remoteSocketType = remoteSocketType;
   }
 
   ZMTPVersion negotiatedVersion() {
-    return version;
+    return negotiatedVersion;
   }
 
   ByteBuffer remoteIdentity() {
-    return greeting.identity();
+    return remoteIdentity;
+  }
+
+  @Nullable
+  ZMTPSocketType remoteSocketType() {
+    return remoteSocketType;
   }
 
   @Override
@@ -43,27 +55,37 @@ class ZMTPHandshake {
 
     final ZMTPHandshake that = (ZMTPHandshake) o;
 
-    if (version != that.version) { return false; }
-    return !(greeting != null ? !greeting.equals(that.greeting) : that.greeting != null);
+    if (negotiatedVersion != that.negotiatedVersion) { return false; }
+    if (remoteIdentity != null ? !remoteIdentity.equals(that.remoteIdentity)
+                               : that.remoteIdentity != null) { return false; }
+    if (remoteSocketType != that.remoteSocketType) { return false; }
 
+    return true;
   }
 
   @Override
   public int hashCode() {
-    int result = version != null ? version.hashCode() : 0;
-    result = 31 * result + (greeting != null ? greeting.hashCode() : 0);
+    int result = negotiatedVersion != null ? negotiatedVersion.hashCode() : 0;
+    result = 31 * result + (remoteSocketType != null ? remoteSocketType.hashCode() : 0);
+    result = 31 * result + (remoteIdentity != null ? remoteIdentity.hashCode() : 0);
     return result;
   }
 
   @Override
   public String toString() {
     return "ZMTPHandshake{" +
-           "version=" + version +
-           ", greeting=" + greeting +
+           "negotiatedVersion=" + negotiatedVersion +
+           ", remoteSocketType=" + remoteSocketType +
            '}';
   }
 
-  static ZMTPHandshake of(final ZMTPVersion negotiatedVersion, final ZMTPGreeting greeting) {
-    return new ZMTPHandshake(negotiatedVersion, greeting);
+  static ZMTPHandshake of(final ZMTPVersion negotiatedVersion,
+                          final ByteBuffer remoteIdentity) {
+    return new ZMTPHandshake(negotiatedVersion, remoteIdentity, null);
+  }
+
+  static ZMTPHandshake of(final ZMTPVersion negotiatedVersion,
+                          final ByteBuffer remoteIdentity, final ZMTPSocketType remoteSocketType) {
+    return new ZMTPHandshake(negotiatedVersion, remoteIdentity, remoteSocketType);
   }
 }

@@ -18,7 +18,6 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.PUB;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.REQ;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.SUB;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.UNKNOWN;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
 import static io.netty.util.CharsetUtil.UTF_8;
@@ -65,8 +64,7 @@ public class HandshakeTest {
     final ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertThat(handshake, is(notNullValue()));
     verifyZeroInteractions(ctx);
-    final ZMTPGreeting expectedGreeting = new ZMTPGreeting(0, UNKNOWN, BAR);
-    assertEquals(ZMTPHandshake.of(ZMTP10, expectedGreeting), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTP10, BAR, null), handshake);
   }
 
   @Test
@@ -76,8 +74,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertThat(handshake, is(notNullValue()));
     verify(ctx).writeAndFlush(buf(0x66, 0x6f, 0x6f));
-    final ZMTPGreeting expectedGreeting = new ZMTPGreeting(0, UNKNOWN, BAR);
-    assertEquals(ZMTPHandshake.of(ZMTP10, expectedGreeting), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTP10, BAR, null), handshake);
   }
 
   @Test
@@ -91,8 +88,7 @@ public class HandshakeTest {
     handshake = h.handshake(buf(0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72), ctx);
     assertThat(handshake, is(notNullValue()));
     verifyNoMoreInteractions(ctx);
-    final ZMTPGreeting expectedGreeting = new ZMTPGreeting(1, PUB, BAR);
-    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, expectedGreeting), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR, PUB), handshake);
   }
 
   @Test
@@ -108,8 +104,7 @@ public class HandshakeTest {
     handshake = h.handshake(cb, ctx);
     assertThat(handshake, is(notNullValue()));
     verifyNoMoreInteractions(ctx);
-    final ZMTPGreeting expectedGreeting = new ZMTPGreeting(1, PUB, BAR);
-    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, expectedGreeting), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR, PUB), handshake);
   }
 
   @Test
@@ -126,8 +121,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(
         buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
     assertThat(handshake, is(notNullValue()));
-    final ZMTPGreeting expectedGreeting = new ZMTPGreeting(1, PUB, BAR);
-    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, expectedGreeting), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR, PUB), handshake);
   }
 
   @Test
@@ -137,8 +131,7 @@ public class HandshakeTest {
     ZMTPHandshake handshake = h.handshake(buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
     assertThat(handshake, is(notNullValue()));
-    final ZMTPGreeting expectedGreeting = new ZMTPGreeting(1, PUB, BAR);
-    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, expectedGreeting), handshake);
+    assertEquals(ZMTPHandshake.of(ZMTPVersion.ZMTP20, BAR, PUB), handshake);
   }
 
 
@@ -168,7 +161,7 @@ public class HandshakeTest {
   @Test
   public void testReadZMTP2Greeting() throws Exception {
     final ByteBuf in = buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x02, 0x00, 0x01, 0x61);
-    final ZMTPGreeting greeting = ZMTP20WireFormat.readGreeting(in);
+    final ZMTP20WireFormat.Greeting greeting = ZMTP20WireFormat.readGreeting(in);
     assertThat(greeting.identity(), is(UTF_8.encode("a")));
   }
 

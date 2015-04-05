@@ -54,10 +54,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.intellij</groupId>
-      <artifactId>annotations</artifactId>
-      <version>9.0.4</version>
-      <!-- annotations not needed at run time -->
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.0</version>
       <scope>provided</scope>
     </dependency>
 

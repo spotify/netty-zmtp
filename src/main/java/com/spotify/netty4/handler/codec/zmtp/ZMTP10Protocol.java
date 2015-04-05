@@ -22,7 +22,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTP10WireFormat.readGreeting;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTP10WireFormat.readIdentity;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP10WireFormat.writeGreeting;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 
@@ -51,9 +51,9 @@ class ZMTP10Protocol implements ZMTPProtocol {
     @Override
     public ZMTPHandshake handshake(final ByteBuf in, final ChannelHandlerContext ctx)
         throws ZMTPException {
-      final ZMTPGreeting remoteGreeting = readGreeting(in);
-      assert remoteGreeting != null;
-      return new ZMTPHandshake(ZMTP10, remoteGreeting);
+      final ByteBuffer remoteIdentity = readIdentity(in);
+      assert remoteIdentity != null;
+      return ZMTPHandshake.of(ZMTP10, remoteIdentity);
     }
   }
 }

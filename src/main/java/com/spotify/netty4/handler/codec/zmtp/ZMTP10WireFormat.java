@@ -20,8 +20,6 @@ import java.nio.ByteBuffer;
 
 import io.netty.buffer.ByteBuf;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.UNKNOWN;
-
 class ZMTP10WireFormat implements ZMTPWireFormat {
 
   private static final byte FINAL_FLAG = 0x0;
@@ -89,14 +87,6 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
       out.writeByte(0xFF);
       out.writeLong(length);
     }
-  }
-
-  static ZMTPGreeting readGreeting(final ByteBuf in) throws ZMTPParsingException {
-    final ByteBuffer remoteIdentity = readIdentity(in);
-    if (remoteIdentity == null) {
-      return null;
-    }
-    return new ZMTPGreeting(0, UNKNOWN, remoteIdentity);
   }
 
   /**
