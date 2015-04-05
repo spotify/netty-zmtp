@@ -28,7 +28,7 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.detectProto
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.readGreeting;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.readGreetingBody;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTP20WireFormat.writeGreetingBody;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkArgument;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
 
@@ -36,7 +36,7 @@ class ZMTP20Protocol implements ZMTPProtocol {
 
   @Override
   public ZMTPHandshaker handshaker(final ZMTPConfig config) {
-    return new Handshaker(config.socketType(), config.interop(), config.localIdentity());
+    return new Handshaker(config.socketType(), config.localIdentity(), config.interop());
   }
 
   static class Handshaker implements ZMTPHandshaker {
@@ -47,10 +47,9 @@ class ZMTP20Protocol implements ZMTPProtocol {
 
     private boolean splitHandshake;
 
-    Handshaker(final ZMTPSocketType socketType, final boolean interop, final ByteBuffer identity) {
-      checkArgument(socketType != null, "ZMTP/2.0 requires a socket type");
-      this.socketType = socketType;
-      this.identity = identity;
+    Handshaker(final ZMTPSocketType socketType, final ByteBuffer identity, final boolean interop) {
+      this.socketType = checkNotNull(socketType, "ZMTP/2.0 requires a socket type");
+      this.identity = checkNotNull(identity, "identity");
       this.interop = interop;
     }
 

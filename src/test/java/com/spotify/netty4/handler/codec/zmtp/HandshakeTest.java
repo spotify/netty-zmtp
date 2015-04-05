@@ -50,10 +50,10 @@ public class HandshakeTest {
     h = new ZMTP10Protocol.Handshaker(ByteBuffer.allocate(0));
     cmp(h.greeting(), 0x01, 0x00);
 
-    h = new ZMTP20Protocol.Handshaker(SUB, true, FOO);
+    h = new ZMTP20Protocol.Handshaker(SUB, FOO, true);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 4, 0x7f);
 
-    h = new ZMTP20Protocol.Handshaker(REQ, false, FOO);
+    h = new ZMTP20Protocol.Handshaker(REQ, FOO, false);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x03, 0x00, 3, 0x66, 0x6f, 0x6f);
   }
 
@@ -69,7 +69,7 @@ public class HandshakeTest {
 
   @Test
   public void test2InteropTo1Handshake() throws Exception {
-    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(ROUTER, true, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(ROUTER, FOO, true);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ZMTPHandshake handshake = h.handshake(buf(0x04, 0x00, 0x62, 0x61, 0x72), ctx);
     assertThat(handshake, is(notNullValue()));
@@ -79,7 +79,7 @@ public class HandshakeTest {
 
   @Test
   public void test2InteropTo2InteropHandshake() throws Exception {
-    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, true, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, FOO, true);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ZMTPHandshake handshake;
     handshake = h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f), ctx);
@@ -93,7 +93,7 @@ public class HandshakeTest {
 
   @Test
   public void test2InteropTo2Handshake() throws Exception {
-    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, true, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, FOO, true);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x7f);
     ByteBuf cb = buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x01, 0x01, 0x00, 0x03, 0x62, 0x61, 0x72);
@@ -109,7 +109,7 @@ public class HandshakeTest {
 
   @Test
   public void test2To2InteropHandshake() throws Exception {
-    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, false, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, FOO, false);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
 
     try {
@@ -126,7 +126,7 @@ public class HandshakeTest {
 
   @Test
   public void test2To2Handshake() throws Exception {
-    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, false, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, FOO, false);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     ZMTPHandshake handshake = h.handshake(buf(
         0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x1, 0, 0x03, 0x62, 0x61, 0x72), ctx);
@@ -137,7 +137,7 @@ public class HandshakeTest {
 
   @Test
   public void test2To1Handshake() {
-    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, false, FOO);
+    ZMTPHandshaker h = new ZMTP20Protocol.Handshaker(PUB, FOO, false);
     cmp(h.greeting(), 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0x1, 0x2, 0, 0x3, 0x66, 0x6f, 0x6f);
     try {
       assertThat(h.handshake(buf(0x04, 0, 0x62, 0x61, 0x72), ctx), is(nullValue()));
@@ -150,7 +150,7 @@ public class HandshakeTest {
   @Test
   public void test2To2CompatTruncated() throws Exception {
     final ByteBuffer identity = UTF_8.encode("identity");
-    ZMTP20Protocol.Handshaker h = new ZMTP20Protocol.Handshaker(PUB, true, identity);
+    ZMTP20Protocol.Handshaker h = new ZMTP20Protocol.Handshaker(PUB, identity, true);
     final ByteBuf greeting = h.greeting();
     cmp(greeting, 0xff, 0, 0, 0, 0, 0, 0, 0, 9, 0x7f);
     ZMTPHandshake handshake = h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 1, 0x7f, 1, 5), ctx);
