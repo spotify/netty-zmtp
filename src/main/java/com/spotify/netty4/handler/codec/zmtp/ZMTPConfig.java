@@ -222,7 +222,11 @@ public class ZMTPConfig {
     public ZMTPDecoder decoder(final ZMTPConfig config) {
       try {
         return constructor.newInstance();
-      } catch (ReflectiveOperationException e) {
+      } catch (InstantiationException e) {
+        throw new RuntimeException(e);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException(e);
+      } catch (InvocationTargetException e) {
         throw new RuntimeException(e);
       }
     }
