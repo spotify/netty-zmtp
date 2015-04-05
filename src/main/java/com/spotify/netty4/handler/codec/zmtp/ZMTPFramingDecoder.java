@@ -22,26 +22,56 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
+import static java.lang.Math.min;
+
 /**
  * Netty decoder for ZMTP
  */
 class ZMTPFramingDecoder extends ByteToMessageDecoder {
 
-  private final ZMTPParser parser;
+  private final ZMTPDecoder decoder;
+  private final ZMTPWireFormat.Header header;
 
-  /**
-   * Creates a new decoder.
-   */
-  ZMTPFramingDecoder(final ZMTPParser parser) {
-    this.parser = parser;
+  private long remaining;
+  private boolean headerParsed;
+
+  public ZMTPFramingDecoder(final ZMTPWireFormat wireFormat, final ZMTPDecoder decoder) {
+    this.header = wireFormat.header();
+    this.decoder = decoder;
   }
 
-  /**
-   * Responsible for decoding incoming data to zmtp frames
-   */
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
-    parser.parse(in, out);
+    while (in.isReadable()) {
+      if (!headerParsed) {
+        final int mark = in.readerIndex();
+        headerParsed = header.read(in);
+        if (!headerParsed) {
+          // Wait for more data
+          in.readerIndex(mark);
+          return;
+        }
+        decoder.header(header.length(), header.more(), out);
+        remaining = header.length();
+      }
+
+      final int writerMark = in.writerIndex();
+      final int n = (int) min(remaining, in.readableBytes());
+      final int readerMark = in.readerIndex();
+      in.writerIndex(readerMark + n);
+      decoder.content(in, out);
+      in.writerIndex(writerMark);
+      final int read = in.readerIndex() - readerMark;
+      remaining -= read;
+      if (remaining > 0) {
+        // Wait for more data
+        return;
+      }
+      if (!header.more()) {
+        decoder.finish(out);
+      }
+      headerParsed = false;
+    }
   }
 }

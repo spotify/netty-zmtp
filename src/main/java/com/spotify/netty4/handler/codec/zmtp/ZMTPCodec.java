@@ -70,11 +70,11 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
     final ZMTPDecoder decoder = config.decoder().decoder(config);
     final ZMTPEncoder encoder = config.encoder().encoder(config);
-    final ZMTPParser parser = ZMTPParser.create(session.negotiatedVersion(), decoder);
+    final ZMTPWireFormat wireFormat = ZMTPWireFormats.wireFormat(session.negotiatedVersion());
     final ChannelHandler handler =
         new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
-            new ZMTPFramingDecoder(parser),
-            new ZMTPFramingEncoder(session, encoder));
+            new ZMTPFramingDecoder(wireFormat, decoder),
+            new ZMTPFramingEncoder(wireFormat, encoder));
     ctx.pipeline().replace(this, ctx.name(), handler);
 
     // This follows the pattern for dynamic pipelines documented in
