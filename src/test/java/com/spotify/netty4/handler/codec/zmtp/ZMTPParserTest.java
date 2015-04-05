@@ -19,6 +19,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 import com.spotify.netty4.handler.codec.zmtp.VerifyingDecoder.ExpectedOutput;
 
 import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.FromDataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
@@ -29,9 +30,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.supportedVersions;
 import static java.util.Arrays.asList;
 
 /**
@@ -45,7 +43,7 @@ public class ZMTPParserTest {
 
   private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
 
-  @DataPoints
+  @DataPoints("frames")
   public static String[][] FRAMES = {
       {"1"},
       {"2", ""},
@@ -58,16 +56,13 @@ public class ZMTPParserTest {
       {"9", "aa", "", "b", "cc"},
   };
 
-  @Theory
-  public void testParse(final String[] frames) throws Exception {
-    for (final ZMTPVersion version : supportedVersions()) {
-      testParse(asList(frames), version);
-    }
-  }
+  @DataPoints("versions")
+  public static final List<ZMTPVersion> VERSIONS = ZMTPVersion.supportedVersions();
 
-  private void testParse(final List<String> input, final ZMTPVersion version)
-      throws Exception {
-    System.out.printf("version=%s, input=%s%n", version, input);
+  @Theory
+  public void testParse(@FromDataPoints("frames") final String[] frames,
+                        @FromDataPoints("versions") final ZMTPVersion version) throws Exception {
+    final List<String> input = asList(frames);
 
     final ZMTPMessage inputMessage = ZMTPMessage.fromUTF8(ALLOC, input);
 
@@ -86,14 +81,10 @@ public class ZMTPParserTest {
     }
 
     // Prepare for trivial message parsing test
-    final List<String> envelope = asList("e", "");
-    final List<String> content = asList("a", "b", "c");
-    final List<String> frames = newArrayList(concat(envelope, content));
-    final ZMTPMessage message = ZMTPMessage.fromUTF8(ALLOC, frames);
-    final ByteBuf trivialSerialized = message.write(ALLOC, version);
+    final ZMTPMessage trivial = ZMTPMessage.fromUTF8(ALLOC, "e", "", "a", "b", "c");
+    final ByteBuf trivialSerialized = trivial.write(ALLOC, version);
     final int trivialLength = trivialSerialized.readableBytes();
-    final ExpectedOutput trivialExpected = new ExpectedOutput(
-        ZMTPMessage.fromUTF8(ALLOC, concat(envelope, content)));
+    final ExpectedOutput trivialExpected = new ExpectedOutput(trivial);
 
     // Test parsing fragmented input
     final VerifyingDecoder verifier = new VerifyingDecoder();
