@@ -29,7 +29,7 @@ import io.netty.channel.DefaultChannelPromise;
 import io.netty.util.ReferenceCountUtil;
 
 /**
- * Netty encoder for ZMTP messages.
+ * Netty ZMTP encoder.
  */
 class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
 

@@ -25,7 +25,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import static java.lang.Math.min;
 
 /**
- * Netty decoder for ZMTP
+ * Netty ZMTP decoder.
  */
 class ZMTPFramingDecoder extends ByteToMessageDecoder {
 
