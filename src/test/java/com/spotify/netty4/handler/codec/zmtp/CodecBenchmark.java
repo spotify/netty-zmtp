@@ -154,5 +154,9 @@ public class CodecBenchmark {
     @Override
     public void finish(final List<Object> out) {
     }
+
+    @Override
+    public void close() {
+    }
   }
 }

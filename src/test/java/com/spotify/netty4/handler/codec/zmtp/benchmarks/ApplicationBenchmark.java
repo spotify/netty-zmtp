@@ -374,6 +374,10 @@ public class ApplicationBenchmark {
       writeId(writer, request.id());
       writePayload(writer, request.payload());
     }
+
+    @Override
+    public void close() {
+    }
   }
 
   private static class ReplyEncoder implements ZMTPEncoder {
@@ -396,6 +400,10 @@ public class ApplicationBenchmark {
       writeId(writer, reply.id());
       writer.frame(4, true).writeInt(reply.statusCode());
       writePayload(writer, reply.payload());
+    }
+
+    @Override
+    public void close() {
     }
   }
 
@@ -546,6 +554,10 @@ public class ApplicationBenchmark {
     public void finish(final List<Object> out) {
       out.add(new Request(id, uri, method, payload));
     }
+
+    @Override
+    public void close() {
+    }
   }
 
   private static class ReplyDecoder implements ZMTPDecoder {
@@ -607,6 +619,10 @@ public class ApplicationBenchmark {
     @Override
     public void finish(final List<Object> out) {
       out.add(new Reply(id, uri, method, statusCode, payload));
+    }
+
+    @Override
+    public void close() {
     }
   }
 

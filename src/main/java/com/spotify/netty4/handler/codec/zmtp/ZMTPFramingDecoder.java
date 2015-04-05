@@ -41,6 +41,12 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
   }
 
   @Override
+  protected void handlerRemoved0(final ChannelHandlerContext ctx) throws Exception {
+    super.handlerRemoved0(ctx);
+    decoder.close();
+  }
+
+  @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
     while (in.isReadable()) {

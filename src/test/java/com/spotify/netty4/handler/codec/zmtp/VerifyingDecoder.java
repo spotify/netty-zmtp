@@ -87,6 +87,10 @@ public class VerifyingDecoder implements ZMTPDecoder {
     finished = true;
   }
 
+  @Override
+  public void close() {
+  }
+
   public void assertFinished() {
     if (!finished) {
       throw new AssertionError("not finished");

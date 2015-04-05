@@ -122,4 +122,12 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
     reset();
     out.add(incomingMessage);
   }
+
+  @Override
+  public void close() {
+    for (final ByteBuf frame : frames) {
+      frame.release();
+    }
+    frames.clear();
+  }
 }

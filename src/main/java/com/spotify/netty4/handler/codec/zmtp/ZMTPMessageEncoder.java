@@ -46,4 +46,8 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
       dst.writeBytes(frame, frame.readerIndex(), frame.readableBytes());
     }
   }
+
+  @Override
+  public void close() {
+  }
 }

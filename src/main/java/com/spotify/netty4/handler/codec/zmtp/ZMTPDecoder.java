@@ -16,6 +16,7 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.io.Closeable;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
@@ -24,7 +25,7 @@ import io.netty.buffer.ByteBuf;
  * A streaming decoder that takes parsed ZMTP frame headers and raw content and (optionally)
  * produces some output.
  */
-public interface ZMTPDecoder {
+public interface ZMTPDecoder extends Closeable {
 
   /**
    * Start a new ZMTP frame.
@@ -52,6 +53,12 @@ public interface ZMTPDecoder {
    * @param out {@link List} to which decoded messages should be added.
    */
   void finish(final List<Object> out);
+
+  /**
+   * Tear down the decoder and release e.g. retained {@link ByteBuf}s. May be called mid-message.
+   */
+  @Override
+  void close();
 
   /**
    * Creates {@link ZMTPDecoder} instances.

@@ -16,10 +16,14 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import java.io.Closeable;
+
+import io.netty.buffer.ByteBuf;
+
 /**
  * An encoder that takes implementation defined messages and writes a stream of ZMTP frames.
  */
-public interface ZMTPEncoder {
+public interface ZMTPEncoder extends Closeable {
 
   /**
    * Estimate ZMTP output for the {@code message} using a {@link ZMTPEstimator}. Called before
@@ -38,6 +42,12 @@ public interface ZMTPEncoder {
    * @param writer  The {@link ZMTPWriter} to use.
    */
   void encode(Object message, ZMTPWriter writer);
+
+  /**
+   * Tear down the encoder and release e.g. retained {@link ByteBuf}s.
+   */
+  @Override
+  void close();
 
   /**
    * Creates {@link ZMTPEncoder} instances.

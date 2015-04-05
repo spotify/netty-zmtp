@@ -137,5 +137,13 @@ public class ZMTPWriterTest {
       out.add(frames);
       frames = Lists.newArrayList();
     }
+
+    @Override
+    public void close() {
+      for (final ByteBuf frame : frames) {
+        frame.release();
+      }
+      frames.clear();
+    }
   }
 }
