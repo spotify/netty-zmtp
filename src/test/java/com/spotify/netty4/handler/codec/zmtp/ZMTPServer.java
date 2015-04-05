@@ -36,7 +36,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import static com.google.common.collect.Queues.newLinkedBlockingQueue;
-import static io.netty.util.ReferenceCountUtil.retain;
 
 /**
  * A simple ZMTP server for testing purposes.
@@ -148,7 +147,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg)
         throws Exception {
-      incomingMessages.put((ZMTPIncomingMessage) retain(msg));
+      incomingMessages.put((ZMTPIncomingMessage) msg);
     }
   }
 }

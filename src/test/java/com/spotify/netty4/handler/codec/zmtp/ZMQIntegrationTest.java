@@ -149,7 +149,7 @@ public class ZMQIntegrationTest {
 
     // Send request
     final ZMTPMessage request = ZMTPMessage.fromUTF8("envelope", "", "hello", "world");
-    ReferenceCountUtil.releaseLater(request.retain());
+    request.retain();
     req.send(request);
 
     // Receive request
@@ -164,6 +164,7 @@ public class ZMQIntegrationTest {
 
     // Verify echo
     assertEquals(request, reply.message());
+    request.release();
   }
 
   private ZMQ.Socket zmqBind(final int zmqType) {

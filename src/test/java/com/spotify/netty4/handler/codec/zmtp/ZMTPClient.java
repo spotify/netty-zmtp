@@ -22,7 +22,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -31,13 +30,12 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.MessageToMessageDecoder;
 
 import static com.google.common.collect.Queues.newLinkedBlockingQueue;
-import static io.netty.util.ReferenceCountUtil.retain;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -103,7 +101,7 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
     }
   }
 
-  private class Handler extends MessageToMessageDecoder<ZMTPIncomingMessage> {
+  private class Handler extends ChannelInboundHandlerAdapter {
 
     private final NioSocketChannel ch;
 
@@ -119,10 +117,10 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
     }
 
     @Override
-    protected void decode(final ChannelHandlerContext ctx, final ZMTPIncomingMessage msg,
-                          final List<Object> out)
-        throws Exception {
-      incomingMessages.put(retain(msg));
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
+      if (msg instanceof ZMTPIncomingMessage) {
+        incomingMessages.put((ZMTPIncomingMessage) msg);
+      }
     }
   }
 }
