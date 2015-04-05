@@ -29,19 +29,24 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPWireFormats.wireFormat;
 import static java.util.Arrays.asList;
+import static org.mockito.Mockito.mock;
 
 /**
- * This test attempts to thoroughly exercise the {@link ZMTPParser} by feeding it input fragmented
- * in every possible way using {@link Fragmenter}. Everything from whole un-fragmented message
- * parsing to each byte being fragmented in a separate buffer is tested. Generating all possible
- * message fragmentations takes some time, so running this test can typically take a few minutes.
+ * This test attempts to thoroughly exercise the {@link ZMTPFramingDecoder} by feeding it input
+ * fragmented in every possible way using {@link Fragmenter}. Everything from whole un-fragmented
+ * message parsing to each byte being fragmented in a separate buffer is tested. Generating all
+ * possible message fragmentations takes some time, so running this test can typically take a few
+ * minutes.
  */
 @RunWith(Theories.class)
 public class ZMTPParserTest {
 
   private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
+  private final ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
 
   @DataPoints("frames")
   public static String[][] FRAMES = {
@@ -63,6 +68,7 @@ public class ZMTPParserTest {
   public void testParse(@FromDataPoints("frames") final String[] frames,
                         @FromDataPoints("versions") final ZMTPVersion version) throws Exception {
     final List<String> input = asList(frames);
+    final ZMTPWireFormat wireFormat = wireFormat(version);
 
     final ZMTPMessage inputMessage = ZMTPMessage.fromUTF8(ALLOC, input);
 
@@ -74,8 +80,8 @@ public class ZMTPParserTest {
     // Test parsing the whole message
     {
       final VerifyingDecoder verifier = new VerifyingDecoder(expected);
-      final ZMTPParser parser = ZMTPParser.create(version, verifier);
-      parser.parse(serialized, null);
+      final ZMTPFramingDecoder decoder = new ZMTPFramingDecoder(wireFormat, verifier);
+      decoder.decode(ctx, serialized, null);
       verifier.assertFinished();
       serialized.setIndex(0, serializedLength);
     }
@@ -88,7 +94,7 @@ public class ZMTPParserTest {
 
     // Test parsing fragmented input
     final VerifyingDecoder verifier = new VerifyingDecoder();
-    final ZMTPParser parser = ZMTPParser.create(version, verifier);
+    final ZMTPFramingDecoder decoder = new ZMTPFramingDecoder(wireFormat, verifier);
     new Fragmenter(serialized.readableBytes()).fragment(new Fragmenter.Consumer() {
       @Override
       public void fragments(final int[] limits, final int count) throws Exception {
@@ -97,19 +103,19 @@ public class ZMTPParserTest {
         for (int i = 0; i < count; i++) {
           final int limit = limits[i];
           serialized.writerIndex(limit);
-          parser.parse(serialized, null);
+          decoder.decode(ctx, serialized, null);
         }
         verifier.assertFinished();
 
         // Verify that the parser can be reused to parse the same message
         serialized.setIndex(0, serializedLength);
-        parser.parse(serialized, null);
+        decoder.decode(ctx, serialized, null);
         verifier.assertFinished();
 
         // Verify that the parser can be reused to parse a well-behaved message
         verifier.expect(trivialExpected);
         trivialSerialized.setIndex(0, trivialLength);
-        parser.parse(trivialSerialized, null);
+        decoder.decode(ctx, trivialSerialized, null);
         verifier.assertFinished();
       }
     });

@@ -35,6 +35,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP20;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPWireFormats.wireFormat;
 
 // FIXME (dano): this benchmark needs to be in this package because it uses some internals
 
@@ -52,17 +53,17 @@ public class CodecBenchmark {
       "datadatadatadatadatadatadatadatadatadata",
       "datadatadatadatadatadatadatadatadatadata");
 
-  private final ZMTPParser messageParserZMTP10 =
-      ZMTPParser.create(ZMTP10, new ZMTPMessageDecoder(Integer.MAX_VALUE));
+  private final ZMTPFramingDecoder messageDecoderZMTP10 =
+      new ZMTPFramingDecoder(wireFormat(ZMTP10), new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
-  private final ZMTPParser messageParserZMTP20 =
-      ZMTPParser.create(ZMTP20, new ZMTPMessageDecoder(Integer.MAX_VALUE));
+  private final ZMTPFramingDecoder messageDecoderZMTP20 =
+      new ZMTPFramingDecoder(wireFormat(ZMTP20), new ZMTPMessageDecoder(Integer.MAX_VALUE));
 
-  private final ZMTPParser discardingParserZMTP10 =
-      ZMTPParser.create(ZMTP10, new Discarder());
+  private final ZMTPFramingDecoder discardingDecoderZMTP10 =
+      new ZMTPFramingDecoder(wireFormat(ZMTP10), new Discarder());
 
-  private final ZMTPParser discardingParserZMTP20 =
-      ZMTPParser.create(ZMTP20, new Discarder());
+  private final ZMTPFramingDecoder discardingDecoderZMTP20 =
+      new ZMTPFramingDecoder(wireFormat(ZMTP20), new Discarder());
 
   private final ByteBuf incomingZMTP10;
   private final ByteBuf incomingZMTP20;
@@ -90,25 +91,25 @@ public class CodecBenchmark {
 
   @Benchmark
   public void parsingToMessageZMTP10(final Blackhole bh) throws ZMTPParsingException {
-    messageParserZMTP10.parse(incomingZMTP10.resetReaderIndex(), out);
+    messageDecoderZMTP10.decode(null, incomingZMTP10.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
   public void parsingToMessageZMTP20(final Blackhole bh) throws ZMTPParsingException {
-    messageParserZMTP20.parse(incomingZMTP20.resetReaderIndex(), out);
+    messageDecoderZMTP20.decode(null, incomingZMTP20.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
   public void discardingZMTP10(final Blackhole bh) throws ZMTPParsingException {
-    discardingParserZMTP10.parse(incomingZMTP10.resetReaderIndex(), out);
+    discardingDecoderZMTP10.decode(null, incomingZMTP10.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 
   @Benchmark
   public void discardingZMTP20(final Blackhole bh) throws ZMTPParsingException {
-    discardingParserZMTP20.parse(incomingZMTP20.resetReaderIndex(), out);
+    discardingDecoderZMTP20.decode(null, incomingZMTP20.resetReaderIndex(), out);
     consumeAndRelease(bh, out);
   }
 

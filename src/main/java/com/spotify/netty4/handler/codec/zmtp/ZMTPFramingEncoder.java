@@ -69,14 +69,13 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
   }
 
   @Override
-  public void handlerRemoved(final ChannelHandlerContext ctx) throws Exception {
-    super.handlerRemoved(ctx);
+  public void handlerRemoved(final ChannelHandlerContext ctx) {
     encoder.close();
   }
 
   @Override
-  public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
-      throws Exception {
+  public void write(final ChannelHandlerContext ctx, final Object msg,
+                    final ChannelPromise promise) {
     messages.add(msg);
     promises.add(promise);
   }

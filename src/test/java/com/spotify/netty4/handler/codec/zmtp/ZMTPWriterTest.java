@@ -28,6 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPWireFormats.wireFormat;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
@@ -56,8 +57,8 @@ public class ZMTPWriterTest {
 
     frame.writeBytes(content.duplicate());
 
-    final ZMTPParser parser = ZMTPParser.create(ZMTP10, new RawDecoder());
-    parser.parse(buf, out);
+    final ZMTPFramingDecoder decoder = new ZMTPFramingDecoder(wireFormat(ZMTP10), new RawDecoder());
+    decoder.decode(null, buf, out);
 
     assertThat(out, hasSize(1));
     assertThat(out, contains((Object) singletonList(content)));
@@ -75,8 +76,8 @@ public class ZMTPWriterTest {
     writer.frame(f0.readableBytes(), true).writeBytes(f0.duplicate());
     writer.frame(f1.readableBytes(), false).writeBytes(f1.duplicate());
 
-    final ZMTPParser parser = ZMTPParser.create(ZMTP10, new RawDecoder());
-    parser.parse(buf, out);
+    final ZMTPFramingDecoder decoder = new ZMTPFramingDecoder(wireFormat(ZMTP10), new RawDecoder());
+    decoder.decode(null, buf, out);
 
     assertThat(out, hasSize(1));
     assertThat(out, contains((Object) asList(f0, f1)));
@@ -84,7 +85,7 @@ public class ZMTPWriterTest {
 
   @Test
   public void testReframe() throws Exception {
-    final ZMTPParser parser = ZMTPParser.create(ZMTP10, new RawDecoder());
+    final ZMTPFramingDecoder decoder = new ZMTPFramingDecoder(wireFormat(ZMTP10), new RawDecoder());
     final ZMTPWriter writer = ZMTPWriter.create(ZMTP10);
     final ByteBuf buf = Unpooled.buffer();
 
@@ -99,7 +100,7 @@ public class ZMTPWriterTest {
     writer.reframe(content.readableBytes(), false);
 
     // Verify that the message can be parsed
-    parser.parse(buf, out);
+    decoder.decode(null, buf, out);
     assertThat(out, hasSize(1));
     assertThat(out, contains((Object) singletonList(content)));
 
@@ -108,7 +109,7 @@ public class ZMTPWriterTest {
     writer.frame(next.readableBytes(), false).writeBytes(next.duplicate());
 
     out.clear();
-    parser.parse(buf, out);
+    decoder.decode(null, buf, out);
     assertThat(out, hasSize(1));
     assertThat(out, contains((Object) singletonList(next)));
   }
