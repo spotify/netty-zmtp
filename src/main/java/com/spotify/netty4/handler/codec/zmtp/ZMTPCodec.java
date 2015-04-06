@@ -66,7 +66,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
       return;
     }
 
-    session.handshakeDone(handshake);
+    session.handshakeSuccess(handshake);
 
     final ZMTPDecoder decoder = config.decoder().decoder(config);
     final ZMTPEncoder encoder = config.encoder().encoder(config);

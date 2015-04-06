@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 
-class ZMTPHandshake {
+public class ZMTPHandshake {
 
   private final ZMTPVersion negotiatedVersion;
   private final ByteBuffer remoteIdentity;
@@ -35,16 +35,16 @@ class ZMTPHandshake {
     this.remoteSocketType = remoteSocketType;
   }
 
-  ZMTPVersion negotiatedVersion() {
+  public ZMTPVersion negotiatedVersion() {
     return negotiatedVersion;
   }
 
-  ByteBuffer remoteIdentity() {
+  public ByteBuffer remoteIdentity() {
     return remoteIdentity;
   }
 
   @Nullable
-  ZMTPSocketType remoteSocketType() {
+  public ZMTPSocketType remoteSocketType() {
     return remoteSocketType;
   }
 

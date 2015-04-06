@@ -19,6 +19,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 import java.nio.ByteBuffer;
 
 import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
@@ -38,7 +39,7 @@ public class ZMTPSession {
   }
 
   /**
-   * The the configuration of this ZMTP session.
+   * The configuration of this ZMTP session.
    */
   public ZMTPConfig config() {
     return config;
@@ -59,10 +60,24 @@ public class ZMTPSession {
   }
 
   /**
-   * Signal ZMTP handshake completion.
+   * Get a future that will be notified when the ZMTP handshake is complete.
    */
-  void handshakeDone(final ZMTPHandshake handshake) {
+  public Future<ZMTPHandshake> handshakeFuture() {
+    return handshake;
+  }
+
+  /**
+   * Signal ZMTP handshake success.
+   */
+  void handshakeSuccess(final ZMTPHandshake handshake) {
     this.handshake.setSuccess(handshake);
+  }
+
+  /**
+   * Signal ZMTP handshake failure.
+   */
+  void handshakeFailure(final Throwable cause) {
+    this.handshake.setFailure(cause);
   }
 
   private ZMTPHandshake handshake() {

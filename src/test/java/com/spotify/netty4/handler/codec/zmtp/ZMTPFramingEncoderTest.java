@@ -56,7 +56,7 @@ public class ZMTPFramingEncoderTest {
         .socketType(DEALER)
         .build();
     ZMTPSession session = new ZMTPSession(config);
-    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP10, ANONYMOUS));
+    session.handshakeSuccess(ZMTPHandshake.of(ZMTPVersion.ZMTP10, ANONYMOUS));
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session, new ZMTPMessageEncoder());
 
@@ -79,7 +79,7 @@ public class ZMTPFramingEncoderTest {
         .socketType(DEALER)
         .build();
     ZMTPSession session = new ZMTPSession(config);
-    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP20, ANONYMOUS));
+    session.handshakeSuccess(ZMTPHandshake.of(ZMTPVersion.ZMTP20, ANONYMOUS));
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session, new ZMTPMessageEncoder());
 
@@ -105,7 +105,7 @@ public class ZMTPFramingEncoderTest {
         .build();
     ZMTPSession session = new ZMTPSession(config);
 
-    session.handshakeDone(ZMTPHandshake.of(ZMTPVersion.ZMTP20, ANONYMOUS));
+    session.handshakeSuccess(ZMTPHandshake.of(ZMTPVersion.ZMTP20, ANONYMOUS));
 
     ZMTPFramingEncoder enc = new ZMTPFramingEncoder(session, new ZMTPMessageEncoder());
 
