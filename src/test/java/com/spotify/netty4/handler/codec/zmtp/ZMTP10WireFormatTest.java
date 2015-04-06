@@ -10,12 +10,12 @@ import io.netty.buffer.Unpooled;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public class CodecTest {
+public class ZMTP10WireFormatTest {
 
   @Rule public final ExpectedException expectedException = ExpectedException.none();
 
   @Test
-  public void testZMTP10OverlyLongIdentity() throws Exception {
+  public void testTooLongIdentity() throws Exception {
     final ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     buffer.writeLong(256 + 1);
@@ -27,7 +27,7 @@ public class CodecTest {
   }
 
   @Test
-  public void testLongZMTP1FrameLengthMissingLong() {
+  public void testLongFrameLengthMissingLong() {
     final ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     final long size = ZMTP10WireFormat.readLength(buffer);
@@ -35,7 +35,7 @@ public class CodecTest {
   }
 
   @Test
-  public void testLongZMTP1FrameLengthWithLong() {
+  public void testLongFrameLengthWithLong() {
     final ByteBuf buffer = Unpooled.buffer();
     buffer.writeByte(0xFF);
     buffer.writeLong(4);
@@ -44,7 +44,7 @@ public class CodecTest {
   }
 
   @Test
-  public void testZMTP1LengthEmptyBuffer() {
+  public void testFrameLengthEmptyBuffer() {
     final ByteBuf buffer = Unpooled.buffer();
     final long size = ZMTP10WireFormat.readLength(buffer);
     assertThat("Empty buffer should return -1 frame length", size, is(-1L));
