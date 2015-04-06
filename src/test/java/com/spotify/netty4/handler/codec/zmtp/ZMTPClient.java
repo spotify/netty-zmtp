@@ -110,8 +110,8 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
         throws Exception {
-      if (evt instanceof ZMTPSession) {
-        incomingSession.set((ZMTPSession) evt);
+      if (evt instanceof ZMTPHandshakeSuccess) {
+        incomingSession.set(((ZMTPHandshakeSuccess) evt).session());
         channel.set(ch);
       }
     }

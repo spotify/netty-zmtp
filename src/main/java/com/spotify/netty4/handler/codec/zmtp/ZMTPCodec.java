@@ -18,6 +18,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
@@ -47,6 +48,9 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     this.handshaker = config.protocol().handshaker(config);
   }
 
+  /**
+   * Get the {@link ZMTPSession} for this codec.
+   */
   public ZMTPSession session() {
     return session;
   }
@@ -58,16 +62,45 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   }
 
   @Override
+  public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
+    super.channelInactive(ctx);
+    if (!session.handshakeFuture().isDone()) {
+      session.handshakeFailure(new ClosedChannelException());
+      ctx.fireUserEventTriggered(new ZMTPHandshakeFailure(session));
+    }
+  }
+
+  @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
       throws Exception {
 
-    final ZMTPHandshake handshake = handshaker.handshake(in, ctx);
-    if (handshake == null) {
-      return;
+    // Discard input if handshake failed. It is expected that the user will close the channel.
+    if (session.handshakeFuture().isDone()) {
+      assert !session.handshakeFuture().isSuccess();
+      in.skipBytes(in.readableBytes());
     }
 
+    // Shake hands
+    final ZMTPHandshake handshake;
+    try {
+      handshake = handshaker.handshake(in, ctx);
+      if (handshake == null) {
+        // Handshake is not yet done. Await more input.
+        return;
+      }
+    } catch (Exception e) {
+      session.handshakeFailure(e);
+      ctx.fireUserEventTriggered(new ZMTPHandshakeFailure(session));
+      throw e;
+    }
+
+    // Handshake is done.
     session.handshakeSuccess(handshake);
 
+    // Replace this handler with the framing encoder and decoder
+    if (actualReadableBytes() > 0) {
+      out.add(in.readBytes(actualReadableBytes()));
+    }
     final ZMTPDecoder decoder = config.decoder().decoder(config);
     final ZMTPEncoder encoder = config.encoder().encoder(config);
     final ZMTPWireFormat wireFormat = ZMTPWireFormats.wireFormat(session.negotiatedVersion());
@@ -77,13 +110,8 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
             new ZMTPFramingEncoder(wireFormat, encoder));
     ctx.pipeline().replace(this, ctx.name(), handler);
 
-    // This follows the pattern for dynamic pipelines documented in
-    // http://netty.io/4.0/api/io/netty/handler/codec/ReplayingDecoder.html
-    if (actualReadableBytes() > 0) {
-      out.add(in.readBytes(actualReadableBytes()));
-    }
-
-    ctx.fireUserEventTriggered(session);
+    // Tell the user that the handshake is complete
+    ctx.fireUserEventTriggered(new ZMTPHandshakeSuccess(session, handshake));
   }
 
   public static Builder builder() {

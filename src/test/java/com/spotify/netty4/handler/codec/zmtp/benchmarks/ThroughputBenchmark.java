@@ -17,8 +17,8 @@
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPHandshakeSuccess;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.util.BatchFlusher;
 
 import java.net.InetSocketAddress;
@@ -127,7 +127,7 @@ public class ThroughputBenchmark {
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
         throws Exception {
-      if (evt instanceof ZMTPSession) {
+      if (evt instanceof ZMTPHandshakeSuccess) {
         send(ctx);
       }
     }

@@ -34,7 +34,7 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
       return null;
     }
     final long identityLength = length - 1;
-    if (identityLength < 0 || identityLength > 256) {
+    if (identityLength < 0 || identityLength > 255) {
       throw new ZMTPParsingException("Bad remote identity length: " + length);
     }
 

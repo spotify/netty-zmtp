@@ -78,7 +78,7 @@ public class ProtocolViolationTests {
 
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
-      if (evt instanceof ZMTPSession) {
+      if (evt instanceof ZMTPHandshakeSuccess) {
         handshaked = true;
       }
     }

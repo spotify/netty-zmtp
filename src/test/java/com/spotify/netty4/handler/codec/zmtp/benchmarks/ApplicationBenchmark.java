@@ -26,7 +26,7 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEncoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPHandshakeSuccess;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
 import com.spotify.netty4.util.BatchFlusher;
 
@@ -192,7 +192,7 @@ public class ApplicationBenchmark {
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
         throws Exception {
-      if (evt instanceof ZMTPSession) {
+      if (evt instanceof ZMTPHandshakeSuccess) {
         for (int i = 0; i < CONCURRENCY; i++) {
           send(ctx);
         }

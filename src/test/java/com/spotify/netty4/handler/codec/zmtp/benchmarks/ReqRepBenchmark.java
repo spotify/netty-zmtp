@@ -19,9 +19,9 @@ package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 import com.google.common.base.Strings;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
+import com.spotify.netty4.handler.codec.zmtp.ZMTPHandshakeSuccess;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPSession;
 import com.spotify.netty4.util.BatchFlusher;
 
 import java.net.InetSocketAddress;
@@ -134,7 +134,7 @@ public class ReqRepBenchmark {
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
         throws Exception {
-      if (evt instanceof ZMTPSession) {
+      if (evt instanceof ZMTPHandshakeSuccess) {
         for (int i = 0; i < CONCURRENCY; i++) {
           ctx.write(req());
         }

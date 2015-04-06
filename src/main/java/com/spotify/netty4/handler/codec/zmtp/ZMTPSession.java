@@ -77,7 +77,7 @@ public class ZMTPSession {
    * Signal ZMTP handshake failure.
    */
   void handshakeFailure(final Throwable cause) {
-    this.handshake.setFailure(cause);
+    this.handshake.tryFailure(cause);
   }
 
   private ZMTPHandshake handshake() {
