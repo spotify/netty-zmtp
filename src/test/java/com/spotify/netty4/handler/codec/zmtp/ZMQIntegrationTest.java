@@ -16,11 +16,15 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import com.google.common.base.Strings;
+
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.FromDataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
@@ -29,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.netty.util.ReferenceCountUtil;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
@@ -36,30 +41,21 @@ import static io.netty.util.CharsetUtil.UTF_8;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeFalse;
 
-@RunWith(Parameterized.class)
+@RunWith(Theories.class)
 public class ZMQIntegrationTest {
 
-  private static final String ZMQ_IDENTITY = "zmq";
-  private static final String ZMQ_ANONYMOUS = "";
-  private static final String NETTY_IDENTITY = "netty";
-  private static final String NETTY_ANONYMOUS = "";
+  private static final String ANONYMOUS = "";
+  private static final String IDENTITY = "zmq-integration-test";
+  private static final String MIN_IDENTITY = "z";
+  private static final String MAX_IDENTITY = Strings.repeat("z", 255);
 
-  @Parameterized.Parameters(name = "identites: zmq=\"{0}\" netty=\"{1}\"")
-  public static Object[][] identities() {
-    return new Object[][]{
-        {ZMQ_IDENTITY, NETTY_IDENTITY},
-        {ZMQ_IDENTITY, NETTY_ANONYMOUS},
-        {ZMQ_ANONYMOUS, NETTY_IDENTITY},
-        {ZMQ_ANONYMOUS, NETTY_ANONYMOUS}
-    };
-  }
+  @DataPoints("identities")
+  public static final String[] IDENTITIES = {IDENTITY, MIN_IDENTITY, MAX_IDENTITY, ANONYMOUS};
 
-  @Parameterized.Parameter(0)
-  public String zmqIdentity;
-
-  @Parameterized.Parameter(1)
-  public String nettyIdentity;
+  @DataPoints("versions")
+  public static final ZMTPProtocol[] PROTOCOLS = {ZMTP10, ZMTP20};
 
   private ZMQ.Context context;
 
@@ -90,41 +86,69 @@ public class ZMQIntegrationTest {
     }
   }
 
-  @Test
-  public void test_NettyBindRouter_ZmqConnectDealer()
+  @Theory
+  public void test_NettyBindRouter_ZmqConnectDealer(
+      @FromDataPoints("identities") final String zmqIdentity,
+      @FromDataPoints("identities") final String nettyIdentity,
+      @FromDataPoints("versions") final ZMTPProtocol nettyProtocol
+  )
       throws TimeoutException, InterruptedException {
-    final ZMTPSocket router = nettyBind(ROUTER);
-    final ZMQ.Socket dealer = zmqConnect(ZMQ.DEALER);
-    testReqRep(dealer, router);
+    // XXX (dano): jeromq fails on identities longer than 127 bytes due to a signedness issue
+    assumeFalse(MAX_IDENTITY.equals(zmqIdentity));
+
+    final ZMTPSocket router = nettyBind(ROUTER, nettyIdentity, nettyProtocol);
+    final ZMQ.Socket dealer = zmqConnect(ZMQ.DEALER, zmqIdentity);
+    testReqRep(dealer, router, zmqIdentity);
   }
 
-  @Test
-  public void test_NettyBindDealer_ZmqConnectRouter()
+  @Theory
+  public void test_NettyBindDealer_ZmqConnectRouter(
+      @FromDataPoints("identities") final String zmqIdentity,
+      @FromDataPoints("identities") final String nettyIdentity,
+      @FromDataPoints("versions") final ZMTPProtocol nettyProtocol
+  )
       throws InterruptedException, TimeoutException {
-    final ZMTPSocket dealer = nettyBind(DEALER);
-    final ZMQ.Socket router = zmqConnect(ZMQ.ROUTER);
-    testReqRep(dealer, router);
+    // XXX (dano): jeromq fails on identities longer than 127 bytes due to a signedness issue
+    assumeFalse(MAX_IDENTITY.equals(zmqIdentity));
+
+    final ZMTPSocket dealer = nettyBind(DEALER, nettyIdentity, nettyProtocol);
+    final ZMQ.Socket router = zmqConnect(ZMQ.ROUTER, zmqIdentity);
+    testReqRep(dealer, router, zmqIdentity);
   }
 
-  @Test
-  public void test_ZmqBindRouter_NettyConnectDealer()
+  @Theory
+  public void test_ZmqBindRouter_NettyConnectDealer(
+      @FromDataPoints("identities") final String zmqIdentity,
+      @FromDataPoints("identities") final String nettyIdentity,
+      @FromDataPoints("versions") final ZMTPProtocol nettyProtocol
+  )
       throws InterruptedException, TimeoutException {
-    final ZMQ.Socket router = zmqBind(ZMQ.ROUTER);
-    final ZMTPClient dealer = nettyConnect(DEALER);
-    testReqRep(dealer, router);
+    // XXX (dano): jeromq fails on identities longer than 127 bytes due to a signedness issue
+    assumeFalse(MAX_IDENTITY.equals(zmqIdentity));
+
+    final ZMQ.Socket router = zmqBind(ZMQ.ROUTER, zmqIdentity);
+    final ZMTPClient dealer = nettyConnect(DEALER, nettyIdentity, nettyProtocol);
+    testReqRep(dealer, router, zmqIdentity);
   }
 
-  @Test
-  public void test_ZmqBindDealer_NettyConnectRouter()
+  @Theory
+  public void test_ZmqBindDealer_NettyConnectRouter(
+      @FromDataPoints("identities") final String zmqIdentity,
+      @FromDataPoints("identities") final String nettyIdentity,
+      @FromDataPoints("versions") final ZMTPProtocol nettyProtocol
+  )
       throws TimeoutException, InterruptedException {
-    final ZMQ.Socket dealer = zmqBind(ZMQ.DEALER);
-    final ZMTPClient router = nettyConnect(ROUTER);
-    testReqRep(dealer, router);
+    // XXX (dano): jeromq fails on identities longer than 127 bytes due to a signedness issue
+    assumeFalse(MAX_IDENTITY.equals(zmqIdentity));
+
+    final ZMQ.Socket dealer = zmqBind(ZMQ.DEALER, zmqIdentity);
+    final ZMTPClient router = nettyConnect(ROUTER, nettyIdentity, nettyProtocol);
+    testReqRep(dealer, router, zmqIdentity);
   }
 
-  private void testReqRep(final ZMQ.Socket req, final ZMTPSocket rep)
+  private void testReqRep(final ZMQ.Socket req, final ZMTPSocket rep, final String zmqIdentity)
       throws InterruptedException, TimeoutException {
-    verifyRemoteIdentity(rep);
+    verifyRemoteIdentity(rep, zmqIdentity);
 
     // Send request
     final ZMsg request = ZMsg.newStringMsg("envelope", "", "hello", "world");
@@ -143,9 +167,9 @@ public class ZMQIntegrationTest {
     assertEquals(request, reply);
   }
 
-  private void testReqRep(final ZMTPSocket req, final ZMQ.Socket rep)
+  private void testReqRep(final ZMTPSocket req, final ZMQ.Socket rep, final String zmqIdentity)
       throws InterruptedException, TimeoutException {
-    verifyRemoteIdentity(req);
+    verifyRemoteIdentity(req, zmqIdentity);
 
     // Send request
     final ZMTPMessage request = ZMTPMessage.fromUTF8("envelope", "", "hello", "world");
@@ -167,25 +191,26 @@ public class ZMQIntegrationTest {
     request.release();
   }
 
-  private ZMQ.Socket zmqBind(final int zmqType) {
+  private ZMQ.Socket zmqBind(final int zmqType, final String identity) {
     socket = context.socket(zmqType);
-    setIdentity(socket);
+    setIdentity(socket, identity);
     port = socket.bindToRandomPort("tcp://127.0.0.1");
     return socket;
   }
 
-  private ZMQ.Socket zmqConnect(final int zmqType) {
+  private ZMQ.Socket zmqConnect(final int zmqType, final String identity) {
     socket = context.socket(zmqType);
-    setIdentity(socket);
+    setIdentity(socket, identity);
     socket.connect(server.endpoint());
     return socket;
   }
 
-  private ZMTPClient nettyConnect(final ZMTPSocketType socketType) {
+  private ZMTPClient nettyConnect(final ZMTPSocketType socketType, final String identity,
+                                  final ZMTPProtocol protocol) {
     final ZMTPCodec codec = ZMTPCodec.builder()
-        .protocol(ZMTP20)
+        .protocol(protocol)
         .socketType(socketType)
-        .localIdentity(nettyIdentity)
+        .localIdentity(identity)
         .build();
 
     client = new ZMTPClient(codec, new InetSocketAddress("127.0.0.1", port));
@@ -193,11 +218,12 @@ public class ZMQIntegrationTest {
     return client;
   }
 
-  private ZMTPSocket nettyBind(final ZMTPSocketType socketType) {
+  private ZMTPSocket nettyBind(final ZMTPSocketType socketType, final String identity,
+                               final ZMTPProtocol protocol) {
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP20)
+        .protocol(protocol)
         .socketType(socketType)
-        .localIdentity(nettyIdentity)
+        .localIdentity(identity)
         .build();
 
     server = new ZMTPServer(serverCodec);
@@ -206,16 +232,13 @@ public class ZMQIntegrationTest {
     return server;
   }
 
-  private void setIdentity(final ZMQ.Socket socket) {
-    if (!zmqIdentity.equals(ZMQ_ANONYMOUS)) {
-      socket.setIdentity(zmqIdentity.getBytes(UTF_8));
+  private void setIdentity(final ZMQ.Socket socket, final String identity) {
+    if (!identity.equals(ANONYMOUS)) {
+      socket.setIdentity(identity.getBytes(UTF_8));
     }
   }
 
-  private void verifyRemoteIdentity(final ZMTPSocket socket) throws InterruptedException {
-    if (zmqIdentity.equals(ZMQ_ANONYMOUS)) {
-      return;
-    }
+  private void verifyRemoteIdentity(final ZMTPSocket socket, final String zmqIdentity) throws InterruptedException {
     assertThat(socket.remoteIdentity(), is(UTF_8.encode(zmqIdentity)));
   }
 }

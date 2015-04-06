@@ -56,4 +56,9 @@ class ZMTP10Protocol implements ZMTPProtocol {
       return ZMTPHandshake.of(ZMTP10, remoteIdentity);
     }
   }
+
+  @Override
+  public String toString() {
+    return "ZMTP/1.0";
+  }
 }

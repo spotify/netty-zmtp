@@ -29,18 +29,19 @@ class ZMTP10WireFormat implements ZMTPWireFormat {
    * Read the remote identity octets from a ZMTP/1.0 greeting.
    */
   static ByteBuffer readIdentity(final ByteBuf buffer) throws ZMTPParsingException {
-    final long len = readLength(buffer);
-    if (len == -1) {
+    final long length = readLength(buffer);
+    if (length == -1) {
       return null;
     }
-    if (len > 256) {
-      throw new ZMTPParsingException("Remote identity longer than the allowed 255 octets");
+    final long identityLength = length - 1;
+    if (identityLength < 0 || identityLength > 256) {
+      throw new ZMTPParsingException("Bad remote identity length: " + length);
     }
 
     // skip the flags byte
     buffer.skipBytes(1);
 
-    final byte[] identity = new byte[(int) len - 1];
+    final byte[] identity = new byte[(int) identityLength];
     buffer.readBytes(identity);
     return ByteBuffer.wrap(identity);
   }

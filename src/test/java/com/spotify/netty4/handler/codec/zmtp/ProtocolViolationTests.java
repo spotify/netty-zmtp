@@ -16,16 +16,20 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import com.google.common.util.concurrent.SettableFuture;
+
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.experimental.theories.suppliers.TestedOn;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.net.InetSocketAddress;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -39,10 +43,10 @@ import io.netty.util.ReferenceCountUtil;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(Theories.class)
 public class ProtocolViolationTests {
 
   private Channel serverChannel;
@@ -55,13 +59,21 @@ public class ProtocolViolationTests {
   @ChannelHandler.Sharable
   private static class MockHandler extends ChannelInboundHandlerAdapter {
 
-    private volatile boolean activeCalled;
-    private volatile boolean readCalled;
+    private SettableFuture<Void> active = SettableFuture.create();
+    private SettableFuture<Throwable> exception = SettableFuture.create();
+    private SettableFuture<Void> inactive = SettableFuture.create();
+
     private volatile boolean handshaked;
+    private volatile boolean read;
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-      activeCalled = true;
+      active.set(null);
+    }
+
+    @Override
+    public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
+      inactive.set(null);
     }
 
     @Override
@@ -73,14 +85,15 @@ public class ProtocolViolationTests {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      ReferenceCountUtil.releaseLater(msg);
-      readCalled = true;
+      ReferenceCountUtil.release(msg);
+      read = true;
     }
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
         throws Exception {
-      // ignore
+      exception.set(cause);
+      ctx.close();
     }
   }
 
@@ -124,35 +137,31 @@ public class ProtocolViolationTests {
     }
   }
 
-  @Test
-  public void testBadConnection() throws Exception {
-    for (int i = 0; i < 32; i++) {
-      testConnect(i);
-    }
-  }
-
-  private void testConnect(final int payloadSize) throws Exception {
+  @Theory
+  public void protocolErrorsCauseException(
+      @TestedOn(ints = {16, 17, 27, 32, 48, 53}) final int payloadSize) throws Exception {
     final Bootstrap b = new Bootstrap();
     b.group(new NioEventLoopGroup());
     b.channel(NioSocketChannel.class);
     b.handler(new ChannelInitializer<NioSocketChannel>() {
       @Override
       protected void initChannel(final NioSocketChannel ch) throws Exception {
+        ch.pipeline().addLast(new MockHandler());
       }
     });
 
     final Channel channel = b.connect(serverAddress).awaitUninterruptibly().channel();
 
-    final StringBuilder payload = new StringBuilder();
+    final ByteBuf payload = Unpooled.buffer(payloadSize);
     for (int i = 0; i < payloadSize; i++) {
-      payload.append('0');
+      payload.writeByte(0);
     }
-    channel.writeAndFlush(Unpooled.copiedBuffer(payload.toString().getBytes()));
+    channel.writeAndFlush(payload);
 
-    Thread.sleep(100);
-
-    assertTrue(mockHandler.activeCalled);
+    mockHandler.active.get(5, SECONDS);
+    mockHandler.exception.get(5, SECONDS);
+    mockHandler.inactive.get(5, SECONDS);
     assertFalse(mockHandler.handshaked);
-    assertFalse(mockHandler.readCalled);
+    assertFalse(mockHandler.read);
   }
 }

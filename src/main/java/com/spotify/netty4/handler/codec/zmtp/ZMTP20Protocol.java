@@ -104,4 +104,8 @@ class ZMTP20Protocol implements ZMTPProtocol {
 
   }
 
+  @Override
+  public String toString() {
+    return "ZMTP/2.0";
+  }
 }
