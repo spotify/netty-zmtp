@@ -179,6 +179,11 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
       return this;
     }
 
+    public Builder identityGenerator(final ZMTPIdentityGenerator identityGenerator) {
+      config.identityGenerator(identityGenerator);
+      return this;
+    }
+
     public ZMTPCodec build() {
       return new ZMTPCodec(config.build());
     }
