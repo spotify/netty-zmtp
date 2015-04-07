@@ -18,13 +18,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.concurrent.EventExecutor;
 
-import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
-import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
+import static com.spotify.netty4.handler.codec.zmtp.Buffers.buf;
+import static com.spotify.netty4.handler.codec.zmtp.Buffers.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConfig.ANONYMOUS;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static io.netty.util.CharsetUtil.UTF_8;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -65,7 +67,10 @@ public class ZMTPFramingEncoderTest {
     enc.write(ctx, message, promise);
     enc.flush(ctx);
     final ByteBuf buf = bufCaptor.getValue();
-    cmp(buf, 4, 1, 0x69, 0x64, 0x30, 4, 1, 0x69, 0x64, 0x31, 1, 1, 3, 0, 0x66, 0x30);
+    assertThat(buf, is(buf(4, 1, 0x69, 0x64, 0x30,
+                           4, 1, 0x69, 0x64, 0x31,
+                           1, 1,
+                           3, 0, 0x66, 0x30)));
     buf.release();
   }
 
@@ -86,7 +91,10 @@ public class ZMTPFramingEncoderTest {
     enc.write(ctx, message, promise);
     enc.flush(ctx);
     final ByteBuf buf = bufCaptor.getValue();
-    cmp(buf, 1, 3, 0x69, 0x64, 0x30, 1, 3, 0x69, 0x64, 0x31, 1, 0, 0, 2, 0x66, 0x30);
+    assertThat(buf, is(buf(1, 3, 0x69, 0x64, 0x30,
+                           1, 3, 0x69, 0x64, 0x31,
+                           1, 0,
+                           0, 2, 0x66, 0x30)));
     buf.release();
   }
 
@@ -113,7 +121,7 @@ public class ZMTPFramingEncoderTest {
     enc.flush(ctx);
     final ByteBuf buf2 = bufCaptor.getValue();
 
-    cmp(buf, buf2);
+    assertThat(buf, is(buf2));
 
     buf.release();
     buf2.release();
