@@ -22,7 +22,7 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
 
   public static final Factory FACTORY = new Factory() {
     @Override
-    public ZMTPEncoder encoder(final ZMTPConfig config) {
+    public ZMTPEncoder encoder(final ZMTPSession session) {
       return new ZMTPMessageEncoder();
     }
   };
@@ -30,7 +30,8 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
   @Override
   public void estimate(final Object msg, final ZMTPEstimator estimator) {
     final ZMTPMessage message = (ZMTPMessage) msg;
-    for (final ByteBuf frame : message) {
+    for (int i = 0; i < message.size(); i++) {
+      final ByteBuf frame = message.frame(i);
       estimator.frame(frame.readableBytes());
     }
   }
@@ -38,7 +39,6 @@ public class ZMTPMessageEncoder implements ZMTPEncoder {
   @Override
   public void encode(final Object msg, final ZMTPWriter writer) {
     final ZMTPMessage message = (ZMTPMessage) msg;
-
     for (int i = 0; i < message.size(); i++) {
       final ByteBuf frame = message.frame(i);
       final boolean more = i < message.size() - 1;

@@ -26,10 +26,11 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
 
   public static final Factory FACTORY = new Factory() {
     @Override
-    public ZMTPDecoder decoder(final ZMTPConfig config) {
+    public ZMTPDecoder decoder(final ZMTPSession session) {
       return new ZMTPMessageDecoder();
     }
   };
+
   private static final ByteBuf DELIMITER = Unpooled.EMPTY_BUFFER;
 
   private final List<ByteBuf> frames = new ArrayList<ByteBuf>();

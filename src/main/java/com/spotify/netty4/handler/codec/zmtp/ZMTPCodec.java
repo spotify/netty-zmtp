@@ -101,8 +101,8 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     if (actualReadableBytes() > 0) {
       out.add(in.readBytes(actualReadableBytes()));
     }
-    final ZMTPDecoder decoder = config.decoder().decoder(config);
-    final ZMTPEncoder encoder = config.encoder().encoder(config);
+    final ZMTPDecoder decoder = config.decoder().decoder(session);
+    final ZMTPEncoder encoder = config.encoder().encoder(session);
     final ZMTPWireFormat wireFormat = ZMTPWireFormats.wireFormat(session.negotiatedVersion());
     final ChannelHandler handler =
         new CombinedChannelDuplexHandler<ZMTPFramingDecoder, ZMTPFramingEncoder>(
@@ -116,6 +116,10 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
   public static Builder builder() {
     return new Builder();
+  }
+
+  public static ZMTPCodec from(final ZMTPConfig config) {
+    return new ZMTPCodec(config);
   }
 
   public static class Builder {

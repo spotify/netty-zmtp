@@ -37,6 +37,7 @@ public class ZMTPConfig {
   private final ByteBuffer localIdentity;
   private final ZMTPEncoder.Factory encoder;
   private final ZMTPDecoder.Factory decoder;
+  private final ZMTPIdentityGenerator identityGenerator;
 
   private ZMTPConfig(final Builder builder) {
     this.protocol = checkNotNull(builder.protocol, "protocol");
@@ -45,6 +46,7 @@ public class ZMTPConfig {
     this.localIdentity = checkNotNull(builder.localIdentity, "localIdentity");
     this.encoder = checkNotNull(builder.encoder, "encoder");
     this.decoder = checkNotNull(builder.decoder, "decoder");
+    this.identityGenerator = checkNotNull(builder.identityGenerator, "identityGenerator");
   }
 
   public ZMTPProtocol protocol() {
@@ -71,6 +73,10 @@ public class ZMTPConfig {
     return decoder;
   }
 
+  public ZMTPIdentityGenerator identityGenerator() {
+    return identityGenerator;
+  }
+
   public Builder toBuilder() {
     return new Builder(this);
   }
@@ -87,6 +93,7 @@ public class ZMTPConfig {
     private ByteBuffer localIdentity = ANONYMOUS;
     private ZMTPEncoder.Factory encoder = ZMTPMessageEncoder.FACTORY;
     private ZMTPDecoder.Factory decoder = ZMTPMessageDecoder.FACTORY;
+    public ZMTPIdentityGenerator identityGenerator = ZMTPDefaultIdentityGenerator.INSTANCE;
 
     private Builder() {
     }
@@ -147,6 +154,11 @@ public class ZMTPConfig {
       return decoder(new ZMTPDecoderClassFactory(decoder));
     }
 
+    public Builder identityGenerator(final ZMTPIdentityGenerator identityGenerator) {
+      this.identityGenerator = identityGenerator;
+      return this;
+    }
+
     public ZMTPConfig build() {
       return new ZMTPConfig(this);
     }
@@ -182,7 +194,7 @@ public class ZMTPConfig {
     }
 
     @Override
-    public ZMTPEncoder encoder(final ZMTPConfig config) {
+    public ZMTPEncoder encoder(final ZMTPSession session) {
       try {
         return constructor.newInstance();
       } catch (InstantiationException e) {
@@ -219,7 +231,7 @@ public class ZMTPConfig {
     }
 
     @Override
-    public ZMTPDecoder decoder(final ZMTPConfig config) {
+    public ZMTPDecoder decoder(final ZMTPSession session) {
       try {
         return constructor.newInstance();
       } catch (InstantiationException e) {

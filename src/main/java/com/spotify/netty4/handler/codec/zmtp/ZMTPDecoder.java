@@ -66,8 +66,8 @@ public interface ZMTPDecoder extends Closeable {
   interface Factory {
 
     /**
-     * Create a {@link ZMTPDecoder} given a {@link ZMTPConfig};
+     * Create a {@link ZMTPDecoder} for a {@link ZMTPSession};
      */
-    ZMTPDecoder decoder(ZMTPConfig config);
+    ZMTPDecoder decoder(ZMTPSession session);
   }
 }

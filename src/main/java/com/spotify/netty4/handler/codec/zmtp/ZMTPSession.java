@@ -34,6 +34,8 @@ public class ZMTPSession {
 
   private final ZMTPConfig config;
 
+  private volatile ByteBuffer peerIdentity;
+
   ZMTPSession(final ZMTPConfig config) {
     this.config = checkNotNull(config, "config");
   }
@@ -46,10 +48,13 @@ public class ZMTPSession {
   }
 
   /**
-   * Get the remote session id (can be used for persistent queuing)
+   * Get the peer identity.
    */
-  public ByteBuffer remoteIdentity() {
-    return handshake().remoteIdentity();
+  public ByteBuffer peerIdentity() {
+    if (!handshake.isDone()) {
+      throw new IllegalStateException("handshake not complete");
+    }
+    return peerIdentity.asReadOnlyBuffer();
   }
 
   /**
@@ -71,6 +76,10 @@ public class ZMTPSession {
    */
   void handshakeSuccess(final ZMTPHandshake handshake) {
     this.handshake.setSuccess(handshake);
+    ByteBuffer remoteIdentity = handshake.remoteIdentity();
+    this.peerIdentity = remoteIdentity.hasRemaining() ?
+                        remoteIdentity :
+                        config.identityGenerator().generateIdentity(this);
   }
 
   /**

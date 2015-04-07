@@ -294,6 +294,34 @@ public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<By
   }
 
   /**
+   * Create a new {@link ZMTPMessage} with a frame added at the front.
+   */
+  public ZMTPMessage push(final ByteBuf frame) {
+    for (final ByteBuf f : frames) {
+      f.retain();
+    }
+    final ByteBuf[] frames = new ByteBuf[this.frames.length + 1];
+    frames[0] = frame;
+    System.arraycopy(this.frames, 0, frames, 1, this.frames.length);
+    return new ZMTPMessage(frames);
+  }
+
+  /**
+   * Create a new {@link ZMTPMessage} with the front frame removed.
+   */
+  public ZMTPMessage pop() {
+    if (this.frames.length == 0) {
+      throw new IllegalStateException("empty message");
+    }
+    final ByteBuf[] frames = new ByteBuf[this.frames.length - 1];
+    System.arraycopy(this.frames, 1, frames, 0, frames.length);
+    for (final ByteBuf f : frames) {
+      f.retain();
+    }
+    return new ZMTPMessage(frames);
+  }
+
+  /**
    * Iterates over the frames of the {@link ZMTPMessage}.
    */
   private class FrameIterator implements Iterator<ByteBuf> {

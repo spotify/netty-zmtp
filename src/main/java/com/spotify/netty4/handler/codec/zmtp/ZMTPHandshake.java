@@ -40,7 +40,7 @@ public class ZMTPHandshake {
   }
 
   public ByteBuffer remoteIdentity() {
-    return remoteIdentity;
+    return remoteIdentity.asReadOnlyBuffer();
   }
 
   @Nullable
