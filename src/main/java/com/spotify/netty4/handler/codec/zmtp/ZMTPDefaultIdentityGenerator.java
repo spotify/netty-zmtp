@@ -17,15 +17,14 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ThreadLocalRandom;
+import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ZMTPDefaultIdentityGenerator implements ZMTPIdentityGenerator {
 
   public static ZMTPDefaultIdentityGenerator INSTANCE = new ZMTPDefaultIdentityGenerator();
 
-  private static final AtomicLong peerIdCounter = new AtomicLong(
-      ThreadLocalRandom.current().nextLong());
+  private static final AtomicLong peerIdCounter = new AtomicLong(new SecureRandom().nextLong());
 
   @Override
   public ByteBuffer generateIdentity(final ZMTPSession session) {
