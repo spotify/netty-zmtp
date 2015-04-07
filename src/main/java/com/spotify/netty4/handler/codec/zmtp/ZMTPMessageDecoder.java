@@ -20,12 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-
-import static java.lang.Math.min;
+import io.netty.buffer.Unpooled;
 
 public class ZMTPMessageDecoder implements ZMTPDecoder {
-
-  public static final long MAX_LIMIT = Integer.MAX_VALUE;
 
   public static final Factory FACTORY = new Factory() {
     @Override
@@ -33,83 +30,37 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
       return new ZMTPMessageDecoder();
     }
   };
-
-  public static final long DEFAULT_SIZE_LIMIT = 4 * 1024 * 1024;
-
-  private final int limit;
+  private static final ByteBuf DELIMITER = Unpooled.EMPTY_BUFFER;
 
   private final List<ByteBuf> frames = new ArrayList<ByteBuf>();
-  private boolean truncated;
-  private long messageSize;
-  private long frameRemaining;
-  private int readLength;
-  private boolean frameRead;
-
-  public ZMTPMessageDecoder() {
-    this(DEFAULT_SIZE_LIMIT);
-  }
-
-  public ZMTPMessageDecoder(final long limit) {
-    if (limit < 0 || limit > MAX_LIMIT) {
-      throw new IllegalArgumentException("limit");
-    }
-    this.limit = (int) limit;
-    reset();
-  }
+  private int frameLength;
 
   /**
    * Reset parser in preparation for the next message.
    */
   private void reset() {
     frames.clear();
-    truncated = false;
-    messageSize = 0;
-    readLength = 0;
-    frameRemaining = 0;
-    frameRead = false;
+    frameLength = 0;
   }
 
   @Override
   public void header(final long length, final boolean more, final List<Object> out) {
-    assert frameRemaining == 0;
-
-    final long newMessageSize = messageSize + length;
-
-    // Truncate?
-    if (newMessageSize > limit) {
-      truncated = true;
-      assert messageSize < limit;
-      readLength = (int) min(length, limit - messageSize);
-    } else {
-      readLength = (int) length;
-    }
-
-    frameRead = false;
-    frameRemaining = length;
-    messageSize = newMessageSize;
+    frameLength = (int) length;
   }
 
   @Override
   public void content(final ByteBuf data, final List<Object> out) {
-    // Truncating?
-    if (frameRead) {
-      assert truncated;
-      assert frameRemaining > 0;
-      final int n = (int) min(data.readableBytes(), frameRemaining);
-      data.skipBytes(n);
-      frameRemaining -= n;
-      return;
-    }
-
     // Wait for more data?
-    if (data.readableBytes() < readLength) {
+    if (data.readableBytes() < frameLength) {
       return;
     }
 
-    // Read the (potentially truncated) frame in one slice
-    final ByteBuf frame = data.readSlice(readLength);
-    frameRemaining -= readLength;
-    frameRead = true;
+    if (frameLength == 0) {
+      frames.add(DELIMITER);
+      return;
+    }
+
+    final ByteBuf frame = data.readSlice(frameLength);
     frame.retain();
     frames.add(frame);
   }
@@ -117,10 +68,8 @@ public class ZMTPMessageDecoder implements ZMTPDecoder {
   @Override
   public void finish(final List<Object> out) {
     final ZMTPMessage message = ZMTPMessage.from(frames);
-    final ZMTPIncomingMessage incomingMessage = new ZMTPIncomingMessage(
-        message, truncated, messageSize);
     reset();
-    out.add(incomingMessage);
+    out.add(message);
   }
 
   @Override

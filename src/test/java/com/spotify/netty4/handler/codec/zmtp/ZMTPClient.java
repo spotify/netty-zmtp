@@ -48,7 +48,7 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
 
   private ChannelFuture future;
   private final SettableFuture<Channel> channel = SettableFuture.create();
-  private final BlockingQueue<ZMTPIncomingMessage> incomingMessages = newLinkedBlockingQueue();
+  private final BlockingQueue<ZMTPMessage> incomingMessages = newLinkedBlockingQueue();
   private final SettableFuture<ZMTPSession> incomingSession = SettableFuture.create();
 
   public ZMTPClient(final ZMTPCodec codec, final InetSocketAddress address) {
@@ -88,7 +88,7 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
   }
 
   @Override
-  public ZMTPIncomingMessage recv() throws InterruptedException {
+  public ZMTPMessage recv() throws InterruptedException {
     return incomingMessages.take();
   }
 
@@ -118,8 +118,8 @@ public class ZMTPClient implements Closeable, ZMTPSocket {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      if (msg instanceof ZMTPIncomingMessage) {
-        incomingMessages.put((ZMTPIncomingMessage) msg);
+      if (msg instanceof ZMTPMessage) {
+        incomingMessages.put((ZMTPMessage) msg);
       }
     }
   }

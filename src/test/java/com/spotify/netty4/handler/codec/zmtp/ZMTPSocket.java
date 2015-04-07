@@ -23,7 +23,7 @@ interface ZMTPSocket {
 
   void send(ZMTPMessage request) throws InterruptedException, TimeoutException;
 
-  ZMTPIncomingMessage recv() throws InterruptedException;
+  ZMTPMessage recv() throws InterruptedException;
 
   ByteBuffer remoteIdentity() throws InterruptedException;
 }

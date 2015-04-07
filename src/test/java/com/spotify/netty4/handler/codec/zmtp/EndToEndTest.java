@@ -98,17 +98,17 @@ public class EndToEndTest {
     // Send and receive request
     final ZMTPMessage helloWorldMessage = ZMTPMessage.fromUTF8("", "hello", "world");
     clientChannel.writeAndFlush(helloWorldMessage.retain());
-    final ZMTPIncomingMessage receivedRequest = server.messages.poll(5, SECONDS);
+    final ZMTPMessage receivedRequest = server.messages.poll(5, SECONDS);
     assertThat(receivedRequest, is(notNullValue()));
-    assertThat(receivedRequest.message(), is(helloWorldMessage));
+    assertThat(receivedRequest, is(helloWorldMessage));
     helloWorldMessage.release();
 
     // Send and receive reply
     final ZMTPMessage fooBarMessage = ZMTPMessage.fromUTF8("", "foo", "bar");
     serverConnectedChannel.writeAndFlush(fooBarMessage.retain());
-    final ZMTPIncomingMessage receivedReply = client.messages.poll(5, SECONDS);
+    final ZMTPMessage receivedReply = client.messages.poll(5, SECONDS);
     assertThat(receivedReply, is(notNullValue()));
-    assertThat(receivedReply.message(), is(fooBarMessage));
+    assertThat(receivedReply, is(fooBarMessage));
     fooBarMessage.release();
 
     // Make sure there's no left over messages/connections on the wires
@@ -186,7 +186,7 @@ public class EndToEndTest {
   private static class Handler extends ChannelInboundHandlerAdapter {
 
     private final BlockingQueue<Channel> connected = Queues.newLinkedBlockingQueue();
-    private final BlockingQueue<ZMTPIncomingMessage> messages = Queues.newLinkedBlockingQueue();
+    private final BlockingQueue<ZMTPMessage> messages = Queues.newLinkedBlockingQueue();
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
@@ -197,7 +197,7 @@ public class EndToEndTest {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       ReferenceCountUtil.releaseLater(msg);
-      messages.put((ZMTPIncomingMessage) msg);
+      messages.put((ZMTPMessage) msg);
     }
   }
 }

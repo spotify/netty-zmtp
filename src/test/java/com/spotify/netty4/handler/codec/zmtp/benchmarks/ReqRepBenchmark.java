@@ -20,7 +20,6 @@ import com.google.common.base.Strings;
 
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPHandshakeSuccess;
-import com.spotify.netty4.handler.codec.zmtp.ZMTPIncomingMessage;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPMessage;
 import com.spotify.netty4.util.BatchFlusher;
 
@@ -101,8 +100,8 @@ public class ReqRepBenchmark {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      final ZMTPIncomingMessage message = (ZMTPIncomingMessage) msg;
-      ctx.write(message.message());
+      final ZMTPMessage message = (ZMTPMessage) msg;
+      ctx.write(message);
       flusher.flush();
     }
   }
@@ -148,7 +147,7 @@ public class ReqRepBenchmark {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
-      final ZMTPIncomingMessage message = (ZMTPIncomingMessage) msg;
+      final ZMTPMessage message = (ZMTPMessage) msg;
       meter.inc(1, 0);
       message.release();
       ctx.write(req());

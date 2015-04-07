@@ -47,7 +47,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
   private NioEventLoopGroup bossGroup;
   private NioEventLoopGroup group;
 
-  private final BlockingQueue<ZMTPIncomingMessage> incomingMessages = newLinkedBlockingQueue();
+  private final BlockingQueue<ZMTPMessage> incomingMessages = newLinkedBlockingQueue();
   private final SettableFuture<Channel> incomingChannel = SettableFuture.create();
   private final SettableFuture<ZMTPSession> incomingSession = SettableFuture.create();
 
@@ -71,7 +71,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
     return incomingChannel;
   }
 
-  public BlockingQueue<ZMTPIncomingMessage> incomingMessages() {
+  public BlockingQueue<ZMTPMessage> incomingMessages() {
     return incomingMessages;
   }
 
@@ -120,7 +120,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
   }
 
   @Override
-  public ZMTPIncomingMessage recv() throws InterruptedException {
+  public ZMTPMessage recv() throws InterruptedException {
     return incomingMessages.take();
   }
 
@@ -147,7 +147,7 @@ public class ZMTPServer implements Closeable, ZMTPSocket {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg)
         throws Exception {
-      incomingMessages.put((ZMTPIncomingMessage) msg);
+      incomingMessages.put((ZMTPMessage) msg);
     }
   }
 }

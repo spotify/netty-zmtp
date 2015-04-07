@@ -155,10 +155,10 @@ public class ZMQIntegrationTest {
     request.send(req, false);
 
     // Receive request
-    final ZMTPIncomingMessage receivedRequest = rep.recv();
+    final ZMTPMessage receivedRequest = rep.recv();
 
     // Send reply
-    rep.send(receivedRequest.message());
+    rep.send(receivedRequest);
 
     // Receive reply
     final ZMsg reply = ZMsg.recvMsg(req);
@@ -183,11 +183,11 @@ public class ZMQIntegrationTest {
     receivedRequest.send(rep, false);
 
     // Receive reply
-    final ZMTPIncomingMessage reply = req.recv();
+    final ZMTPMessage reply = req.recv();
     ReferenceCountUtil.releaseLater(reply);
 
     // Verify echo
-    assertEquals(request, reply.message());
+    assertEquals(request, reply);
     request.release();
   }
 

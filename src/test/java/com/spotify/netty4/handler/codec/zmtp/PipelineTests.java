@@ -7,6 +7,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+import static com.google.common.base.Strings.repeat;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.buf;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.TestUtil.cmp;
@@ -21,11 +22,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class PipelineTests {
 
-  private final byte[] LONG_MSG = (
-      "To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your " +
-      "`ChannelPipeline` and it will turn incoming buffers into  `ZMTPIncomingMessage` " +
-      "instances up the pipeline and accept `ZMTPMessage` instances that gets serialized into " +
-      "buffers downstream.").getBytes();
+  // FIXME (dano): Tests are hardcoded to use a message 260 bytes long
+  private static final byte[] LONG_MSG = repeat("data", 100).substring(0, 260).getBytes(UTF_8);
 
   /**
    * First let's just exercise the PipelineTester a bit.
@@ -68,12 +66,12 @@ public class PipelineTests {
     cmp(buf(1, 3, 0, 3, 0x66, 0x6f, 0x6f), pt.readClient());
 
     pt.writeClient(buf(1, 1, 0x65, 1, 0, 0, 1, 0x62));
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(3, m.message().size());
-    cmp(buf(0x65), m.message().frame(0));
-    cmp(buf(), m.message().frame(1));
-    cmp(buf(0x62), m.message().frame(2));
+    assertEquals(3, m.size());
+    cmp(buf(0x65), m.frame(0));
+    cmp(buf(), m.frame(1));
+    cmp(buf(0x62), m.frame(2));
   }
 
   @Test
@@ -90,12 +88,12 @@ public class PipelineTests {
     cmp(buf(1, 3, 0, 3, 0x66, 0x6f, 0x6f), pt.readClient());
 
     pt.writeClient(buf(0, 0, 1, 0x62));
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(3, m.message().size());
-    cmp(buf(0x65), m.message().frame(0));
-    cmp(buf(), m.message().frame(1));
-    cmp(buf(0x62), m.message().frame(2));
+    assertEquals(3, m.size());
+    cmp(buf(0x65), m.frame(0));
+    cmp(buf(), m.frame(1));
+    cmp(buf(0x62), m.frame(2));
   }
 
   @Test
@@ -120,11 +118,11 @@ public class PipelineTests {
     cb.writeBytes(LONG_MSG);
 
     pt.writeClient(cb);
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0));
-    cmp(buf(LONG_MSG), m.message().frame(1));
+    assertEquals(2, m.size());
+    cmp(buf(), m.frame(0));
+    cmp(buf(LONG_MSG), m.frame(1));
   }
 
   @Test
@@ -158,11 +156,11 @@ public class PipelineTests {
     cb.writeBytes(LONG_MSG);
 
     pt.writeClient(cb);
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0));
-    cmp(buf(LONG_MSG), m.message().frame(1));
+    assertEquals(2, m.size());
+    cmp(buf(), m.frame(0));
+    cmp(buf(LONG_MSG), m.frame(1));
   }
 
 
@@ -196,11 +194,11 @@ public class PipelineTests {
 
     pt.writeClient(cb);
 
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0));
-    cmp(buf(LONG_MSG), m.message().frame(1));
+    assertEquals(2, m.size());
+    cmp(buf(), m.frame(0));
+    cmp(buf(LONG_MSG), m.frame(1));
   }
 
   @Test
@@ -233,11 +231,11 @@ public class PipelineTests {
 
     pt.writeClient(cb);
 
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0));
-    cmp(buf(LONG_MSG), m.message().frame(1));
+    assertEquals(2, m.size());
+    cmp(buf(), m.frame(0));
+    cmp(buf(LONG_MSG), m.frame(1));
   }
 
 
@@ -267,11 +265,11 @@ public class PipelineTests {
     cb.writeBytes(bytes(1, 1, 0x0ff, 0, 0));
 
     pt.writeClient(cb);
-    ZMTPIncomingMessage m = (ZMTPIncomingMessage) pt.readServer();
+    ZMTPMessage m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0));
-    cmp(buf(LONG_MSG), m.message().frame(1));
+    assertEquals(2, m.size());
+    cmp(buf(), m.frame(0));
+    cmp(buf(LONG_MSG), m.frame(1));
 
     // send the rest of the second message
     cb = Unpooled.buffer();
@@ -281,11 +279,11 @@ public class PipelineTests {
     cb.writeBytes(LONG_MSG);
     pt.writeClient(cb);
 
-    m = (ZMTPIncomingMessage) pt.readServer();
+    m = (ZMTPMessage) pt.readServer();
 
-    assertEquals(2, m.message().size());
-    cmp(buf(), m.message().frame(0));
-    cmp(buf(LONG_MSG), m.message().frame(1));
+    assertEquals(2, m.size());
+    cmp(buf(), m.frame(0));
+    cmp(buf(LONG_MSG), m.frame(1));
   }
 
 }

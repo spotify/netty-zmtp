@@ -29,7 +29,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPMessage.fromUTF8;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -51,23 +50,7 @@ public class ZMTPMessageDecoderTest {
     decoder.content(content, out);
     decoder.finish(out);
 
-    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "hello"), false, 5);
-    assertThat(out, hasSize(1));
-    assertThat(out, contains(expected));
-  }
-
-  @Test
-  public void testSingleFrameTruncated() throws Exception {
-    final ZMTPMessageDecoder decoder = new ZMTPMessageDecoder(2);
-
-    final ByteBuf content = Unpooled.copiedBuffer("hello", UTF_8);
-
-    final List<Object> out = Lists.newArrayList();
-    decoder.header(content.readableBytes(), false, out);
-    decoder.content(content, out);
-    decoder.finish(out);
-
-    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "he"), true, 5);
+    final Object expected = ZMTPMessage.fromUTF8(ALLOC, "hello");
     assertThat(out, hasSize(1));
     assertThat(out, contains(expected));
   }
@@ -86,27 +69,7 @@ public class ZMTPMessageDecoderTest {
     decoder.content(f1, out);
     decoder.finish(out);
 
-    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "hello", "world"), false, 10);
-    assertThat(out, hasSize(1));
-    assertThat(out, contains(expected));
-  }
-
-
-  @Test
-  public void testTwoFramesTruncated() throws Exception {
-    final ZMTPMessageDecoder decoder = new ZMTPMessageDecoder(7);
-
-    final ByteBuf f0 = Unpooled.copiedBuffer("hello", UTF_8);
-    final ByteBuf f1 = Unpooled.copiedBuffer("world", UTF_8);
-
-    final List<Object> out = Lists.newArrayList();
-    decoder.header(f0.readableBytes(), true, out);
-    decoder.content(f0, out);
-    decoder.header(f1.readableBytes(), false, out);
-    decoder.content(f1, out);
-    decoder.finish(out);
-
-    final Object expected = new ZMTPIncomingMessage(fromUTF8(ALLOC, "hello", "wo"), true, 10);
+    final Object expected = ZMTPMessage.fromUTF8(ALLOC, "hello", "world");
     assertThat(out, hasSize(1));
     assertThat(out, contains(expected));
   }

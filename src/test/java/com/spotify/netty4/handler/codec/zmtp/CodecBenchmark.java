@@ -54,10 +54,10 @@ public class CodecBenchmark {
       "datadatadatadatadatadatadatadatadatadata");
 
   private final ZMTPFramingDecoder messageDecoderZMTP10 =
-      new ZMTPFramingDecoder(wireFormat(ZMTP10), new ZMTPMessageDecoder(Integer.MAX_VALUE));
+      new ZMTPFramingDecoder(wireFormat(ZMTP10), new ZMTPMessageDecoder());
 
   private final ZMTPFramingDecoder messageDecoderZMTP20 =
-      new ZMTPFramingDecoder(wireFormat(ZMTP20), new ZMTPMessageDecoder(Integer.MAX_VALUE));
+      new ZMTPFramingDecoder(wireFormat(ZMTP20), new ZMTPMessageDecoder());
 
   private final ZMTPFramingDecoder discardingDecoderZMTP10 =
       new ZMTPFramingDecoder(wireFormat(ZMTP10), new Discarder());
