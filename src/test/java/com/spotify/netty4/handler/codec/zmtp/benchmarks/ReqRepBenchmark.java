@@ -49,12 +49,6 @@ public class ReqRepBenchmark {
     final ProgressMeter meter = new ProgressMeter("requests");
 
     // Codecs
-    final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .socketType(ROUTER)
-        .build();
-    final ZMTPCodec clientCodec = ZMTPCodec.builder()
-        .socketType(DEALER)
-        .build();
 
     // Server
     final ServerBootstrap serverBootstrap = new ServerBootstrap()
@@ -64,7 +58,9 @@ public class ReqRepBenchmark {
         .childHandler(new ChannelInitializer<NioSocketChannel>() {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
-            ch.pipeline().addLast(serverCodec);
+            ch.pipeline().addLast(ZMTPCodec.builder()
+                                      .socketType(ROUTER)
+                                      .build());
             ch.pipeline().addLast(new ServerHandler());
           }
         });
@@ -79,7 +75,10 @@ public class ReqRepBenchmark {
         .handler(new ChannelInitializer<NioSocketChannel>() {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
-            ch.pipeline().addLast(clientCodec);
+            ch.pipeline().addLast(
+                ZMTPCodec.builder()
+                    .socketType(DEALER)
+                    .build());
             ch.pipeline().addLast(new ClientHandler(meter));
           }
         });
