@@ -24,10 +24,38 @@ native dependency on e.g. libzmq.
 
 ## Usage
 
-To use netty-zmtp, insert one of `ZMTP10Codec` or `ZMTP20Codec` into your
-`ChannelPipeline` and it will turn incoming buffers into  `ZMTPIncomingMessage`
-instances up the pipeline and accept `ZMTPMessage` instances that gets
-serialized into buffers downstream.
+To use netty-zmtp, insert a `ZMTPCodec` instance into your channel pipeline.
+
+```java
+// ...
+ch.pipeline().addLast(ZMTPCodec.builder()
+                          .socketType(ROUTER)
+                          .build());
+// ...
+```
+
+Upstream handlers will receive `ZMTPMessage` instances.
+
+```java
+@Override
+public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+ final ZMTPMessage message = (ZMTPMessage) msg;
+ // ...
+}
+```
+
+Be careful to wait for handshake to complete before sending messages.
+
+```java
+@Override
+public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt)
+    throws Exception {
+  if (evt instanceof ZMTPHandshakeSuccess) {
+    // ...
+  }
+}
+```
+
 
 ### `pom.xml`
 
