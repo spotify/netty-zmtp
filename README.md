@@ -40,7 +40,7 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception 
 }
 ```
 
-Be careful to wait for handshake to complete before sending messages.
+Wait for the ZMTP handshake to complete before sending messages.
 
 ```java
 @Override
