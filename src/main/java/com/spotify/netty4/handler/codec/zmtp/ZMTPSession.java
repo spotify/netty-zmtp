@@ -25,7 +25,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
 
 /**
- * Represents a single ZMTP session.
+ * Represents one end of a single ZMTP connection.
  */
 public class ZMTPSession {
 
@@ -58,6 +58,13 @@ public class ZMTPSession {
   }
 
   /**
+   * Check whether the peer is anonymous and the peer identity is generated.
+   */
+  public boolean isPeerAnonymous() {
+    return !handshake().remoteIdentity().hasRemaining();
+  }
+
+  /**
    * The ZMTP framing version negotiated as part of the handshake on connection establishment.
    */
   public ZMTPVersion negotiatedVersion() {
@@ -75,11 +82,10 @@ public class ZMTPSession {
    * Signal ZMTP handshake success.
    */
   void handshakeSuccess(final ZMTPHandshake handshake) {
+    peerIdentity = handshake.remoteIdentity().hasRemaining()
+                   ? handshake.remoteIdentity()
+                   : config.identityGenerator().generateIdentity(this);
     this.handshake.setSuccess(handshake);
-    ByteBuffer remoteIdentity = handshake.remoteIdentity();
-    this.peerIdentity = remoteIdentity.hasRemaining() ?
-                        remoteIdentity :
-                        config.identityGenerator().generateIdentity(this);
   }
 
   /**
@@ -104,5 +110,9 @@ public class ZMTPSession {
            "config=" + config +
            ", handshake=" + handshake +
            '}';
+  }
+
+  public static ZMTPSession from(final ZMTPConfig config) {
+    return new ZMTPSession(config);
   }
 }

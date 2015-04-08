@@ -277,8 +277,10 @@ public class ZMQIntegrationTest {
     assertThat(peers.size(), is(1));
     final ZMTPSession session = peers.get(0).session();
     if (ANONYMOUS.equals(zmqIdentity)) {
+      assertThat(session.isPeerAnonymous(), is(true));
       assertThat(UTF_8.decode(session.peerIdentity()).toString(), not(isEmptyString()));
     } else {
+      assertThat(session.isPeerAnonymous(), is(false));
       assertThat(session.peerIdentity(), is(UTF_8.encode(zmqIdentity)));
     }
   }

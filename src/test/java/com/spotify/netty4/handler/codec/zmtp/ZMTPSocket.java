@@ -37,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,7 @@ import static com.google.common.util.concurrent.Futures.transform;
 import static com.spotify.netty4.handler.codec.zmtp.ListenableFutureAdapter.listenable;
 
 /**
- * A simple ZMTP socket implementation.
+ * A simple ZMTP socket implementation for testing purposes.
  */
 public class ZMTPSocket implements Closeable {
 
@@ -148,6 +149,7 @@ public class ZMTPSocket implements Closeable {
   private ZMTPSocket(final Handler handler, final ZMTPConfig config) {
     this.handler = checkNotNull(handler, "handler");
     this.config = config.toBuilder()
+        .identityGenerator(new IdentityGenerator())
         .decoder(decoder(config.socketType()))
         .encoder(encoder(config.socketType()))
         .build();
@@ -432,7 +434,8 @@ public class ZMTPSocket implements Closeable {
     protected void initChannel(final Channel ch) throws Exception {
       channelGroup.add(ch);
       final ZMTPCodec codec = ZMTPCodec.from(config);
-      ch.pipeline().addLast(codec, new Peer(ch, codec.session()));
+      final Peer peer = new Peer(ch, codec.session());
+      ch.pipeline().addLast(codec, peer);
     }
   }
 
@@ -552,7 +555,7 @@ public class ZMTPSocket implements Closeable {
       }
     };
 
-    private static final ByteBuf DELIMITER = Unpooled.EMPTY_BUFFER;
+    private final ByteBuf DELIMITER = Unpooled.EMPTY_BUFFER;
 
     private final ByteBuffer identity;
 
@@ -688,6 +691,23 @@ public class ZMTPSocket implements Closeable {
 
     public ZMTPSocket build() {
       return new ZMTPSocket(handler, config.build());
+    }
+  }
+
+  /**
+   * An identity generator that keeps an integer counter per {@link ZMTPSocket}.
+   */
+  private static class IdentityGenerator implements ZMTPIdentityGenerator {
+
+    private final AtomicInteger peerIdCounter = new AtomicInteger(new SecureRandom().nextInt());
+
+    @Override
+    public ByteBuffer generateIdentity(final ZMTPSession session) {
+      final ByteBuffer generated = ByteBuffer.allocate(5);
+      generated.put((byte) 0);
+      generated.putInt(peerIdCounter.incrementAndGet());
+      generated.flip();
+      return generated;
     }
   }
 }

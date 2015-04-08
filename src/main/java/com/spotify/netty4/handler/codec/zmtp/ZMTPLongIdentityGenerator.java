@@ -20,9 +20,12 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class ZMTPDefaultIdentityGenerator implements ZMTPIdentityGenerator {
+/**
+ * A {@link ZMTPIdentityGenerator} that generates identities using a {@code long} counter.
+ */
+public class ZMTPLongIdentityGenerator implements ZMTPIdentityGenerator {
 
-  public static ZMTPDefaultIdentityGenerator INSTANCE = new ZMTPDefaultIdentityGenerator();
+  public static ZMTPLongIdentityGenerator GLOBAL = new ZMTPLongIdentityGenerator();
 
   private static final AtomicLong peerIdCounter = new AtomicLong(new SecureRandom().nextLong());
 

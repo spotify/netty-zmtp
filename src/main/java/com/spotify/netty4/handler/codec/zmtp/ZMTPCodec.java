@@ -42,9 +42,9 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
 
   private final ZMTPConfig config;
 
-  private ZMTPCodec(final ZMTPConfig config) {
-    this.config = checkNotNull(config, "config");
-    this.session = new ZMTPSession(config);
+  public ZMTPCodec(final ZMTPSession session) {
+    this.config = session.config();
+    this.session = checkNotNull(session, "session");
     this.handshaker = config.protocol().handshaker(config);
   }
 
@@ -119,11 +119,15 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
   }
 
   public static ZMTPCodec from(final ZMTPConfig config) {
-    return new ZMTPCodec(config);
+    return new ZMTPCodec(ZMTPSession.from(config));
   }
 
   public static ZMTPCodec of(final ZMTPSocketType socketType) {
     return builder().socketType(socketType).build();
+  }
+
+  public static ZMTPCodec from(final ZMTPSession session) {
+    return new ZMTPCodec(session);
   }
 
   public static class Builder {
@@ -189,7 +193,7 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     }
 
     public ZMTPCodec build() {
-      return new ZMTPCodec(config.build());
+      return ZMTPCodec.from(config.build());
     }
   }
 }

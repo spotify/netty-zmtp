@@ -93,7 +93,7 @@ public class ZMTPConfig {
     private ByteBuffer localIdentity = ANONYMOUS;
     private ZMTPEncoder.Factory encoder = ZMTPMessageEncoder.FACTORY;
     private ZMTPDecoder.Factory decoder = ZMTPMessageDecoder.FACTORY;
-    public ZMTPIdentityGenerator identityGenerator = ZMTPDefaultIdentityGenerator.INSTANCE;
+    private ZMTPIdentityGenerator identityGenerator = ZMTPLongIdentityGenerator.GLOBAL;
 
     private Builder() {
     }
