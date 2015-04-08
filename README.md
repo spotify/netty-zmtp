@@ -15,6 +15,8 @@ to be currently possible with the JNI based JZMQ library.
 This project implements the ZMTP wire protocol but not the ZeroMQ API, meaning
 that it can be used to communicate with other peers using e.g. ZeroMQ (libzmq)
 but it's not a drop-in replacement for JZMQ like e.g. JeroMQ attempts to be.
+For an example of how a ZeroMQ socket equivalent might be implemented using
+the netty-zmtp codecs, see the `ZMTPSocket` class in the tests.
 
 We have successfully used these handlers to implement services capable of
 processing millions of messages per second.
