@@ -64,6 +64,18 @@ public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt
 </dependency>
 ```
 
+## Performance
+
+Performance seems decent, with the throughput benchmark producing 7M+ messages/s throughput numbers
+on a recent laptop.
+
+For maximum throughput, look into using the `BatchFlusher` to opportunistically gather writes into
+fewer syscalls.
+
+Truly overhead conscientious users might want to look into implementing the `ZMTPEncoder` and
+`ZMTPDecoder` interfaces for eliminating the `ZMTPMessage` intermediary when reading/writing
+application messages.
+
 ## Benchmarks
 
 ### Preparation
