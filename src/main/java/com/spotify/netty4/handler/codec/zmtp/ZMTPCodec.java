@@ -122,6 +122,10 @@ public class ZMTPCodec extends ReplayingDecoder<Void> {
     return new ZMTPCodec(config);
   }
 
+  public static ZMTPCodec of(final ZMTPSocketType socketType) {
+    return builder().socketType(socketType).build();
+  }
+
   public static class Builder {
 
     private final ZMTPConfig.Builder config = ZMTPConfig.builder();

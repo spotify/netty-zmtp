@@ -27,11 +27,7 @@ native dependency on e.g. libzmq.
 To use netty-zmtp, insert a `ZMTPCodec` instance into your channel pipeline.
 
 ```java
-// ...
-ch.pipeline().addLast(ZMTPCodec.builder()
-                          .socketType(ROUTER)
-                          .build());
-// ...
+ch.pipeline().addLast(ZMTPCodec.of(ROUTER));
 ```
 
 Upstream handlers will receive `ZMTPMessage` instances.
