@@ -43,8 +43,6 @@ import static com.google.common.base.Strings.repeat;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
-import static io.netty.channel.ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK;
-import static io.netty.channel.ChannelOption.WRITE_BUFFER_LOW_WATER_MARK;
 
 /**
  * A raw one-way throughput benchmark.
@@ -54,11 +52,7 @@ public class ThroughputBenchmark {
   private static final InetSocketAddress ANY_PORT = new InetSocketAddress("127.0.0.1", 0);
 
   public static void main(final String... args) throws InterruptedException {
-    final ProgressMeter meter = new ProgressMeter("requests");
-
-    // Codecs
-    final ZMTPCodec serverCodec = ZMTPCodec.builder().socketType(ROUTER).build();
-    final ZMTPCodec clientCodec = ZMTPCodec.builder().socketType(DEALER).build();
+    final ProgressMeter meter = new ProgressMeter("messages");
 
     // Server
     final ServerBootstrap serverBootstrap = new ServerBootstrap()
@@ -68,7 +62,7 @@ public class ThroughputBenchmark {
         .childHandler(new ChannelInitializer<NioSocketChannel>() {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
-            ch.pipeline().addLast(serverCodec);
+            ch.pipeline().addLast(ZMTPCodec.of(ROUTER));
             ch.pipeline().addLast(new ServerHandler(meter));
           }
         });
@@ -81,12 +75,10 @@ public class ThroughputBenchmark {
         .channel(NioSocketChannel.class)
         .option(ALLOCATOR, PooledByteBufAllocator.DEFAULT)
         .option(ChannelOption.MESSAGE_SIZE_ESTIMATOR, ByteBufSizeEstimator.INSTANCE)
-        .option(WRITE_BUFFER_HIGH_WATER_MARK, 4 * 1024 * 1024)
-        .option(WRITE_BUFFER_LOW_WATER_MARK, 2 * 1024 * 1024)
         .handler(new ChannelInitializer<NioSocketChannel>() {
           @Override
           protected void initChannel(final NioSocketChannel ch) throws Exception {
-            ch.pipeline().addLast(clientCodec);
+            ch.pipeline().addLast(ZMTPCodec.of(DEALER));
             ch.pipeline().addLast(new ClientHandler());
           }
         });
@@ -107,7 +99,7 @@ public class ThroughputBenchmark {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       ReferenceCountUtil.release(msg);
-      meter.inc(1, 0);
+      meter.inc();
     }
   }
 

@@ -16,108 +16,90 @@
 
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
-import java.util.ArrayDeque;
+import com.google.common.util.concurrent.AbstractScheduledService;
+
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-class ProgressMeter {
+import static java.lang.System.out;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
-  static class Delta {
+class ProgressMeter extends AbstractScheduledService {
 
-    Delta(final long ops, final long time) {
-      this.ops = ops;
-      this.time = time;
-    }
+  private static final long NANOS_PER_MS = TimeUnit.MILLISECONDS.toNanos(1);
+  private static final long NANOS_PER_S = TimeUnit.SECONDS.toNanos(1);
 
-    public final long ops;
-    public final long time;
-  }
+  private final AtomicLong totalLatency = new AtomicLong();
+  private final AtomicLong totalOperations = new AtomicLong();
 
-  private long lastRows = 0;
-  private long lastTime = System.nanoTime();
-  private long lastLatency = 0;
-  private final long interval = 1000;
+  private final String unit;
+  private final boolean reportLatency;
 
-  final private String unit;
-
-  final private AtomicLong latency = new AtomicLong();
-  final private AtomicLong operations = new AtomicLong();
-
-  final private ArrayDeque<Delta> deltas = new ArrayDeque<Delta>();
-
-  private volatile boolean run = true;
-
-  private final Thread worker;
-
-  public ProgressMeter() {
-    this("ops");
-  }
+  private long startTime;
+  private long lastRows;
+  private long lastTime;
+  private long lastLatency;
 
   public ProgressMeter(final String unit) {
+    this(unit, false);
+  }
+
+  public ProgressMeter(final String unit, final boolean reportLatency) {
     this.unit = unit;
-    worker = new Thread(new Runnable() {
-      public void run() {
-        while (run) {
-          try {
-            Thread.sleep(interval);
-          } catch (InterruptedException e) {
-            continue;
-          }
-          progress();
-        }
-      }
-    });
-    worker.start();
+    this.reportLatency = reportLatency;
+    startAsync();
   }
 
-  private void progress() {
-    final long count = this.operations.get();
-    final long time = System.nanoTime();
-    final long latency = this.latency.get();
-
-    final long delta = count - lastRows;
-    final long deltaTime = time - lastTime;
-    final long deltaLatency = latency - lastLatency;
-
-    deltas.add(new Delta(delta, deltaTime));
-
-    if (deltas.size() > 10) {
-      deltas.pop();
-    }
-
-    long opSum = 0;
-    long timeSum = 0;
-
-    for (final Delta d : deltas) {
-      timeSum += d.time;
-      opSum += d.ops;
-    }
-
-    final long operations = deltaTime == 0 ? 0 : 1000000000 * delta / deltaTime;
-    final long averagedOperations = timeSum == 0 ? 0 : 1000000000 * opSum / timeSum;
-    final float averageLatency = opSum == 0 ? 0 : deltaLatency / (1000000.f * opSum);
-
-    System.out.printf("%,10d (%,10d) %s/s. %,10.3f ms average latency. %,10d %s total.\n",
-                      operations, averagedOperations, unit, averageLatency, count, unit);
-    System.out.flush();
-
-    lastRows = count;
-    lastTime = time;
-    lastLatency = latency;
+  public void inc() {
+    this.totalOperations.incrementAndGet();
   }
 
-  public void finish() {
-    run = false;
-    worker.interrupt();
-    try {
-      worker.join();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    progress();
+  public void inc(final long ops) {
+    this.totalOperations.addAndGet(ops);
   }
 
   public void inc(final long ops, final long latency) {
-    this.operations.addAndGet(ops);
-    this.latency.addAndGet(latency);
+    this.totalOperations.addAndGet(ops);
+    this.totalLatency.addAndGet(latency);
+  }
+
+  @Override
+  protected void runOneIteration() throws Exception {
+    final long now = System.nanoTime();
+    final long totalOperations = this.totalOperations.get();
+    final long totalLatency = this.totalLatency.get();
+
+    final long deltaOps = totalOperations - lastRows;
+    final long deltaTime = now - lastTime;
+    final long deltaLatency = totalLatency - lastLatency;
+
+    // TODO (dano): use HdrHistogram to compute latency percentiles
+
+    final long operations = (deltaTime == 0) ? 0 : (NANOS_PER_S * deltaOps) / deltaTime;
+    final double avgLatency = (deltaOps == 0) ? 0 : deltaLatency / (NANOS_PER_MS * deltaOps);
+    final long seconds = NANOSECONDS.toSeconds(now - startTime);
+
+    out.printf("%,4ds: %,12d %s/s.", seconds, operations, unit);
+    if (reportLatency) {
+      out.printf("    %,10.3f ms avg latency.", avgLatency);
+    }
+    out.printf("    (total: %,12d)\n", totalOperations);
+    out.flush();
+
+    lastRows = totalOperations;
+    lastTime = now;
+    lastLatency = totalLatency;
+  }
+
+  @Override
+  protected void startUp() throws Exception {
+    startTime = System.nanoTime();
+    lastTime = startTime;
+  }
+
+  @Override
+  protected Scheduler scheduler() {
+    return Scheduler.newFixedRateSchedule(1, 1, SECONDS);
   }
 }

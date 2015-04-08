@@ -56,7 +56,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.chmv8.ForkJoinPool;
 
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static io.netty.util.CharsetUtil.UTF_8;
@@ -77,18 +76,16 @@ public class ApplicationBenchmark {
       };
 
   public static void main(final String... args) throws InterruptedException {
-    final ProgressMeter meter = new ProgressMeter("requests");
+    final ProgressMeter meter = new ProgressMeter("requests", true);
 
     // Codecs
     final ZMTPCodec serverCodec = ZMTPCodec.builder()
-        .protocol(ZMTP10)
         .socketType(ROUTER)
         .encoder(ReplyEncoder.class)
         .decoder(RequestDecoder.class)
         .build();
 
     final ZMTPCodec clientCodec = ZMTPCodec.builder()
-        .protocol(ZMTP10)
         .socketType(DEALER)
         .encoder(RequestEncoder.class)
         .decoder(ReplyDecoder.class)

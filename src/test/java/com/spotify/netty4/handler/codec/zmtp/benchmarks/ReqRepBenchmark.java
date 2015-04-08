@@ -147,7 +147,7 @@ public class ReqRepBenchmark {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       final ZMTPMessage message = (ZMTPMessage) msg;
-      meter.inc(1, 0);
+      meter.inc();
       message.release();
       ctx.write(req());
       flusher.flush();
