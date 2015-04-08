@@ -68,11 +68,15 @@ public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt
 
 First compile and run tests:
 
-        $ mvn clean test
+```
+mvn clean test
+```
 
 Fetch dependencies:
 
-        $ mvn dependency:copy-dependencies
+```
+mvn dependency:copy-dependencies
+```
 
 Now benchmarks are ready to run.
 
