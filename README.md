@@ -79,8 +79,8 @@ Now benchmarks are ready to run.
 ### One-Way Throughput
 
 ```
-$ java -cp 'target/classes:target/test-classes:target/dependency/*' \
-       com.spotify.netty4.handler.codec.zmtp.benchmarks.ThroughputBenchmark
+java -cp 'target/classes:target/test-classes:target/dependency/*' \
+     com.spotify.netty4.handler.codec.zmtp.benchmarks.ThroughputBenchmark
 ```
 
 ```
@@ -98,8 +98,8 @@ $ java -cp 'target/classes:target/test-classes:target/dependency/*' \
 
 
 ```
-$ java -cp 'target/classes:target/test-classes:target/dependency/*' \
-       com.spotify.netty4.handler.codec.zmtp.benchmarks.ReqRepBenchmark
+java -cp 'target/classes:target/test-classes:target/dependency/*' \
+     com.spotify.netty4.handler.codec.zmtp.benchmarks.ReqRepBenchmark
 ```
 
 ```
@@ -115,8 +115,8 @@ $ java -cp 'target/classes:target/test-classes:target/dependency/*' \
 ### Req/Rep With Custom Encoder/Decoder Throughput
 
 ```
-$ java -cp 'target/classes:target/test-classes:target/dependency/*' \
-       com.spotify.netty4.handler.codec.zmtp.benchmarks.ApplicationBenchmark
+java -cp 'target/classes:target/test-classes:target/dependency/*' \
+     com.spotify.netty4.handler.codec.zmtp.benchmarks.ApplicationBenchmark
 ```
 
 ```
