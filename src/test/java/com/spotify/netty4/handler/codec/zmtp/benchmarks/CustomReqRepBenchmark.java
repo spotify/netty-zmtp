@@ -61,7 +61,7 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.asList;
 
-public class ApplicationBenchmark {
+public class CustomReqRepBenchmark {
 
   private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 

@@ -120,7 +120,7 @@ java -cp 'target/classes:target/test-classes:target/dependency/*' \
 
 ```
 java -cp 'target/classes:target/test-classes:target/dependency/*' \
-     com.spotify.netty4.handler.codec.zmtp.benchmarks.ApplicationBenchmark
+     com.spotify.netty4.handler.codec.zmtp.benchmarks.CustomReqRepBenchmark
 ```
 
 ```
