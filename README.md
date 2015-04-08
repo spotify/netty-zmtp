@@ -138,13 +138,14 @@ java -cp 'target/classes:target/test-classes:target/dependency/*' \
 ```
 
 ```
-1s:      494,978 requests/s.         1.000 ms avg latency.    (total:      497,512)
-2s:    1,345,494 requests/s.         0.000 ms avg latency.    (total:    1,838,109)
-3s:    1,594,242 requests/s.         0.000 ms avg latency.    (total:    3,436,276)
-4s:    1,688,887 requests/s.         0.000 ms avg latency.    (total:    5,125,976)
-5s:    1,710,013 requests/s.         0.000 ms avg latency.    (total:    6,838,872)
-6s:    1,707,321 requests/s.         0.000 ms avg latency.    (total:    8,542,567)
-7s:    1,721,369 requests/s.         0.000 ms avg latency.    (total:   10,259,305)
+1s:      443,337 requests/s.         1.470 ms avg latency.    (total:      445,512)
+2s:    1,306,539 requests/s.         0.765 ms avg latency.    (total:    1,747,153)
+3s:    1,549,594 requests/s.         0.645 ms avg latency.    (total:    3,303,268)
+4s:    1,557,397 requests/s.         0.642 ms avg latency.    (total:    4,859,727)
+5s:    1,618,137 requests/s.         0.618 ms avg latency.    (total:    6,472,114)
+6s:    1,609,406 requests/s.         0.621 ms avg latency.    (total:    8,084,958)
+7s:    1,611,349 requests/s.         0.621 ms avg latency.    (total:    9,692,777)
+8s:    1,611,672 requests/s.         0.620 ms avg latency.    (total:   11,306,988)
 ```
 
 ## Feedback

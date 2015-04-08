@@ -27,7 +27,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 class ProgressMeter extends AbstractScheduledService {
 
-  private static final long NANOS_PER_MS = TimeUnit.MILLISECONDS.toNanos(1);
+  private static final double NANOS_PER_MS = TimeUnit.MILLISECONDS.toNanos(1);
   private static final long NANOS_PER_S = TimeUnit.SECONDS.toNanos(1);
 
   private final AtomicLong totalLatency = new AtomicLong();
@@ -74,6 +74,10 @@ class ProgressMeter extends AbstractScheduledService {
     final long deltaTime = now - lastTime;
     final long deltaLatency = totalLatency - lastLatency;
 
+    lastRows = totalOperations;
+    lastTime = now;
+    lastLatency = totalLatency;
+
     // TODO (dano): use HdrHistogram to compute latency percentiles
 
     final long operations = (deltaTime == 0) ? 0 : (NANOS_PER_S * deltaOps) / deltaTime;
@@ -86,10 +90,6 @@ class ProgressMeter extends AbstractScheduledService {
     }
     out.printf("    (total: %,12d)\n", totalOperations);
     out.flush();
-
-    lastRows = totalOperations;
-    lastTime = now;
-    lastLatency = totalLatency;
   }
 
   @Override
