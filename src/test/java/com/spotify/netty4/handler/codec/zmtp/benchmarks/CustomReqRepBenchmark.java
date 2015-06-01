@@ -515,7 +515,8 @@ public class CustomReqRepBenchmark {
     private int frameLength;
 
     @Override
-    public void header(final long length, final boolean more, final List<Object> out) {
+    public void header(final ChannelHandlerContext ctx, final long length, final boolean more,
+                       final List<Object> out) {
       if (length > Integer.MAX_VALUE) {
         throw new IllegalArgumentException("length");
       }
@@ -523,7 +524,8 @@ public class CustomReqRepBenchmark {
     }
 
     @Override
-    public void content(final ByteBuf data, final List<Object> out) {
+    public void content(final ChannelHandlerContext ctx, final ByteBuf data,
+                        final List<Object> out) {
       if (data.readableBytes() < frameLength) {
         return;
       }
@@ -548,7 +550,7 @@ public class CustomReqRepBenchmark {
     }
 
     @Override
-    public void finish(final List<Object> out) {
+    public void finish(final ChannelHandlerContext ctx, final List<Object> out) {
       out.add(new Request(id, uri, method, payload));
     }
 
@@ -577,7 +579,8 @@ public class CustomReqRepBenchmark {
     private ByteBuffer payload;
 
     @Override
-    public void header(final long length, final boolean more, final List<Object> out) {
+    public void header(final ChannelHandlerContext ctx, final long length, final boolean more,
+                       final List<Object> out) {
       if (length > Integer.MAX_VALUE) {
         throw new IllegalArgumentException("length");
       }
@@ -585,7 +588,8 @@ public class CustomReqRepBenchmark {
     }
 
     @Override
-    public void content(final ByteBuf data, final List<Object> out) {
+    public void content(final ChannelHandlerContext ctx, final ByteBuf data,
+                        final List<Object> out) {
       if (data.readableBytes() < frameLength) {
         return;
       }
@@ -614,7 +618,7 @@ public class CustomReqRepBenchmark {
     }
 
     @Override
-    public void finish(final List<Object> out) {
+    public void finish(final ChannelHandlerContext ctx, final List<Object> out) {
       out.add(new Reply(id, uri, method, statusCode, payload));
     }
 

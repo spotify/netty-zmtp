@@ -26,6 +26,7 @@ import java.util.List;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPWireFormats.wireFormat;
@@ -121,12 +122,14 @@ public class ZMTPWriterTest {
 
     private List<ByteBuf> frames = Lists.newArrayList();
 
-    public void header(final long length, final boolean more, final List<Object> out) {
+    public void header(final ChannelHandlerContext ctx, final long length, final boolean more,
+                       final List<Object> out) {
       this.length = length;
     }
 
     @Override
-    public void content(final ByteBuf data, final List<Object> out) {
+    public void content(final ChannelHandlerContext ctx, final ByteBuf data,
+                        final List<Object> out) {
       if (data.readableBytes() < length) {
         return;
       }
@@ -134,7 +137,7 @@ public class ZMTPWriterTest {
     }
 
     @Override
-    public void finish(final List<Object> out) {
+    public void finish(final ChannelHandlerContext ctx, final List<Object> out) {
       out.add(frames);
       frames = Lists.newArrayList();
     }

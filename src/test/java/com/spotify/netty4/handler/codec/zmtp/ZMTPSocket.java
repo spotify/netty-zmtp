@@ -574,12 +574,14 @@ public class ZMTPSocket implements Closeable {
     }
 
     @Override
-    public void header(final long length, final boolean more, final List<Object> out) {
+    public void header(final ChannelHandlerContext ctx, final long length, final boolean more,
+                       final List<Object> out) {
       frameLength = (int) length;
     }
 
     @Override
-    public void content(final ByteBuf data, final List<Object> out) {
+    public void content(final ChannelHandlerContext ctx, final ByteBuf data,
+                        final List<Object> out) {
       if (data.readableBytes() < frameLength) {
         return;
       }
@@ -593,7 +595,7 @@ public class ZMTPSocket implements Closeable {
     }
 
     @Override
-    public void finish(final List<Object> out) {
+    public void finish(final ChannelHandlerContext ctx, final List<Object> out) {
       final ZMTPMessage message = ZMTPMessage.from(frames);
       reset();
       out.add(message);

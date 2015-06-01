@@ -57,7 +57,7 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
           in.readerIndex(mark);
           return;
         }
-        decoder.header(header.length(), header.more(), out);
+        decoder.header(ctx, header.length(), header.more(), out);
         remaining = header.length();
       }
 
@@ -65,7 +65,7 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
       final int n = (int) min(remaining, in.readableBytes());
       final int readerMark = in.readerIndex();
       in.writerIndex(readerMark + n);
-      decoder.content(in, out);
+      decoder.content(ctx, in, out);
       in.writerIndex(writerMark);
       final int read = in.readerIndex() - readerMark;
       remaining -= read;
@@ -74,7 +74,7 @@ class ZMTPFramingDecoder extends ByteToMessageDecoder {
         return;
       }
       if (!header.more()) {
-        decoder.finish(out);
+        decoder.finish(ctx, out);
       }
       headerParsed = false;
     }
