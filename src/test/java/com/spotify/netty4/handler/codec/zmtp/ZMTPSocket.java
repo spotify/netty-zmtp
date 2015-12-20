@@ -78,9 +78,9 @@ public class ZMTPSocket implements Closeable {
       MoreExecutors.listeningDecorator(GlobalEventExecutor.INSTANCE);
 
   /**
-   * Represents a conencted peer.
+   * Represents a connected peer.
    */
-  public static interface ZMTPPeer {
+  public interface ZMTPPeer {
 
     /**
      * Get the ZMTP session for this peer.
@@ -96,7 +96,7 @@ public class ZMTPSocket implements Closeable {
   /**
    * Handles incoming messages and connection events.
    */
-  public static interface Handler {
+  public interface Handler {
 
     /**
      * A peer connected.
@@ -114,12 +114,12 @@ public class ZMTPSocket implements Closeable {
     void message(ZMTPSocket socket, ZMTPPeer peer, ZMTPMessage message);
   }
 
-  private static interface Sender {
+  private interface Sender {
 
     ListenableFuture<Void> send(ZMTPMessage message);
   }
 
-  private static interface Receiver {
+  private interface Receiver {
 
     void receive(final ZMTPPeer peer, ZMTPMessage message);
   }

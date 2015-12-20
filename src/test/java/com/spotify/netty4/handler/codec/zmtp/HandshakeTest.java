@@ -114,7 +114,7 @@ public class HandshakeTest {
 
     try {
       h.handshake(buf(0xff, 0, 0, 0, 0, 0, 0, 0, 0x4, 0x7f), ctx);
-      fail("not enough data in greeting (because compat mode) shuld have thrown exception");
+      fail("not enough data in greeting (because compat mode) should have thrown exception");
     } catch (IndexOutOfBoundsException e) {
       // expected
     }
@@ -186,13 +186,13 @@ public class HandshakeTest {
   public void testDetectProtocolVersion() {
     try {
       ZMTP20WireFormat.detectProtocolVersion(Unpooled.wrappedBuffer(new byte[0]));
-      fail("Should have thown IndexOutOfBoundsException");
+      fail("Should have thrown IndexOutOfBoundsException");
     } catch (IndexOutOfBoundsException e) {
       // ignore
     }
     try {
       ZMTP20WireFormat.detectProtocolVersion(buf(0xff, 0, 0, 0));
-      fail("Should have thown IndexOutOfBoundsException");
+      fail("Should have thrown IndexOutOfBoundsException");
     } catch (IndexOutOfBoundsException e) {
       // ignore
     }
