@@ -6,8 +6,8 @@ package com.spotify.netty4.handler.codec.zmtp;
  */
 public enum ZMTPSocketType {
   PAIR,
-  SUB,
   PUB,
+  SUB,
   REQ,
   REP,
   DEALER,
