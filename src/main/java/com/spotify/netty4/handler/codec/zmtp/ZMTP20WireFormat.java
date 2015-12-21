@@ -152,9 +152,9 @@ class ZMTP20WireFormat implements ZMTPWireFormat {
     switch (socketType) {
       case PAIR:
         return 0;
-      case SUB:
-        return 1;
       case PUB:
+        return 1;
+      case SUB:
         return 2;
       case REQ:
         return 3;
