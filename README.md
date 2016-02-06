@@ -60,7 +60,7 @@ public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt
 <dependency>
   <groupId>com.spotify</groupId>
   <artifactId>netty4-zmtp</artifactId>
-  <version>0.4.0</version>
+  <version>0.4.1</version>
 </dependency>
 ```
 
