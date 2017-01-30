@@ -16,17 +16,15 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-
-import java.util.ArrayList;
-import java.util.List;
-
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.DefaultChannelPromise;
 import io.netty.util.ReferenceCountUtil;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Netty ZMTP encoder.
@@ -91,48 +89,22 @@ class ZMTPFramingEncoder extends ChannelOutboundHandlerAdapter {
       encoder.encode(message, writer);
       ReferenceCountUtil.release(message);
     }
-    final ChannelPromise aggregate = new AggregatePromise(ctx.channel(), promises);
+    final List<ChannelPromise> sentPromises = new ArrayList<ChannelPromise>(promises);
     messages.clear();
     promises.clear();
-    ctx.write(output, aggregate);
-    ctx.flush();
-  }
-
-  private static class AggregatePromise extends DefaultChannelPromise {
-
-    private final ChannelPromise[] promises;
-
-    private AggregatePromise(final Channel channel,
-                             final List<ChannelPromise> promises) {
-      super(channel);
-      this.promises = promises.toArray(new ChannelPromise[promises.size()]);
-    }
-
-    @Override
-    public ChannelPromise setSuccess(final Void result) {
-      super.setSuccess(result);
-      for (final ChannelPromise promise : promises) {
-        promise.setSuccess(result);
+    ctx.writeAndFlush(output).addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(final ChannelFuture future) throws Exception {
+        if (future.isSuccess()) {
+          for (final ChannelPromise promise : sentPromises) {
+            promise.setSuccess();
+          }
+        } else {
+          for (final ChannelPromise promise : sentPromises) {
+            promise.setFailure(future.cause());
+          }
+        }
       }
-      return this;
-    }
-
-    @Override
-    public boolean trySuccess() {
-      final boolean result = super.trySuccess();
-      for (final ChannelPromise promise : promises) {
-        promise.trySuccess();
-      }
-      return result;
-    }
-
-    @Override
-    public ChannelPromise setFailure(final Throwable cause) {
-      super.setFailure(cause);
-      for (final ChannelPromise promise : promises) {
-        promise.setFailure(cause);
-      }
-      return this;
-    }
+    });
   }
 }
