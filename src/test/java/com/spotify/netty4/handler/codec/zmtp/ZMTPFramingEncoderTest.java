@@ -1,23 +1,5 @@
 package com.spotify.netty4.handler.codec.zmtp;
 
-import com.google.common.base.Strings;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.util.concurrent.EventExecutor;
-
 import static com.spotify.netty4.handler.codec.zmtp.Buffers.buf;
 import static com.spotify.netty4.handler.codec.zmtp.Buffers.bytes;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPConfig.ANONYMOUS;
@@ -27,8 +9,23 @@ import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
+
+import com.google.common.base.Strings;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.concurrent.EventExecutor;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZMTPFramingEncoderTest {
@@ -45,7 +42,7 @@ public class ZMTPFramingEncoderTest {
 
   @Before
   public void setUp() {
-    when(ctx.write(bufCaptor.capture(), any(ChannelPromise.class))).thenReturn(promise);
+    when(ctx.writeAndFlush(bufCaptor.capture())).thenReturn(promise);
     when(ctx.alloc()).thenReturn(ByteBufAllocator.DEFAULT);
     when(ctx.executor()).thenReturn(executor);
   }

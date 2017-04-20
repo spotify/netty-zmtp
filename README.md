@@ -21,7 +21,7 @@ the netty-zmtp codecs, see the `ZMTPSocket` class in the tests.
 We have successfully used these handlers to implement services capable of
 processing millions of messages per second.
 
-Currently this project targets Java 6+ and Netty 4.x. It does not have any
+Currently this project targets Java 7+ and Netty 4.1.x. It does not have any
 native dependency on e.g. libzmq.
 
 ## Usage

@@ -16,29 +16,6 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import com.google.common.base.Strings;
-import com.google.common.util.concurrent.ListenableFuture;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.FromDataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
-
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import io.netty.util.ReferenceCountUtil;
-
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPProtocols.ZMTP20;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
@@ -54,6 +31,26 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+
+import com.google.common.base.Strings;
+import com.google.common.util.concurrent.ListenableFuture;
+import io.netty.util.ReferenceCountUtil;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.FromDataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 @RunWith(Theories.class)
 public class ZMQIntegrationTest {
@@ -161,7 +158,7 @@ public class ZMQIntegrationTest {
   }
 
   private void testReqRep(final ZMQ.Socket req, final ZMTPSocket rep, final String zmqIdentity)
-      throws InterruptedException, TimeoutException {
+      throws ExecutionException, InterruptedException, TimeoutException {
 
     // Verify that sockets are connected
     verify(handler, timeout(5000)).connected(eq(rep), any(ZMTPSocket.ZMTPPeer.class));
@@ -179,17 +176,20 @@ public class ZMQIntegrationTest {
     final ZMTPMessage receivedRequest = messageCaptor.getValue();
 
     // Send reply
-    rep.send(receivedRequest);
+    final ListenableFuture<Void> future = rep.send(receivedRequest);
 
     // Receive reply
     final ZMsg reply = ZMsg.recvMsg(req);
 
     // Verify echo
     assertEquals(request, reply);
+
+    // verify future completes
+    future.get(1, TimeUnit.SECONDS);
   }
 
   private void testReqRep(final ZMTPSocket req, final ZMQ.Socket rep, final String zmqIdentity)
-      throws InterruptedException, TimeoutException {
+      throws ExecutionException, InterruptedException, TimeoutException {
 
     // Verify that sockets are connected
     verify(handler, timeout(5000)).connected(eq(req), any(ZMTPSocket.ZMTPPeer.class));
@@ -200,7 +200,7 @@ public class ZMQIntegrationTest {
     // Send request
     final ZMTPMessage request = ZMTPMessage.fromUTF8("envelope", "", "hello", "world");
     request.retain();
-    req.send(request);
+    final ListenableFuture<Void> future = req.send(request);
 
     // Receive request
     final ZMsg receivedRequest = ZMsg.recvMsg(rep);
@@ -217,6 +217,9 @@ public class ZMQIntegrationTest {
     // Verify echo
     assertEquals(request, reply);
     request.release();
+
+    // verify future completes
+    future.get(1, TimeUnit.SECONDS);
   }
 
   private ZMQ.Socket zmqBind(final int zmqType, final String identity) {

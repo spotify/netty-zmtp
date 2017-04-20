@@ -16,6 +16,15 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
+import static io.netty.buffer.ByteBufUtil.encodeString;
+import static io.netty.util.CharsetUtil.UTF_8;
+import static java.util.Arrays.asList;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.AbstractReferenceCounted;
+import io.netty.util.internal.RecyclableArrayList;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -23,16 +32,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.util.AbstractReferenceCounted;
-import io.netty.util.internal.RecyclableArrayList;
-
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
-import static io.netty.buffer.ByteBufUtil.encodeString;
-import static io.netty.util.CharsetUtil.UTF_8;
-import static java.util.Arrays.asList;
 
 public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<ByteBuf> {
 
@@ -175,6 +174,14 @@ public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<By
   @Override
   public String toString() {
     return "ZMTPMessage{" + toString(frames) + '}';
+  }
+
+  @Override
+  public ZMTPMessage touch(final Object hint) {
+    if (frames.length > 0) {
+      frames[0].touch(hint);
+    }
+    return this;
   }
 
   /**

@@ -16,12 +16,16 @@
 
 package com.spotify.netty4.handler.codec.zmtp.benchmarks;
 
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
+import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
+import static io.netty.util.CharsetUtil.UTF_8;
+import static java.util.Arrays.asList;
+
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
-
 import com.spotify.netty4.handler.codec.zmtp.ZMTPCodec;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPDecoder;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPEncoder;
@@ -29,15 +33,6 @@ import com.spotify.netty4.handler.codec.zmtp.ZMTPEstimator;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPHandshakeSuccess;
 import com.spotify.netty4.handler.codec.zmtp.ZMTPWriter;
 import com.spotify.netty4.util.BatchFlusher;
-
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executor;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -54,12 +49,14 @@ import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.internal.chmv8.ForkJoinPool;
-
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.DEALER;
-import static com.spotify.netty4.handler.codec.zmtp.ZMTPSocketType.ROUTER;
-import static io.netty.util.CharsetUtil.UTF_8;
-import static java.util.Arrays.asList;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 public class CustomReqRepBenchmark {
 

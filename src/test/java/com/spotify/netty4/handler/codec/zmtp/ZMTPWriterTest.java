@@ -16,18 +16,6 @@
 
 package com.spotify.netty4.handler.codec.zmtp;
 
-import com.google.common.collect.Lists;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.List;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPVersion.ZMTP10;
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPWireFormats.wireFormat;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -39,6 +27,16 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.junit.Assert.assertThat;
+
+import com.google.common.collect.Lists;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.ReferenceCountUtil;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZMTPWriterTest {
@@ -133,7 +131,7 @@ public class ZMTPWriterTest {
       if (data.readableBytes() < length) {
         return;
       }
-      frames.add(data.readBytes((int) length));
+      frames.add(ReferenceCountUtil.releaseLater(data.readBytes((int) length)));
     }
 
     @Override
