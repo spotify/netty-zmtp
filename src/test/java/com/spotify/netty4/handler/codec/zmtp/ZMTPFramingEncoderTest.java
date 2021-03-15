@@ -2,6 +2,7 @@ package com.spotify.netty4.handler.codec.zmtp;
 
 import com.google.common.base.Strings;
 
+import io.netty.channel.Channel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +37,7 @@ public class ZMTPFramingEncoderTest {
   private final static ByteBufAllocator ALLOC = new UnpooledByteBufAllocator(false);
 
   @Mock ChannelHandlerContext ctx;
+  @Mock Channel channel;
   @Mock ChannelPromise promise;
   @Mock EventExecutor executor;
 
@@ -48,6 +50,7 @@ public class ZMTPFramingEncoderTest {
     when(ctx.write(bufCaptor.capture(), any(ChannelPromise.class))).thenReturn(promise);
     when(ctx.alloc()).thenReturn(ByteBufAllocator.DEFAULT);
     when(ctx.executor()).thenReturn(executor);
+    when(ctx.channel()).thenReturn(channel);
   }
 
   @Test

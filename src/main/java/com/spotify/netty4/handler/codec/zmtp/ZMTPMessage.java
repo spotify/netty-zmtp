@@ -27,6 +27,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.AbstractReferenceCounted;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.internal.RecyclableArrayList;
 
 import static com.spotify.netty4.handler.codec.zmtp.ZMTPUtils.checkNotNull;
@@ -51,6 +52,11 @@ public class ZMTPMessage extends AbstractReferenceCounted implements Iterable<By
   @Override
   public ZMTPMessage retain(final int increment) {
     super.retain(increment);
+    return this;
+  }
+
+  @Override
+  public ReferenceCounted touch(Object hint) {
     return this;
   }
 
