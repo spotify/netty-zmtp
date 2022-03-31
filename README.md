@@ -1,3 +1,7 @@
+# Netty-zmtp
+
+**Note** This project has been discontinued. 
+
 [![Build Status](https://travis-ci.org/spotify/netty-zmtp.png?branch=master)](https://travis-ci.org/spotify/netty-zmtp)
 
 This is a ZeroMQ codec for Netty that aims to implement ZMTP, the ZeroMQ
