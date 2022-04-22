@@ -33,8 +33,6 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>1.6</maven.compiler.target>
-    <maven.compiler.source>1.6</maven.compiler.source>
   </properties>
 
   <developers>
@@ -49,7 +47,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.0.34.Final</version>
+      <version>4.1.9.Final</version>
       <!-- the user of this lib should already have a dependency on netty -->
       <scope>provided</scope>
     </dependency>
@@ -125,8 +123,8 @@
         <version>3.3</version>
         <configuration>
           <useIncrementalCompilation>false</useIncrementalCompilation>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
       <plugin>
